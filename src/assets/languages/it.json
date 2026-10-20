@@ -1311,6 +1311,7 @@
       "usage": "Utilizzo",
       "battery": "Batteria",
       "github": "Github",
+      "calendar": "Calendario",
       "time": "Ora"
     },
     "variants": {
@@ -1320,6 +1321,8 @@
       "minimal": "Minimal",
       "round": "Rotondo",
       "compact": "Compatto",
+      "month": "Mese",
+      "agenda": "Agenda",
       "rect": "Rettangolare",
       "rounded": "Arrotondato",
       "bars": "Barre",
@@ -1355,6 +1358,17 @@
       "fetch_error": "Impossibile recuperare l'utente @{user}",
       "enter_username": "Inserisci un nome utente GitHub",
       "no_contributions": "Nessun contributo trovato"
+    },
+    "calendar": {
+      "manage_calendars": "Gestisci calendari",
+      "gcal_help": "Google Calendar: Impostazioni > Integra calendario > Indirizzo segreto in formato iCal",
+      "sync_now": "Sincronizza ora",
+      "sync": "Sincronizza",
+      "add_calendar": "Aggiungi calendario",
+      "agenda_title": "Agenda",
+      "today": "Oggi",
+      "tomorrow": "Domani",
+      "next_event": "Prossimo evento"
     },
     "settings": {
       "lyricsLines": "Righe",

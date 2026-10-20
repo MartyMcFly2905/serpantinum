@@ -741,6 +741,10 @@ Scope {
                                 activeWidgetsModel.setProperty(itemIndex, "wWidth", redactorMode.safeHeight);
                             }
                             proxy.finalizeSync();
+                        } else if (action === "syncCalendar") {
+                            if (typeof CalendarService !== "undefined") {
+                                CalendarService.sync(true);
+                            }
                         } else if (extraArg !== undefined) {
                             setWidgetProperty(action, extraArg, itemId);
                         }

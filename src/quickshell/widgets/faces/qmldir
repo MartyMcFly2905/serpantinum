@@ -1,4 +1,7 @@
 BatteryFace 1.0 battery/BatteryFace.qml
+CalendarFaceMonth 1.0 calendar/CalendarFaceMonth.qml
+CalendarFaceAgenda 1.0 calendar/CalendarFaceAgenda.qml
+CalendarFaceCompact 1.0 calendar/CalendarFaceCompact.qml
 ClockFaceAnalog 1.0 clock/ClockFaceAnalog.qml
 ClockFaceDigital 1.0 clock/ClockFaceDigital.qml
 ClockFaceMaterial 1.0 clock/ClockFaceMaterial.qml

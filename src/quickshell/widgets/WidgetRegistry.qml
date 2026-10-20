@@ -729,6 +729,30 @@ QtObject {
             variants: {
                 "default": { file: "faces/github/GithubFace.qml", icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.default", "Default") : "Default" }
             }
+        },
+        "calendar": {
+            name: typeof I18n !== "undefined" ? I18n.t("widgets.types.calendar", "Calendar") : "Calendar",
+            icon: String.fromCodePoint(0xF00ED),
+            iconOffsetX: 0,
+            defaultWidth: 340,
+            defaultHeight: 320,
+            defaultVariant: "month",
+            variants: {
+                "month":   { file: "faces/calendar/CalendarFaceMonth.qml",   icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.month", "Month") : "Month" },
+                "agenda":  { file: "faces/calendar/CalendarFaceAgenda.qml",  icon: "2", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.agenda", "Agenda") : "Agenda" },
+                "compact": { file: "faces/calendar/CalendarFaceCompact.qml", icon: "3", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.compact", "Compact") : "Compact" }
+            },
+            additionalSettings: [
+                {
+                    id: "syncCalendar",
+                    icon: String.fromCodePoint(0xF0450),
+                    iconFontSize: 16,
+                    action: "syncCalendar",
+                    row: "top",
+                    accentColor: "surface0",
+                    textColor: "mauve"
+                }
+            ]
         }
     })
 

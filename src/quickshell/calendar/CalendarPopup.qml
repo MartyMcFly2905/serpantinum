@@ -425,18 +425,31 @@ Item {
         calendarModel.clear();
 
         for (let i = firstDay - 1; i >= 0; i--) {
-            calendarModel.append({ dayNum: (daysInPrevMonth - i).toString(), isCurrentMonth: false, isToday: false });
+            let pDay = daysInPrevMonth - i;
+            let pDate = new Date(targetYear, targetMonth - 1, pDay);
+            let hasEvs = typeof CalendarService !== "undefined" ? CalendarService.hasEventsOnDate(pDate.getFullYear(), pDate.getMonth() + 1, pDay) : false;
+            calendarModel.append({ dayNum: pDay.toString(), isCurrentMonth: false, isToday: false, hasEvents: hasEvs });
         }
         for (let i = 1; i <= daysInMonth; i++) {
-            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: true, isToday: (isRealCurrentMonth && i === todayDate) });
+            let hasEvs = typeof CalendarService !== "undefined" ? CalendarService.hasEventsOnDate(targetYear, targetMonth + 1, i) : false;
+            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: true, isToday: (isRealCurrentMonth && i === todayDate), hasEvents: hasEvs });
         }
         let remaining = 42 - calendarModel.count;
         for (let i = 1; i <= remaining; i++) {
-            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: false, isToday: false });
+            let nDate = new Date(targetYear, targetMonth + 1, i);
+            let hasEvs = typeof CalendarService !== "undefined" ? CalendarService.hasEventsOnDate(nDate.getFullYear(), nDate.getMonth() + 1, i) : false;
+            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: false, isToday: false, hasEvents: hasEvs });
         }
     }
 
     onMonthOffsetChanged: updateCalendarGrid()
+
+    Connections {
+        target: typeof CalendarService !== "undefined" ? CalendarService : null
+        function onCalendarUpdated() {
+            window.updateCalendarGrid();
+        }
+    }
 
     Component.onCompleted: {
         updateCalendarGrid();
@@ -893,16 +906,31 @@ Item {
 
                         Repeater {
                             model: calendarModel
-                            ClickButton {
+                            Item {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                enabled: false
-                                buttonText: dayNum
-                                textFontSize: window.s(11.5)
-                                cornerRadius: window.s(5)
-                                horizontalPadding: 0
-                                accentColor: isToday ? window.textAccent : "transparent"
-                                textColor: isToday ? window.base : (isCurrentMonth ? window.text : window.surface0)
+
+                                ClickButton {
+                                    anchors.fill: parent
+                                    enabled: false
+                                    buttonText: dayNum
+                                    textFontSize: window.s(11.5)
+                                    cornerRadius: window.s(5)
+                                    horizontalPadding: 0
+                                    accentColor: isToday ? window.textAccent : "transparent"
+                                    textColor: isToday ? window.base : (isCurrentMonth ? window.text : window.surface0)
+                                }
+
+                                Rectangle {
+                                    visible: hasEvents
+                                    anchors.bottom: parent.bottom
+                                    anchors.bottomMargin: window.s(3)
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: window.s(3.5)
+                                    height: window.s(3.5)
+                                    radius: width / 2
+                                    color: isToday ? window.base : window.textAccent
+                                }
                             }
                         }
                     }

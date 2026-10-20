@@ -1318,6 +1318,7 @@
       "usage": "Usage",
       "battery": "Battery",
       "github": "Github",
+      "calendar": "Calendar",
       "time": "Time"
     },
     "variants": {
@@ -1327,6 +1328,8 @@
       "minimal": "Minimal",
       "round": "Round",
       "compact": "Compact",
+      "month": "Month",
+      "agenda": "Agenda",
       "rect": "Rect",
       "rounded": "Rounded",
       "bars": "Bars",
@@ -1360,6 +1363,17 @@
       "fetch_error": "Could not fetch user @{user}",
       "enter_username": "Enter a GitHub username",
       "no_contributions": "No contributions found"
+    },
+    "calendar": {
+      "manage_calendars": "Manage Calendars",
+      "gcal_help": "Google Calendar: Settings > Integrate calendar > Secret address in iCal format",
+      "sync_now": "Sync Now",
+      "sync": "Sync",
+      "add_calendar": "Add Calendar",
+      "agenda_title": "Agenda",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "next_event": "Next Event"
     },
     "settings": {
       "lyricsLines": "Lines",

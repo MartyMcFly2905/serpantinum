@@ -66,10 +66,10 @@ fi
 
 # 4. Salva su GitHub personale (origin) se possibile
 echo -e "${C_CYAN}[3/4] Sincronizzazione con il tuo repository GitHub personale...${C_RESET}"
-if git push origin master --quiet 2>/dev/null; then
+if GIT_TERMINAL_PROMPT=0 git push origin master --quiet 2>/dev/null; then
     echo -e "  ${C_GREEN}✓${C_RESET} Backup GitHub aggiornato con successo."
 else
-    echo -e "  ${C_YELLOW}!${C_RESET} Push su GitHub saltato (richiede credenziali interattive o offline)."
+    echo -e "  ${C_YELLOW}!${C_RESET} Push su GitHub saltato (richiede 'git push' manuale o token)."
 fi
 
 # 5. Distribuisci i file in ~/.local/share/serpantinum/src

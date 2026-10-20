@@ -1,12 +1,8 @@
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/master/doc/json_schema.json",
   "logo": {
-    "type": "small",
-    "color": {
-      "1": "{{colors.primary.default.hex}}",
-      "2": "{{colors.tertiary.default.hex}}",
-      "3": "{{colors.secondary.default.hex}}"
-    },
+    "source": "~/.config/fastfetch/logo.txt",
+    "type": "file-raw",
     "padding": {
       "top": 1,
       "left": 2,
@@ -16,7 +12,7 @@
   "display": {
     "separator": "  ",
     "color": {
-      "separator": "{{colors.on_surface.default.hex}}"
+      "separator": "#e3e1e9"
     }
   },
   "modules": [
@@ -25,29 +21,64 @@
       "type": "title",
       "format": "{1}",
       "color": {
-        "user": "{{colors.primary.default.hex}}"
+        "user": "#b6c4ff"
       }
     },
     "break",
     {
       "type": "os",
-      "key": "󱄅 os ",
-      "keyColor": "{{colors.primary.default.hex}}"
+      "key": "󱄅 os  ",
+      "keyColor": "#b6c4ff"
     },
     {
-      "type": "cpu",
-      "key": " cpu",
-      "keyColor": "{{colors.tertiary.default.hex}}"
+      "type": "kernel",
+      "key": "󰒋 ker ",
+      "keyColor": "#c2c5dd"
     },
     {
-      "type": "memory",
-      "key": "󰘚 ram",
-      "keyColor": "{{colors.secondary.default.hex}}"
+      "type": "uptime",
+      "key": "󱑂 up  ",
+      "keyColor": "#e3bada"
+    },
+    {
+      "type": "packages",
+      "key": "󰏖 pkg ",
+      "keyColor": "#b6c4ff"
     },
     {
       "type": "shell",
-      "key": " sh ",
-      "keyColor": "{{colors.inverse_primary.default.hex}}"
+      "key": " sh  ",
+      "keyColor": "#4d5c92"
+    },
+    {
+      "type": "wm",
+      "key": " wm  ",
+      "keyColor": "#b6c4ff"
+    },
+    {
+      "type": "terminal",
+      "key": " term",
+      "keyColor": "#c2c5dd"
+    },
+    {
+      "type": "cpu",
+      "key": " cpu ",
+      "keyColor": "#e3bada"
+    },
+    {
+      "type": "gpu",
+      "key": "󰢮 gpu ",
+      "keyColor": "#b6c4ff"
+    },
+    {
+      "type": "memory",
+      "key": "󰘚 ram ",
+      "keyColor": "#c2c5dd"
+    },
+    {
+      "type": "battery",
+      "key": "󰁹 bat ",
+      "keyColor": "#e3bada"
     },
     "break",
     {

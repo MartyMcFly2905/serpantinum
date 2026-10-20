@@ -157,7 +157,15 @@ Item {
 
     property bool showLayout: (!barWindow || isPreview) ? true : false
     readonly property var batPill: pillLoader.item ? pillLoader.item.pill : null
-    readonly property int pillHeight: s(root.isCompact ? 28 : 30)
+    readonly property bool lockLook: activeTarget ? activeTarget.lockLook === true : false
+    readonly property int pillHeight: s(lockLook ? 36 : (root.isCompact ? 28 : 30))
+    readonly property color lockBatColor: {
+        if (isDesktop) return ThemeBackend.red;
+        if (isCharging) return ThemeBackend.green;
+        if (batCap <= 15) return ThemeBackend.red;
+        if (batCap <= 25) return ThemeBackend.peach;
+        return ThemeBackend.text;
+    }
 
     readonly property real pillLength: pillLoader.item ? (isVertical ? pillLoader.item.implicitHeight : pillLoader.item.implicitWidth) : 0
     readonly property real textLength: isVertical ? textLayout.implicitHeight : textLayout.implicitWidth
@@ -254,7 +262,33 @@ Item {
         id: pillLoader
         visible: root.batStyle !== "text"
         anchors.centerIn: parent
-        sourceComponent: root.isVertical ? sideLayoutComponent : topLayoutComponent
+        sourceComponent: root.batStyle === "button" ? buttonLayoutComponent : (root.isVertical ? sideLayoutComponent : topLayoutComponent)
+    }
+
+    Component {
+        id: buttonLayoutComponent
+
+        Item {
+            id: buttonLayout
+            readonly property var pill: null
+            implicitWidth: batButton.width
+            implicitHeight: batButton.height
+
+            ClickButton {
+                id: batButton
+                height: root.pillHeight
+                width: root.isVertical ? height : Math.max(s(root.isCompact ? 32 : 36), implicitWidth)
+                cornerRadius: root.lockLook ? ThemeBackend.borderRadius : Math.max(0, ThemeBackend.borderRadius - s(2))
+                horizontalPadding: s(root.isCompact ? 10 : 12)
+                buttonIcon: root.effectiveShowIcon ? root.batIcon : ""
+                iconFontSize: s(root.isCompact ? 14 : 15)
+                buttonText: (!root.isVertical && root.effectiveShowPercent) ? root.batPercent : ""
+                textFontSize: s(root.isCompact ? 11 : 12)
+                accentColor: Qt.lighter(ThemeBackend.surface0, root.isCompact && !root.lockLook ? 1.18 : 1.28)
+                textColor: root.lockLook ? root.lockBatColor : root.batDynamicColor
+                onClicked: if (!root.isPreview) Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle system"])
+            }
+        }
     }
 
     Component {
@@ -317,12 +351,22 @@ Item {
 
                 radius: Math.max(0, ThemeBackend.borderRadius - s(2))
                 property color baseColor: root.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
-                color: batMouseArea.pressed ? Qt.darker(baseColor, 1.15) : (batMouseArea.containsMouse ? Qt.lighter(baseColor, 1.08) : baseColor)
+                color: batPillGlass.active ? "transparent" : (batMouseArea.pressed ? Qt.darker(baseColor, 1.15) : (batMouseArea.containsMouse ? Qt.lighter(baseColor, 1.08) : baseColor))
                 Behavior on color { ColorAnimation { duration: 150 } }
                 property color baseBorderColor: root.isCompact ? ThemeBackend.surface2 : ThemeBackend.surface1
                 border.color: batMouseArea.containsMouse ? ThemeBackend.surface2 : baseBorderColor
                 Behavior on border.color { ColorAnimation { duration: 150 } }
-                border.width: 1
+                border.width: ThemeBackend.liquidGlass ? 0 : 1
+
+                GlassFill {
+                    id: batPillGlass
+                    anchors.fill: parent
+                    radius: parent.radius
+                    tintColor: parent.baseColor
+                    tintAmount: 0.3
+                    press: batMouseArea.pressed ? 1 : (batMouseArea.containsMouse ? 0.25 : 0)
+                    Behavior on press { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                }
                 clip: true
 
                 Timer {
@@ -349,6 +393,7 @@ Item {
                     vertical: 0.0
                     color1: (root.batStyle === "minimal") ? root.calmBatFillColor : Qt.lighter(batPill.accentColor, 1.20)
                     color2: (root.batStyle === "minimal") ? root.calmBatFillColor : batPill.accentColor
+                    opacity: batPillGlass.active ? 0.6 : 1.0
                 }
 
                 Row {
@@ -397,7 +442,7 @@ Item {
                             text: batIconText.text
                             font.family: batIconText.font.family
                             font.pixelSize: batIconText.font.pixelSize
-                            color: Qt.rgba(ThemeBackend.crust.r, ThemeBackend.crust.g, ThemeBackend.crust.b, 0.85)
+                            color: batPillGlass.active ? ThemeBackend.text : Qt.rgba(ThemeBackend.crust.r, ThemeBackend.crust.g, ThemeBackend.crust.b, 0.85)
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
@@ -407,7 +452,7 @@ Item {
                             font.family: batPercentText.font.family
                             font.pixelSize: batPercentText.font.pixelSize
                             font.bold: batPercentText.font.bold
-                            color: ThemeBackend.crust
+                            color: batPillGlass.active ? ThemeBackend.text : ThemeBackend.crust
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
@@ -474,12 +519,22 @@ Item {
 
                 radius: Math.max(0, ThemeBackend.borderRadius - s(2))
                 property color baseColor: root.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
-                color: sideBatMouseArea.pressed ? Qt.darker(baseColor, 1.15) : (sideBatMouseArea.containsMouse ? Qt.lighter(baseColor, 1.08) : baseColor)
+                color: batBtnGlass.active ? "transparent" : (sideBatMouseArea.pressed ? Qt.darker(baseColor, 1.15) : (sideBatMouseArea.containsMouse ? Qt.lighter(baseColor, 1.08) : baseColor))
                 Behavior on color { ColorAnimation { duration: 150 } }
+
+                GlassFill {
+                    id: batBtnGlass
+                    anchors.fill: parent
+                    radius: parent.radius
+                    tintColor: parent.baseColor
+                    tintAmount: 0.3
+                    press: sideBatMouseArea.pressed ? 1 : (sideBatMouseArea.containsMouse ? 0.25 : 0)
+                    Behavior on press { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                }
                 property color baseBorderColor: root.isCompact ? ThemeBackend.surface2 : ThemeBackend.surface1
                 border.color: sideBatMouseArea.containsMouse ? ThemeBackend.surface2 : baseBorderColor
                 Behavior on border.color { ColorAnimation { duration: 150 } }
-                border.width: 1
+                border.width: ThemeBackend.liquidGlass ? 0 : 1
                 clip: true
 
                 scale: sideBatMouseArea.pressed ? 0.94 : (sideBatMouseArea.containsMouse ? 1.04 : 1.0)
@@ -530,6 +585,7 @@ Item {
                     vertical: 1.0
                     color1: (root.batStyle === "minimal") ? root.calmBatFillColor : Qt.lighter(batBtn.accentColor, 1.20)
                     color2: (root.batStyle === "minimal") ? root.calmBatFillColor : batBtn.accentColor
+                    opacity: batBtnGlass.active ? 0.6 : 1.0
                 }
 
                 Item {
@@ -564,7 +620,7 @@ Item {
                         text: sideBatIconText.text
                         font.family: sideBatIconText.font.family
                         font.pixelSize: sideBatIconText.font.pixelSize
-                        color: Qt.rgba(ThemeBackend.crust.r, ThemeBackend.crust.g, ThemeBackend.crust.b, 0.85)
+                        color: batBtnGlass.active ? ThemeBackend.text : Qt.rgba(ThemeBackend.crust.r, ThemeBackend.crust.g, ThemeBackend.crust.b, 0.85)
                     }
                 }
 

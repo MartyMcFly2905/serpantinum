@@ -8,6 +8,7 @@ Item {
     property var widget: null
 
     readonly property bool isVertical: widget ? widget.orientation === "vertical" : false
+    readonly property int activeIdx: widget ? Number(widget.activeIndex) : -1
 
     implicitWidth: wsLayout.implicitWidth
     implicitHeight: wsLayout.implicitHeight
@@ -16,7 +17,16 @@ Item {
         id: activeHighlight
         z: 3
         radius: widget ? widget.s(widget.isCompact ? 7 : 8) : 8
-        color: (widget && widget.isCompact) ? Qt.lighter(ThemeBackend.mauve, 1.05) : ThemeBackend.mauve
+        color: pillsGlass.active ? "transparent" : ((widget && widget.isCompact) ? Qt.lighter(ThemeBackend.mauve, 1.05) : ThemeBackend.mauve)
+
+        GlassFill {
+            id: pillsGlass
+            anchors.fill: parent
+            radius: parent.radius
+            tintColor: ThemeBackend.mauve
+            tintAmount: 0.5
+            press: 0.3 + 0.7 * activeHighlight.lift
+        }
 
         property int prevIdx: 0
         property int curIdx: widget ? widget.activeIndex : -1
@@ -67,6 +77,12 @@ Item {
         Behavior on actualStart { NumberAnimation { id: startAnim; duration: 380; easing.type: Easing.OutQuint } }
         Behavior on actualEnd { NumberAnimation { id: endAnim; duration: 380; easing.type: Easing.OutQuint } }
 
+        readonly property bool isMoving: Math.abs(actualStart - targetStart) > 0.5 || Math.abs(actualEnd - targetEnd) > 0.5
+        property real lift: (pillsGlass.active && isMoving) ? 1.0 : 0.0
+        Behavior on lift { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+        scale: 1.0 + 0.14 * lift
+        transformOrigin: Item.Center
+
         readonly property real thickness: widget ? widget.s(widget.isCompact ? 16 : 18) : 18
 
         x: pillsFaceRoot.isVertical ? wsLayout.x + (wsLayout.width - width) / 2 : wsLayout.x + actualStart
@@ -94,7 +110,7 @@ Item {
                 required property int index
 
                 property bool isOccupied: widget ? widget.isOccupied(index) : false
-                property bool isActive: widget ? (index === widget.activeIndex) : false
+                property bool isActive: pillsFaceRoot ? index === pillsFaceRoot.activeIdx : false
                 property bool initAnimTrigger: false
                 property bool shown: widget && typeof widget.isShown === "function" ? widget.isShown(index) : true
 
@@ -119,8 +135,18 @@ Item {
                     id: wsVisualShape
                     anchors.fill: parent
                     radius: widget ? widget.s(widget.isCompact ? 8 : 10) : 10
-                    color: wsPill.isActive ? "transparent" : (wsPill.isOccupied ? ThemeBackend.surface2 : ((widget && widget.isCompact) ? ThemeBackend.surface1 : ThemeBackend.surface0))
+                    color: (wsPill.isActive || pillsShapeGlass.active) ? "transparent" : Qt.alpha(wsPill.isOccupied ? ThemeBackend.surface2 : ((widget && widget.isCompact) ? ThemeBackend.surface1 : ThemeBackend.surface0), ThemeBackend.elementOpacity)
                     border.width: 0
+
+                    GlassFill {
+                        id: pillsShapeGlass
+                        anchors.fill: parent
+                        radius: parent.radius
+                        allowed: !wsPill.isActive
+                        tintColor: wsPill.isOccupied ? ThemeBackend.surface2 : ThemeBackend.surface0
+                        tintAmount: 0.3
+                        press: wsPillMouse.pressed ? 0.8 : (wsPillMouse.containsMouse ? 0.25 : 0)
+                    }
 
                     Behavior on color { ColorAnimation { duration: 250 } }
 

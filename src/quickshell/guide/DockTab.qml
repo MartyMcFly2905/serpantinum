@@ -6,19 +6,8 @@ import "../"
 import "../reusables"
 import "../reusables/guide"
 
-Item {
+GuideTab {
     id: dockTabRoot
-    required property var rootObj
-    required property int tabIndex
-
-    anchors.fill: parent
-    visible: rootObj.currentTab === tabIndex
-    opacity: visible ? 1.0 : 0.0
-    property real slideY: visible ? 0 : rootObj.s(10)
-
-    Behavior on slideY { NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }
-    transform: Translate { y: slideY }
-    Behavior on opacity { NumberAnimation { duration: 250 } }
 
     property var defaultDockSettings: ({
         "enabled": true,
@@ -26,7 +15,7 @@ Item {
         "onTop": true,
         "elementSize": 44,
         "floating": false,
-        "opacity": 100,
+        "background": true,
         "exclusive": false,
         "autohide": false,
         "smartAutohide": true,
@@ -56,13 +45,9 @@ Item {
     property bool currentEnabled: dockSettings && dockSettings.enabled !== undefined ? dockSettings.enabled : true
     property string currentPosition: dockSettings && dockSettings.position !== undefined ? dockSettings.position : "bottom"
     property bool currentOnTop: dockSettings && dockSettings.onTop !== undefined ? Boolean(dockSettings.onTop) : true
+    property bool currentBackground: dockSettings && dockSettings.background !== undefined ? Boolean(dockSettings.background) : true
     property bool currentFloating: dockSettings && dockSettings.floating !== undefined ? dockSettings.floating : false
     property bool currentExclusive: dockSettings && (dockSettings.exclusive !== undefined ? dockSettings.exclusive : (dockSettings.exclusiveMode !== undefined ? dockSettings.exclusiveMode : false)) ? true : false
-    property real currentOpacity: {
-        if (dockSettings && dockSettings.opacity !== undefined) return Number(dockSettings.opacity);
-        if (dockSettings && dockSettings.transparency !== undefined) return Math.max(0, 100 - Number(dockSettings.transparency));
-        return 100;
-    }
     property int currentElementSize: (dockSettings && dockSettings.elementSize !== undefined && !isNaN(parseInt(dockSettings.elementSize))) ? parseInt(dockSettings.elementSize) : 44
     property bool currentOverrideBoundsCorrection: dockSettings && dockSettings.overrideBoundsCorrection !== undefined ? dockSettings.overrideBoundsCorrection : false
     property int currentHoverScale: (dockSettings && dockSettings.hoverScale !== undefined && !isNaN(parseInt(dockSettings.hoverScale))) ? parseInt(dockSettings.hoverScale) : 120
@@ -87,9 +72,9 @@ Item {
         dockTabRoot.currentEnabled = s.enabled !== undefined ? s.enabled : true;
         dockTabRoot.currentPosition = s.position !== undefined ? s.position : "bottom";
         dockTabRoot.currentOnTop = s.onTop !== undefined ? Boolean(s.onTop) : true;
+        dockTabRoot.currentBackground = s.background !== undefined ? Boolean(s.background) : true;
         dockTabRoot.currentFloating = s.floating !== undefined ? s.floating : false;
         dockTabRoot.currentExclusive = s.exclusive !== undefined ? s.exclusive : (s.exclusiveMode !== undefined ? Boolean(s.exclusiveMode) : false);
-        dockTabRoot.currentOpacity = s.opacity !== undefined ? Number(s.opacity) : (s.transparency !== undefined ? Math.max(0, 100 - Number(s.transparency)) : 100);
         dockTabRoot.currentElementSize = (s.elementSize !== undefined && !isNaN(parseInt(s.elementSize))) ? parseInt(s.elementSize) : 44;
         dockTabRoot.currentOverrideBoundsCorrection = s.overrideBoundsCorrection !== undefined ? s.overrideBoundsCorrection : false;
         dockTabRoot.currentHoverScale = (s.hoverScale !== undefined && !isNaN(parseInt(s.hoverScale))) ? parseInt(s.hoverScale) : 120;
@@ -218,7 +203,7 @@ Item {
                 clip: true
 
                 readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || dockAppsCard.tempVisible
-                visible: height > 0.01
+                visible: implicitHeight > 0.01
 
                 implicitHeight: shouldBeOpen ? dockAppsCard.implicitHeight : 0
                 Behavior on implicitHeight {
@@ -232,12 +217,21 @@ Item {
                     anchors.right: parent.right
                     clip: true
                     radius: ThemeBackend.borderRadius
-                    color: {
+                    readonly property color legacyColor: {
                         let base = Qt.alpha(ThemeBackend.surface0, 0.4);
                         if (highlightFlash > 0.001) {
                             return Qt.tint(base, Qt.rgba(ThemeBackend.mauve.r, ThemeBackend.mauve.g, ThemeBackend.mauve.b, highlightFlash * 0.12));
                         }
                         return base;
+                    }
+                    color: dockAppsGlass.active ? (highlightFlash > 0.001 ? Qt.alpha(ThemeBackend.mauve, highlightFlash * 0.12) : "transparent") : legacyColor
+
+                    GlassFill {
+                        id: dockAppsGlass
+                        anchors.fill: parent
+                        radius: parent.radius
+                        tintColor: ThemeBackend.surface0
+                        tintAmount: 0.25
                     }
                     border.color: Qt.alpha(ThemeBackend.surface1, 0.4)
                     border.width: 1
@@ -449,9 +443,17 @@ Item {
                                     Layout.fillWidth: false
                                     Layout.preferredHeight: dockTabRoot.rootObj.s(48)
                                     radius: ThemeBackend.borderRadius
-                                    color: Qt.alpha(ThemeBackend.surface1, 0.3)
+                                    color: appCardGlass1.active ? "transparent" : Qt.alpha(ThemeBackend.surface1, 0.3)
+
+                                    GlassFill {
+                                        id: appCardGlass1
+                                        anchors.fill: parent
+                                        radius: parent.radius
+                                        tintColor: Qt.alpha(ThemeBackend.surface1, 0.3)
+                                        tintAmount: 0.25
+                                    }
                                     border.color: Qt.alpha(ThemeBackend.surface2, 0.35)
-                                    border.width: 1
+                                    border.width: ThemeBackend.liquidGlass ? 0 : 1
 
                                     RowLayout {
                                         anchors.fill: parent
@@ -465,7 +467,15 @@ Item {
                                             implicitHeight: dockTabRoot.rootObj.s(32)
                                             Layout.alignment: Qt.AlignVCenter
                                             radius: Math.round(dockTabRoot.rootObj.s(32) * 0.28)
-                                            color: ThemeBackend.surface0
+                                            color: gf1.active ? "transparent" : ThemeBackend.surface0
+
+                                            GlassFill {
+                                                id: gf1
+                                                anchors.fill: parent
+                                                radius: parent.radius
+                                                tintColor: ThemeBackend.surface0
+                                                tintAmount: 0.25
+                                            }
                                             clip: true
 
                                             Image {
@@ -565,7 +575,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || positionRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? positionRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -579,7 +589,6 @@ Item {
                         settingId: "dock_position"
                         rootObj: dockTabRoot.rootObj
                         icon: "󰍹"
-                        iconOffsetX: -2
                         title: I18n.t("guide.dock.position.title", "Dock position")
                         description: I18n.t("guide.dock.position.desc", "Select the screen edge to anchor the dock")
 
@@ -649,7 +658,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || onTopRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? onTopRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -710,7 +719,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || floatingRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? floatingRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -767,11 +776,72 @@ Item {
                 }
 
                 Item {
+                    id: backgroundWrapper
+                    Layout.fillWidth: true
+                    clip: true
+                    readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || backgroundRow.tempVisible
+                    visible: implicitHeight > 0.01
+                    implicitHeight: shouldBeOpen ? backgroundRow.implicitHeight : 0
+                    Behavior on implicitHeight {
+                        NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
+                    }
+
+                    SettingsRow {
+                        id: backgroundRow
+                        anchors.top: parent.top
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        settingId: "dock_background"
+                        rootObj: dockTabRoot.rootObj
+                        icon: "󰂵"
+                        title: I18n.t("guide.dock.background.title", "Draw a background behind apps")
+                        description: I18n.t("guide.dock.background.desc", "Show the dock panel behind app icons")
+
+                        property bool tempVisible: false
+
+                        function checkHighlight() {
+                            let r = effectiveRootObj;
+                            if (!r) return;
+                            if (r.highlightToken === handledHighlightToken) return;
+                            if (r.highlightedSettingId && (r.highlightedSettingId === effectiveSettingId || r.highlightedSettingId === settingId)) {
+                                handledHighlightToken = r.highlightToken;
+                                r.highlightedSettingId = "";
+                                if (!dockTabRoot.currentEnabled) {
+                                    tempVisible = true;
+                                    backgroundCollapseTimer.restart();
+                                }
+                                highlightDelayTimer.restart();
+                            }
+                        }
+
+                        Timer {
+                            id: backgroundCollapseTimer
+                            interval: 2800
+                            repeat: false
+                            onTriggered: backgroundRow.tempVisible = false
+                        }
+
+                        Toggle {
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            checked: dockTabRoot.currentBackground
+                            accentColor: ThemeBackend.mauve
+                            baseColor: ThemeBackend.surface1
+                            handleColor: ThemeBackend.crust
+                            handleOffColor: ThemeBackend.text
+                            onToggled: function(val) {
+                                dockTabRoot.currentBackground = val;
+                                dockTabRoot.updateDockSetting("background", val);
+                            }
+                        }
+                    }
+                }
+
+                Item {
                     id: exclusiveWrapper
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || exclusiveRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? exclusiveRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -830,90 +900,11 @@ Item {
 
             SettingsBlob {
                 Item {
-                    id: opacityWrapper
-                    Layout.fillWidth: true
-                    clip: true
-                    readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || opacityRow.tempVisible
-                    visible: height > 0.01
-                    implicitHeight: shouldBeOpen ? opacityRow.implicitHeight : 0
-                    Behavior on implicitHeight {
-                        NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
-                    }
-
-                    SettingsRow {
-                        id: opacityRow
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        settingId: "dock_opacity"
-                        rootObj: dockTabRoot.rootObj
-                        icon: "󰂵"
-                        title: I18n.t("guide.dock.opacity.title", "Dock opacity")
-                        description: I18n.t("guide.dock.opacity.desc", "Adjust dock background opacity level")
-
-                        property bool tempVisible: false
-
-                        function checkHighlight() {
-                            let r = effectiveRootObj;
-                            if (!r) return;
-                            if (r.highlightToken === handledHighlightToken) return;
-                            if (r.highlightedSettingId && (r.highlightedSettingId === effectiveSettingId || r.highlightedSettingId === settingId)) {
-                                handledHighlightToken = r.highlightToken;
-                                r.highlightedSettingId = "";
-                                if (!dockTabRoot.currentEnabled) {
-                                    tempVisible = true;
-                                    opacityCollapseTimer.restart();
-                                }
-                                highlightDelayTimer.restart();
-                            }
-                        }
-
-                        Timer {
-                            id: opacityCollapseTimer
-                            interval: 2800
-                            repeat: false
-                            onTriggered: opacityRow.tempVisible = false
-                        }
-
-                        Draggable {
-                            id: opacitySlider
-                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            implicitWidth: dockTabRoot.rootObj.s(220)
-                            implicitHeight: dockTabRoot.rootObj.s(18)
-                            from: 0
-                            to: 100
-                            stepSize: 1
-                            defaultValue: 100
-                            showValueBubble: true
-                            valueFormatter: function(v) { return Math.round(v) + "%" }
-                            value: dockTabRoot.currentOpacity
-                            backgroundColor: ThemeBackend.surface0
-                            accentColor: ThemeBackend.mauve
-                            handleColor: ThemeBackend.text
-                            handleBorderColor: ThemeBackend.mantle
-                            onMoved: function(val) {
-                                let rounded = Math.round(val);
-                                if (dockTabRoot.currentOpacity !== rounded) {
-                                    dockTabRoot.currentOpacity = rounded;
-                                    dockTabRoot.triggerDebounced(function() {
-                                        dockTabRoot.updateDockSetting("opacity", rounded);
-                                    });
-                                }
-                            }
-                            onDragFinished: {
-                                dockDebounceTimer.stop();
-                                dockTabRoot.updateDockSetting("opacity", Math.round(opacitySlider.value));
-                            }
-                        }
-                    }
-                }
-
-                Item {
                     id: elementSizeWrapper
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || elementSizeRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? elementSizeRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -992,7 +983,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || overrideBoundsRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? overrideBoundsRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -1053,7 +1044,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || scrollingGroup.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? scrollingGroup.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -1182,7 +1173,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || hoverScaleRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? hoverScaleRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -1261,7 +1252,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || cascadeScaleRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? cascadeScaleRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -1324,7 +1315,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || autohideGroup.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? autohideGroup.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -1453,7 +1444,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || smartAutohideRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? smartAutohideRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -1516,7 +1507,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || focusRunningRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? focusRunningRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -1555,7 +1546,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || showIndicatorsRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? showIndicatorsRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -1594,7 +1585,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || showRunningAppsRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? showRunningAppsRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }
@@ -1633,7 +1624,7 @@ Item {
                     Layout.fillWidth: true
                     clip: true
                     readonly property bool shouldBeOpen: dockTabRoot.currentEnabled || runningScopeRow.tempVisible
-                    visible: height > 0.01
+                    visible: implicitHeight > 0.01
                     implicitHeight: shouldBeOpen ? runningScopeRow.implicitHeight : 0
                     Behavior on implicitHeight {
                         NumberAnimation { duration: 250; easing.type: Easing.InOutCubic }

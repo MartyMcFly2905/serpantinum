@@ -25,7 +25,7 @@ Rectangle {
     property bool isRightAligned: false
     readonly property bool isRightBar: barWindow ? (barWindow.barPosition === "right") : false
     property real contentWrapperWidth: 0
-    readonly property real barOpacity: (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.opacity !== undefined ? (Config.rawSettings.bar.opacity / 100.0) : 1.0)
+    readonly property real barOpacity: ThemeBackend.elementOpacity
 
     function s(val) {
         if (barWindow && typeof barWindow.cs === "function") return barWindow.cs(val);
@@ -34,6 +34,8 @@ Rectangle {
         return val;
     }
 
+    property Item providedBackdrop: null
+    readonly property Item glassBackdropItem: providedBackdrop ? providedBackdrop : ((!isGrouped && !isSolid) ? ownBlur : null)
     readonly property alias faceItem: faceLoader.item
 
     readonly property var helpButton: (faceLoader.item && faceLoader.item.helpButton) ? faceLoader.item.helpButton : null
@@ -92,14 +94,40 @@ Rectangle {
 
     radius: ThemeBackend.borderRadius
     border.width: 0
-    color: isGrouped ? "transparent" : (isSolid ? (distinctPills ? Qt.alpha(Qt.darker(ThemeBackend.surface0, 1.15), root.barOpacity) : "transparent") : Qt.alpha(ThemeBackend.base, root.barOpacity))
+    color: isGrouped || pillGlass.active ? "transparent" : (isSolid ? (distinctPills ? Qt.alpha(Qt.darker(ThemeBackend.surface0, 1.15), root.barOpacity) : "transparent") : Qt.alpha(ThemeBackend.base, root.barOpacity))
     clip: true
+
+    WallpaperBlur {
+        id: ownBlur
+        z: -1
+        anchors.fill: parent
+        radius: root.radius
+        surfaceEnabled: !root.isGrouped && !root.isSolid
+        standalone: true
+    }
+
+    GlassFill {
+        id: pillGlass
+        anchors.fill: parent
+        z: -1
+        radius: root.radius
+        allowed: !root.isGrouped && root.isSolid && root.distinctPills
+        tintColor: ThemeBackend.surface0
+        tintAmount: 0.3
+    }
 
     readonly property bool isFaceVisible: faceLoader.item ? (faceLoader.item.isFaceVisible !== undefined ? faceLoader.item.isFaceVisible : true) : true
     readonly property bool effectiveVisible: moduleActive && isFaceVisible && (isVertical ? targetHeight : targetWidth) > 0
 
     opacity: effectiveVisible ? 1.0 : 0.0
-    visible: opacity > 0 && (isVertical ? targetHeight : targetWidth) > 0
+    visible: false
+    function updateVisible() {
+        visible = opacity > 0 && (isVertical ? targetHeight : targetWidth) > 0;
+    }
+    onOpacityChanged: updateVisible()
+    onTargetWidthChanged: updateVisible()
+    onTargetHeightChanged: updateVisible()
+    onIsVerticalChanged: updateVisible()
     enabled: moduleActive
 
     Behavior on opacity {
@@ -117,7 +145,10 @@ Rectangle {
     }
 
     onFaceSourceChanged: loadFace()
-    Component.onCompleted: loadFace()
+    Component.onCompleted: {
+        loadFace();
+        updateVisible();
+    }
 
     Loader {
         id: faceLoader

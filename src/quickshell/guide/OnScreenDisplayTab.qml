@@ -5,19 +5,8 @@ import Quickshell
 import "../"
 import "../reusables"
 
-Item {
+GuideTab {
     id: osdTabRoot
-    required property var rootObj
-    required property int tabIndex
-
-    anchors.fill: parent
-    visible: rootObj.currentTab === tabIndex
-    opacity: visible ? 1.0 : 0.0
-    property real slideY: visible ? 0 : rootObj.s(10)
-
-    Behavior on slideY { NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }
-    transform: Translate { y: slideY }
-    Behavior on opacity { NumberAnimation { duration: 250 } }
 
     property bool selectorOpen: false
     property bool gridEnabled: false
@@ -167,7 +156,6 @@ Item {
                     id: posSettingsRow
                     rootObj: osdTabRoot.rootObj
                     icon: "󰍹"
-                    iconOffsetX: -2
                     title: I18n.t("guide.osd.position.title", "Screen position")
                     titleBold: true
                     wrapText: true
@@ -196,7 +184,15 @@ Item {
                         implicitHeight: rootObj.s(32)
                         implicitWidth: osdTabRoot.isCustomPos ? (customPosText.implicitWidth + rootObj.s(20)) : 0
                         radius: ThemeBackend.borderRadius
-                        color: ThemeBackend.surface0
+                        color: gf1.active ? "transparent" : ThemeBackend.surface0
+
+                        GlassFill {
+                            id: gf1
+                            anchors.fill: parent
+                            radius: parent.radius
+                            tintColor: ThemeBackend.surface0
+                            tintAmount: 0.25
+                        }
                         border.width: 1
                         border.color: Qt.alpha(ThemeBackend.surface2, 0.6)
                         clip: true
@@ -297,7 +293,15 @@ Item {
                                 height: implicitHeight
                                 implicitHeight: selectorInnerCol.implicitHeight + rootObj.s(24)
                                 radius: ThemeBackend.borderRadius
-                                color: Qt.alpha(ThemeBackend.surface1, 0.35)
+                                color: gf2.active ? "transparent" : Qt.alpha(ThemeBackend.surface1, 0.35)
+
+                                GlassFill {
+                                    id: gf2
+                                    anchors.fill: parent
+                                    radius: parent.radius
+                                    tintColor: Qt.alpha(ThemeBackend.surface1, 0.35)
+                                    tintAmount: 0.25
+                                }
                                 border.width: 0
 
                                 ColumnLayout {
@@ -425,10 +429,19 @@ Item {
                                         Rectangle {
                                             anchors.fill: parent
                                             radius: rootObj.s(11)
-                                            color: ThemeBackend.base
-                                            border.width: 1
+                                            color: osdPreviewGlass.active ? "transparent" : ThemeBackend.base
+                                            border.width: ThemeBackend.liquidGlass ? 0 : 1
                                             border.color: ThemeBackend.surface0
                                             clip: true
+
+                                            GlassFill {
+                                                id: osdPreviewGlass
+                                                anchors.fill: parent
+                                                radius: parent.radius
+                                                tintColor: ThemeBackend.base
+                                                tintAmount: 0.35
+                                                shadow: 1
+                                            }
 
                                             RowLayout {
                                                 visible: !osdTabRoot.isVertical
@@ -442,7 +455,15 @@ Item {
                                                     Layout.preferredHeight: parent.height - rootObj.s(10)
                                                     Layout.alignment: Qt.AlignVCenter
                                                     radius: rootObj.s(7)
-                                                    color: ThemeBackend.surface1
+                                                    color: osdIconGlassH.active ? "transparent" : ThemeBackend.surface1
+
+                                                    GlassFill {
+                                                        id: osdIconGlassH
+                                                        anchors.fill: parent
+                                                        radius: parent.radius
+                                                        tintColor: ThemeBackend.surface1
+                                                        tintAmount: 0.3
+                                                    }
 
                                                     Text {
                                                         anchors.centerIn: parent
@@ -453,39 +474,21 @@ Item {
                                                     }
                                                 }
 
-                                                Item {
+                                                Draggable {
                                                     Layout.fillWidth: true
-                                                    Layout.fillHeight: true
-
-                                                    Rectangle {
-                                                        id: trackBar
-                                                        anchors.left: parent.left
-                                                        anchors.right: parent.right
-                                                        anchors.verticalCenter: parent.verticalCenter
-                                                        height: rootObj.s(9)
-                                                        radius: height / 2
-                                                        color: ThemeBackend.surface1
-
-                                                        Rectangle {
-                                                            anchors.left: parent.left
-                                                            anchors.top: parent.top
-                                                            anchors.bottom: parent.bottom
-                                                            width: parent.width * 0.65
-                                                            radius: parent.radius
-                                                            color: Qt.lighter(ThemeBackend.sapphire, 1.5)
-                                                        }
-
-                                                        Rectangle {
-                                                            x: (parent.width * 0.65) - (width / 2)
-                                                            anchors.verticalCenter: parent.verticalCenter
-                                                            width: rootObj.s(16)
-                                                            height: rootObj.s(16)
-                                                            radius: width / 2
-                                                            color: Qt.lighter(ThemeBackend.sapphire, 1.3)
-                                                            border.width: 1
-                                                            border.color: Qt.rgba(0, 0, 0, 0.25)
-                                                        }
-                                                    }
+                                                    Layout.preferredHeight: rootObj.s(18)
+                                                    Layout.alignment: Qt.AlignVCenter
+                                                    showValueBubble: false
+                                                    alwaysShowHandle: true
+                                                    value: 65
+                                                    backgroundColor: ThemeBackend.surface1
+                                                    accentColor: Qt.lighter(ThemeBackend.sapphire, 1.5)
+                                                    gradColor1: accentColor
+                                                    gradColor2: Qt.lighter(accentColor, 1.05)
+                                                    gradColor3: Qt.lighter(accentColor, 1.10)
+                                                    cornerRadius: rootObj.s(5)
+                                                    handleSize: rootObj.s(16)
+                                                    handleColor: Qt.lighter(accentColor, 1.3)
                                                 }
                                             }
 
@@ -501,7 +504,15 @@ Item {
                                                     Layout.preferredHeight: parent.width - rootObj.s(10)
                                                     Layout.alignment: Qt.AlignHCenter
                                                     radius: rootObj.s(7)
-                                                    color: ThemeBackend.surface1
+                                                    color: osdIconGlassV.active ? "transparent" : ThemeBackend.surface1
+
+                                                    GlassFill {
+                                                        id: osdIconGlassV
+                                                        anchors.fill: parent
+                                                        radius: parent.radius
+                                                        tintColor: ThemeBackend.surface1
+                                                        tintAmount: 0.3
+                                                    }
 
                                                     Text {
                                                         anchors.centerIn: parent
@@ -512,38 +523,22 @@ Item {
                                                     }
                                                 }
 
-                                                Item {
-                                                    Layout.fillWidth: true
+                                                Draggable {
                                                     Layout.fillHeight: true
-
-                                                    Rectangle {
-                                                        anchors.top: parent.top
-                                                        anchors.bottom: parent.bottom
-                                                        anchors.horizontalCenter: parent.horizontalCenter
-                                                        width: rootObj.s(9)
-                                                        radius: width / 2
-                                                        color: ThemeBackend.surface1
-
-                                                        Rectangle {
-                                                            anchors.left: parent.left
-                                                            anchors.right: parent.right
-                                                            anchors.bottom: parent.bottom
-                                                            height: parent.height * 0.65
-                                                            radius: parent.radius
-                                                            color: Qt.lighter(ThemeBackend.sapphire, 1.5)
-                                                        }
-
-                                                        Rectangle {
-                                                            y: parent.height - (parent.height * 0.65) - (height / 2)
-                                                            anchors.horizontalCenter: parent.horizontalCenter
-                                                            width: rootObj.s(16)
-                                                            height: rootObj.s(16)
-                                                            radius: width / 2
-                                                            color: Qt.lighter(ThemeBackend.sapphire, 1.3)
-                                                            border.width: 1
-                                                            border.color: Qt.rgba(0, 0, 0, 0.25)
-                                                        }
-                                                    }
+                                                    Layout.preferredWidth: rootObj.s(16)
+                                                    Layout.alignment: Qt.AlignHCenter
+                                                    vertical: true
+                                                    showValueBubble: false
+                                                    alwaysShowHandle: true
+                                                    value: 65
+                                                    backgroundColor: ThemeBackend.surface1
+                                                    accentColor: Qt.lighter(ThemeBackend.sapphire, 1.5)
+                                                    gradColor1: accentColor
+                                                    gradColor2: Qt.lighter(accentColor, 1.05)
+                                                    gradColor3: Qt.lighter(accentColor, 1.10)
+                                                    cornerRadius: rootObj.s(5)
+                                                    handleSize: rootObj.s(16)
+                                                    handleColor: Qt.lighter(accentColor, 1.3)
                                                 }
                                             }
                                         }
@@ -576,117 +571,138 @@ Item {
                 }
             }
 
-            SettingsBlob {
-                SettingsRow {
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: rootObj.s(10)
+
+                SettingsBlob {
                     Layout.fillWidth: true
-                    rootObj: osdTabRoot.rootObj
-                    icon: "󰘲"
-                    title: I18n.t("guide.osd.capslock.title", "Show on Caps Lock")
-                    titlePixelSize: 12
-                    wrapText: true
-                    titleColor: osdTabRoot.isVertical ? ThemeBackend.subtext0 : ThemeBackend.text
-                    opacity: osdTabRoot.isVertical ? 0.6 : 1.0
-                    Behavior on opacity { NumberAnimation { duration: 250 } }
-                    spacing: rootObj.s(10)
+                    Layout.preferredWidth: 1
+                    Layout.alignment: Qt.AlignTop
+                    baseColor: osdTabRoot.isVertical ? Qt.alpha(ThemeBackend.surface0, 0.18) : Qt.alpha(ThemeBackend.surface0, 0.4)
 
-                    Text {
-                        visible: osdTabRoot.isVertical
-                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                        text: I18n.t("guide.common.unavailable", "Unavailable")
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: rootObj.s(11)
-                        font.bold: true
-                        color: ThemeBackend.subtext0
-                    }
+                    SettingsRow {
+                        rootObj: osdTabRoot.rootObj
+                        icon: "󰘲"
+                        title: I18n.t("guide.osd.capslock.title", "Show on Caps Lock")
+                        titlePixelSize: 12
+                        wrapText: true
+                        titleColor: osdTabRoot.isVertical ? ThemeBackend.subtext0 : ThemeBackend.text
+                        opacity: osdTabRoot.isVertical ? 0.6 : 1.0
+                        Behavior on opacity { NumberAnimation { duration: 250 } }
+                        spacing: rootObj.s(10)
 
-                    Toggle {
-                        visible: !osdTabRoot.isVertical
-                        enabled: !osdTabRoot.isVertical
-                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                        checked: osdTabRoot.showCapsLock
-                        accentColor: ThemeBackend.mauve
-                        baseColor: ThemeBackend.surface1
-                        handleColor: ThemeBackend.crust
-                        handleOffColor: ThemeBackend.text
-                        onToggled: function(c) {
-                            osdTabRoot.showCapsLock = c;
-                            osdTabRoot.updateOsdSetting("showCapsLock", c);
+                        Text {
+                            visible: osdTabRoot.isVertical
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            text: I18n.t("guide.common.unavailable", "Unavailable")
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: rootObj.s(11)
+                            font.bold: true
+                            color: ThemeBackend.subtext0
+                        }
+
+                        Toggle {
+                            visible: !osdTabRoot.isVertical
+                            enabled: !osdTabRoot.isVertical
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            checked: osdTabRoot.showCapsLock
+                            accentColor: ThemeBackend.mauve
+                            baseColor: ThemeBackend.surface1
+                            handleColor: ThemeBackend.crust
+                            handleOffColor: ThemeBackend.text
+                            onToggled: function(c) {
+                                osdTabRoot.showCapsLock = c;
+                                osdTabRoot.updateOsdSetting("showCapsLock", c);
+                            }
                         }
                     }
                 }
 
-                SettingsRow {
+                SettingsBlob {
                     Layout.fillWidth: true
-                    rootObj: osdTabRoot.rootObj
-                    icon: "󰎤"
-                    title: I18n.t("guide.osd.numlock.title", "Show on Num Lock")
-                    titlePixelSize: 12
-                    wrapText: true
-                    titleColor: osdTabRoot.isVertical ? ThemeBackend.subtext0 : ThemeBackend.text
-                    opacity: osdTabRoot.isVertical ? 0.6 : 1.0
-                    Behavior on opacity { NumberAnimation { duration: 250 } }
-                    spacing: rootObj.s(10)
+                    Layout.preferredWidth: 1
+                    Layout.alignment: Qt.AlignTop
+                    baseColor: osdTabRoot.isVertical ? Qt.alpha(ThemeBackend.surface0, 0.18) : Qt.alpha(ThemeBackend.surface0, 0.4)
 
-                    Text {
-                        visible: osdTabRoot.isVertical
-                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                        text: I18n.t("guide.common.unavailable", "Unavailable")
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: rootObj.s(11)
-                        font.bold: true
-                        color: ThemeBackend.subtext0
-                    }
+                    SettingsRow {
+                        rootObj: osdTabRoot.rootObj
+                        icon: "󰎤"
+                        title: I18n.t("guide.osd.numlock.title", "Show on Num Lock")
+                        titlePixelSize: 12
+                        wrapText: true
+                        titleColor: osdTabRoot.isVertical ? ThemeBackend.subtext0 : ThemeBackend.text
+                        opacity: osdTabRoot.isVertical ? 0.6 : 1.0
+                        Behavior on opacity { NumberAnimation { duration: 250 } }
+                        spacing: rootObj.s(10)
 
-                    Toggle {
-                        visible: !osdTabRoot.isVertical
-                        enabled: !osdTabRoot.isVertical
-                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                        checked: osdTabRoot.showNumLock
-                        accentColor: ThemeBackend.mauve
-                        baseColor: ThemeBackend.surface1
-                        handleColor: ThemeBackend.crust
-                        handleOffColor: ThemeBackend.text
-                        onToggled: function(c) {
-                            osdTabRoot.showNumLock = c;
-                            osdTabRoot.updateOsdSetting("showNumLock", c);
+                        Text {
+                            visible: osdTabRoot.isVertical
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            text: I18n.t("guide.common.unavailable", "Unavailable")
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: rootObj.s(11)
+                            font.bold: true
+                            color: ThemeBackend.subtext0
+                        }
+
+                        Toggle {
+                            visible: !osdTabRoot.isVertical
+                            enabled: !osdTabRoot.isVertical
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            checked: osdTabRoot.showNumLock
+                            accentColor: ThemeBackend.mauve
+                            baseColor: ThemeBackend.surface1
+                            handleColor: ThemeBackend.crust
+                            handleOffColor: ThemeBackend.text
+                            onToggled: function(c) {
+                                osdTabRoot.showNumLock = c;
+                                osdTabRoot.updateOsdSetting("showNumLock", c);
+                            }
                         }
                     }
                 }
 
-                SettingsRow {
+                SettingsBlob {
                     Layout.fillWidth: true
-                    rootObj: osdTabRoot.rootObj
-                    icon: "󰀝"
-                    title: I18n.t("guide.osd.airplane.title", "Show on Airplane Mode")
-                    titlePixelSize: 12
-                    wrapText: true
-                    titleColor: osdTabRoot.isVertical ? ThemeBackend.subtext0 : ThemeBackend.text
-                    opacity: osdTabRoot.isVertical ? 0.6 : 1.0
-                    Behavior on opacity { NumberAnimation { duration: 250 } }
-                    spacing: rootObj.s(10)
+                    Layout.preferredWidth: 1
+                    Layout.alignment: Qt.AlignTop
+                    baseColor: osdTabRoot.isVertical ? Qt.alpha(ThemeBackend.surface0, 0.18) : Qt.alpha(ThemeBackend.surface0, 0.4)
 
-                    Text {
-                        visible: osdTabRoot.isVertical
-                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                        text: I18n.t("guide.common.unavailable", "Unavailable")
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: rootObj.s(11)
-                        font.bold: true
-                        color: ThemeBackend.subtext0
-                    }
+                    SettingsRow {
+                        rootObj: osdTabRoot.rootObj
+                        icon: "󰀝"
+                        title: I18n.t("guide.osd.airplane.title", "Show on Airplane Mode")
+                        titlePixelSize: 12
+                        wrapText: true
+                        titleColor: osdTabRoot.isVertical ? ThemeBackend.subtext0 : ThemeBackend.text
+                        opacity: osdTabRoot.isVertical ? 0.6 : 1.0
+                        Behavior on opacity { NumberAnimation { duration: 250 } }
+                        spacing: rootObj.s(10)
 
-                    Toggle {
-                        visible: !osdTabRoot.isVertical
-                        enabled: !osdTabRoot.isVertical
-                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                        checked: osdTabRoot.showAirplane
-                        accentColor: ThemeBackend.mauve
-                        baseColor: ThemeBackend.surface1
-                        handleColor: ThemeBackend.crust
-                        handleOffColor: ThemeBackend.text
-                        onToggled: function(c) {
-                            osdTabRoot.showAirplane = c;
-                            osdTabRoot.updateOsdSetting("showAirplane", c);
+                        Text {
+                            visible: osdTabRoot.isVertical
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            text: I18n.t("guide.common.unavailable", "Unavailable")
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: rootObj.s(11)
+                            font.bold: true
+                            color: ThemeBackend.subtext0
+                        }
+
+                        Toggle {
+                            visible: !osdTabRoot.isVertical
+                            enabled: !osdTabRoot.isVertical
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            checked: osdTabRoot.showAirplane
+                            accentColor: ThemeBackend.mauve
+                            baseColor: ThemeBackend.surface1
+                            handleColor: ThemeBackend.crust
+                            handleOffColor: ThemeBackend.text
+                            onToggled: function(c) {
+                                osdTabRoot.showAirplane = c;
+                                osdTabRoot.updateOsdSetting("showAirplane", c);
+                            }
                         }
                     }
                 }

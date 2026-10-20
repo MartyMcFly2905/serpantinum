@@ -42,7 +42,8 @@
       "dock": "Dock",
       "bar_general": "General",
       "bar_modules": "Modules",
-      "bar_side_modules": "Side modules"
+      "bar_side_modules": "Side modules",
+      "display_lockscreen": "Lock screen"
     },
     "launcher": {
       "position": {
@@ -282,6 +283,36 @@
         },
         "preset_name_placeholder": "Enter preset name...",
         "screen_desc": "Configure and edit desktop widgets"
+      },
+      "lockscreen": {
+        "edit": {
+          "title": "Lock screen",
+          "desc": "Customize the layout of your lock screen",
+          "button": "Edit lock screen"
+        },
+        "limits": {
+          "title": "Attempt limits",
+          "desc": "Temporarily block password entry and disable the fingerprint reader after too many failed attempts"
+        },
+        "password_attempts": {
+          "title": "Password attempts",
+          "desc": "Failed attempts before password entry is blocked for 30 seconds"
+        },
+        "fingerprint_attempts": {
+          "title": "Fingerprint attempts",
+          "desc": "Failed scans before the fingerprint reader is disabled until the next unlock"
+        },
+        "fingerprint": {
+          "title": "Enable fingerprint login",
+          "desc": "Allow unlocking the lock screen with a fingerprint"
+        },
+        "background": {
+          "select": "Select background",
+          "follow": "Follow wallpaper",
+          "custom": "Custom",
+          "follows_hint": "Follows wallpaper",
+          "none": "No background selected"
+        }
       }
     },
     "bar": {
@@ -318,7 +349,10 @@
           }
         },
         "info": "Recording/timer",
-        "weather": "Weather"
+        "weather": "Weather",
+        "notifications": "Notifications",
+        "usage": "System usage",
+        "clock": "Clock"
       },
       "position": {
         "title": "Bar position",
@@ -349,10 +383,6 @@
           "title": "Style",
           "desc": "Choose the visual style for workspace indicators"
         }
-      },
-      "opacity": {
-        "title": "Bar opacity",
-        "desc": "Set the opacity of the bar as a percentage"
       },
       "style": {
         "title": "Bar style",
@@ -460,11 +490,13 @@
           "name": {
             "classic": "Classic",
             "minimal": "Minimal",
-            "text": "Text"
+            "text": "Text",
+            "button": "Button"
           },
           "classic": "Pill with gradient wave fill",
           "minimal": "iOS/Android capsule with cap",
-          "text": "Clean text and icon without background"
+          "text": "Clean text and icon without background",
+          "button": "Interactive button pill with background"
         }
       },
       "wifi": {
@@ -570,6 +602,26 @@
       "thickness": {
         "title": "Bar thickness",
         "desc": "Change how thick the bar is, modules scale to fit"
+      },
+      "menu": {
+        "show_settings": {
+          "title": "Show settings icon",
+          "desc": "Display the button that opens settings"
+        },
+        "show_launcher": {
+          "title": "Show launcher icon",
+          "desc": "Display the search button that opens the launcher"
+        },
+        "style": {
+          "title": "Style",
+          "desc": "Choose the visual appearance of the menu module",
+          "name": {
+            "button": "Button",
+            "icon": "Icon"
+          },
+          "button": "Interactive icon buttons with background",
+          "icon": "Clean icons without background"
+        }
       }
     },
     "theme": {
@@ -581,6 +633,18 @@
       "radius": {
         "title": "Border radius",
         "desc": "Corner radius for UI elements"
+      },
+      "element_opacity": {
+        "title": "Element opacity",
+        "desc": "Opacity of the bar, dock, widgets and every other shell element"
+      },
+      "blur_background": {
+        "title": "Add a blurred wallpaper background",
+        "desc": "Blur the wallpaper behind every element that uses transparency",
+        "style": {
+          "blur": "Blur",
+          "liquid": "Liquid glass"
+        }
       },
       "colors": {
         "title": "Color themes",
@@ -785,6 +849,10 @@
         "title": "Floating dock",
         "desc": "Detach dock from screen edge with rounded corners"
       },
+      "background": {
+        "title": "Draw a background behind apps",
+        "desc": "Show the dock panel behind app icons"
+      },
       "transparency": {
         "title": "Dock transparency",
         "desc": "Adjust dock background opacity level"
@@ -802,10 +870,6 @@
         "search": "Search apps...",
         "done": "Done",
         "empty": "No matching applications"
-      },
-      "opacity": {
-        "title": "Dock opacity",
-        "desc": "Adjust dock background opacity level"
       },
       "override_bounds": {
         "title": "Override out-of-screen-bounds size correction",
@@ -946,12 +1010,14 @@
       "locked": "Locked",
       "access_denied": "Access denied",
       "authenticating": "Authenticating...",
-      "enter_pin": "Enter PIN"
+      "enter_pin": "Enter PIN",
+      "too_many_attempts": "Too many attempts"
     },
     "fingerprint": {
       "ready": "Touch the sensor",
       "not_recognized": "Fingerprint not recognized",
-      "recognized": "Fingerprint recognized"
+      "recognized": "Fingerprint recognized",
+      "blocked": "Fingerprint disabled"
     },
     "power": {
       "suspend": "Suspend",
@@ -959,7 +1025,54 @@
       "power_off": "Power off"
     },
     "default_user": "User",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "redactor": {
+      "done": "Done",
+      "element": {
+        "avatar": "Avatar",
+        "user": "User",
+        "password": "Password",
+        "fingerprint": "Fingerprint",
+        "notifications": "Notifications",
+        "clock": "Clock",
+        "lockstatus": "Lock status",
+        "keyboard": "Keyboard",
+        "battery": "Battery"
+      },
+      "variant": {
+        "avatar": {
+          "round": "Round",
+          "rounded": "Rounded"
+        },
+        "user": {
+          "filled": "Filled",
+          "plain": "Plain"
+        },
+        "password": {
+          "filled": "Filled",
+          "glass": "Glass"
+        },
+        "fingerprint": {
+          "classic": "Classic",
+          "ring": "Ring",
+          "scanner": "Scanner",
+          "pulse": "Pulse",
+          "orbit": "Orbit",
+          "liquid": "Liquid"
+        },
+        "notifications": {
+          "card": "Card",
+          "plain": "Plain"
+        },
+        "lockstatus": {
+          "filled": "Filled",
+          "plain": "Plain"
+        }
+      },
+      "setting": {
+        "show_text": "Show text"
+      }
+    }
   },
   "music": {
     "nothing_playing": "Nothing is playing",
@@ -973,6 +1086,26 @@
     "eq": {
       "apply": "Apply",
       "saved": "Saved"
+    },
+    "audio": {
+      "title": "Audio",
+      "balance": "Channel balance",
+      "reset": "Reset",
+      "centered": "Centered",
+      "left_slightly_favored": "Slightly left favored",
+      "right_slightly_favored": "Slightly right favored",
+      "left_only": "Left only",
+      "right_only": "Right only",
+      "left_favored": "Left favored",
+      "right_favored": "Right favored",
+      "test": "Test",
+      "stop_test": "Stop",
+      "mono": "Mono audio",
+      "swap": "Swap L/R",
+      "dynamic_range": "Dynamic range",
+      "off": "Off",
+      "balanced": "Balanced",
+      "night": "Night"
     },
     "presets": {
       "flat": "Flat",
@@ -1115,11 +1248,33 @@
       "pin": "Pin",
       "unpin": "Unpin"
     },
+    "calculator": {
+      "history": "History",
+      "no_history": "No calculations yet",
+      "clear_history": "Clear history",
+      "copied": "Copied",
+      "deg": "Deg",
+      "rad": "Rad",
+      "grad": "Grad",
+      "inv": "Inv",
+      "mode": {
+        "normal": "Normal",
+        "advanced": "Advanced"
+      },
+      "clear": "AC",
+      "error": {
+        "syntax": "Invalid expression",
+        "div0": "Can't divide by zero",
+        "domain": "Invalid input",
+        "paste": "Invalid paste"
+      }
+    },
     "tabs": {
       "draw": "Draw",
       "system": "System",
       "timer": "Timer",
       "notes": "Notes",
+      "calculator": "Calculator",
       "tab": "Tab"
     }
   },
@@ -1337,6 +1492,8 @@
       "default": "Default",
       "material": "Material",
       "materialAnalog": "Material Analog",
+      "lockscreen": "Lockscreen",
+      "stretched": "Stretched",
       "lumen": "Lumen",
       "lyrics": "Lyrics",
       "simpleLyrics": "Simple Lyrics",
@@ -1380,7 +1537,8 @@
       "lyricsAlignment": "Alignment",
       "usageStyle": "Style",
       "lineThickness": "Thickness",
-      "visualizerStyle": "Visualizer style"
+      "visualizerStyle": "Visualizer style",
+      "showNoLyrics": "Show \"no lyrics\" text"
     },
     "align": {
       "left": "Left",

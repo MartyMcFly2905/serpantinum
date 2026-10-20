@@ -52,7 +52,16 @@ Item {
         width: numbersFaceRoot.isVertical ? numbersFaceRoot.pillSize : actualEnd - actualStart
         height: numbersFaceRoot.isVertical ? actualEnd - actualStart : numbersFaceRoot.pillSize
         radius: numbersFaceRoot.pillRadius
-        color: (widget && widget.isCompact) ? Qt.lighter(ThemeBackend.mauve, 1.05) : ThemeBackend.mauve
+        color: numbersGlass.active ? "transparent" : ((widget && widget.isCompact) ? Qt.lighter(ThemeBackend.mauve, 1.05) : ThemeBackend.mauve)
+
+        GlassFill {
+            id: numbersGlass
+            anchors.fill: parent
+            radius: parent.radius
+            tintColor: ThemeBackend.mauve
+            tintAmount: 0.5
+            press: 0.3 + 0.7 * activeHighlight.lift
+        }
 
         property int prevIdx: 0
         property int curIdx: widget ? widget.activeIndex : -1
@@ -97,6 +106,12 @@ Item {
         Behavior on actualStart { NumberAnimation { id: startAnim; duration: 250; easing.type: Easing.OutExpo } }
         Behavior on actualEnd { NumberAnimation { id: endAnim; duration: 250; easing.type: Easing.OutExpo } }
 
+        readonly property bool isMoving: Math.abs(actualStart - targetStart) > 0.5 || Math.abs(actualEnd - targetEnd) > 0.5
+        property real lift: (numbersGlass.active && isMoving) ? 1.0 : 0.0
+        Behavior on lift { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+        scale: 1.0 + 0.14 * lift
+        transformOrigin: Item.Center
+
         opacity: (widget && widget.workspaceCount > 0 && widget.activeIndex >= 0) ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 200 } }
     }
@@ -128,7 +143,7 @@ Item {
                 Rectangle {
                     anchors.fill: parent
                     radius: numbersFaceRoot.pillRadius
-                    color: wsPill.isHovered
+                    color: numbersHoverGlass.active ? "transparent" : wsPill.isHovered
                         ? Qt.alpha(ThemeBackend.text, 0.1)
                         : (wsPill.isActive ? "transparent" : (wsPill.isOccupied ? Qt.alpha(ThemeBackend.text, 0.15) : "transparent"))
 
@@ -136,6 +151,16 @@ Item {
 
                     scale: wsPill.isHovered && !wsPill.isActive ? 1.08 : 1.0
                     Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+
+                    GlassFill {
+                        id: numbersHoverGlass
+                        anchors.fill: parent
+                        radius: parent.radius
+                        allowed: wsPill.isHovered && !wsPill.isActive
+                        tintColor: ThemeBackend.text
+                        tintAmount: 0.15
+                        press: wsPillMouse.pressed ? 0.8 : 0.25
+                    }
                 }
 
                 opacity: initAnimTrigger ? 1.0 : 0.0
@@ -172,7 +197,7 @@ Item {
                     font.weight: wsPill.isActive ? Font.Black : (wsPill.isOccupied ? Font.Bold : Font.Medium)
 
                     color: wsPill.isActive
-                        ? ThemeBackend.crust
+                        ? (numbersGlass.active ? ThemeBackend.text : ThemeBackend.crust)
                         : (wsPill.isHovered
                             ? ThemeBackend.text
                             : (wsPill.isOccupied

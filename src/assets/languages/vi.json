@@ -42,7 +42,8 @@
       "dock": "Dock",
       "bar_general": "Chung",
       "bar_modules": "Mô-đun",
-      "bar_side_modules": "Mô-đun bên cạnh"
+      "bar_side_modules": "Mô-đun bên cạnh",
+      "display_lockscreen": "Màn hình khóa"
     },
     "launcher": {
       "position": {
@@ -282,6 +283,36 @@
         },
         "preset_name_placeholder": "Nhập tên preset...",
         "screen_desc": "Cấu hình và chỉnh sửa tiện ích màn hình nền"
+      },
+      "lockscreen": {
+        "edit": {
+          "title": "Màn hình khóa",
+          "desc": "Tùy chỉnh bố cục màn hình khóa của bạn",
+          "button": "Chỉnh sửa màn hình khóa"
+        },
+        "limits": {
+          "title": "Giới hạn số lần thử",
+          "desc": "Tạm thời chặn nhập mật khẩu và tắt trình đọc vân tay sau quá nhiều lần thử thất bại"
+        },
+        "password_attempts": {
+          "title": "Số lần thử mật khẩu",
+          "desc": "Số lần thất bại trước khi việc nhập mật khẩu bị chặn trong 30 giây"
+        },
+        "fingerprint_attempts": {
+          "title": "Số lần thử vân tay",
+          "desc": "Số lần quét thất bại trước khi trình đọc vân tay bị tắt cho đến lần mở khóa tiếp theo"
+        },
+        "fingerprint": {
+          "title": "Bật đăng nhập bằng vân tay",
+          "desc": "Cho phép mở khóa màn hình khóa bằng vân tay"
+        },
+        "background": {
+          "select": "Chọn nền",
+          "follow": "Theo hình nền",
+          "custom": "Tùy chỉnh",
+          "follows_hint": "Đang theo hình nền",
+          "none": "Chưa chọn nền"
+        }
       }
     },
     "bar": {
@@ -349,10 +380,6 @@
           "title": "Kiểu",
           "desc": "Chọn kiểu hiển thị cho các chỉ báo không gian làm việc"
         }
-      },
-      "opacity": {
-        "title": "Độ mờ thanh tác vụ",
-        "desc": "Đặt độ mờ của thanh tác vụ theo phần trăm"
       },
       "style": {
         "title": "Kiểu thanh tác vụ",
@@ -570,6 +597,26 @@
       "thickness": {
         "title": "Độ dày thanh",
         "desc": "Thay đổi độ dày của thanh, các mô-đun sẽ tự điều chỉnh"
+      },
+      "menu": {
+        "show_settings": {
+          "title": "Hiện biểu tượng cài đặt",
+          "desc": "Hiển thị nút mở cài đặt"
+        },
+        "show_launcher": {
+          "title": "Hiện biểu tượng trình khởi chạy",
+          "desc": "Hiển thị nút tìm kiếm mở trình khởi chạy"
+        },
+        "style": {
+          "title": "Kiểu dáng",
+          "desc": "Chọn giao diện của mô-đun menu",
+          "name": {
+            "button": "Nút bấm",
+            "icon": "Biểu tượng"
+          },
+          "button": "Nút biểu tượng tương tác có nền",
+          "icon": "Biểu tượng gọn gàng không có nền"
+        }
       }
     },
     "theme": {
@@ -595,6 +642,18 @@
         "select_wallpaper": "Chọn hình nền",
         "no_wallpaper_selected": "Chưa chọn hình nền nào",
         "select": "Hình nền"
+      },
+      "element_opacity": {
+        "title": "Độ mờ của phần tử",
+        "desc": "Độ mờ của thanh, dock, tiện ích và mọi phần tử khác của shell"
+      },
+      "blur_background": {
+        "title": "Thêm nền hình nền làm mờ",
+        "desc": "Làm mờ hình nền phía sau mọi phần tử sử dụng độ trong suốt",
+        "style": {
+          "blur": "Làm mờ",
+          "liquid": "Kính lỏng"
+        }
       }
     },
     "file_picker": {
@@ -803,10 +862,6 @@
         "done": "Xong",
         "empty": "Không tìm thấy ứng dụng phù hợp"
       },
-      "opacity": {
-        "title": "Độ đục của dock",
-        "desc": "Điều chỉnh mức độ đục của nền dock"
-      },
       "override_bounds": {
         "title": "Ghi đè điều chỉnh kích thước ngoài giới hạn màn hình",
         "desc": "Giữ nguyên kích thước phần tử ngay cả khi dock vượt quá giới hạn màn hình"
@@ -861,6 +916,10 @@
       },
       "window_menu": {
         "untitled": "Untitled"
+      },
+      "background": {
+        "title": "Vẽ nền phía sau ứng dụng",
+        "desc": "Hiển thị bảng dock phía sau biểu tượng ứng dụng"
       }
     },
     "lyrics_picker": {
@@ -956,7 +1015,54 @@
       "power_off": "Tắt nguồn"
     },
     "default_user": "Người dùng",
-    "unknown": "Không rõ"
+    "unknown": "Không rõ",
+    "redactor": {
+      "done": "Xong",
+      "element": {
+        "avatar": "Ảnh đại diện",
+        "user": "Người dùng",
+        "password": "Mật khẩu",
+        "fingerprint": "Vân tay",
+        "notifications": "Thông báo",
+        "clock": "Đồng hồ",
+        "lockstatus": "Trạng thái khóa",
+        "keyboard": "Bàn phím",
+        "battery": "Pin"
+      },
+      "variant": {
+        "avatar": {
+          "round": "Tròn",
+          "rounded": "Bo góc"
+        },
+        "user": {
+          "filled": "Đặc",
+          "plain": "Đơn giản"
+        },
+        "password": {
+          "filled": "Đặc",
+          "glass": "Kính"
+        },
+        "fingerprint": {
+          "classic": "Cổ điển",
+          "ring": "Vòng",
+          "scanner": "Máy quét",
+          "pulse": "Nhịp",
+          "orbit": "Quỹ đạo",
+          "liquid": "Chất lỏng"
+        },
+        "notifications": {
+          "card": "Thẻ",
+          "plain": "Đơn giản"
+        },
+        "lockstatus": {
+          "filled": "Đặc",
+          "plain": "Đơn giản"
+        }
+      },
+      "setting": {
+        "show_text": "Hiện văn bản"
+      }
+    }
   },
   "music": {
     "nothing_playing": "Không có nhạc đang phát",
@@ -970,6 +1076,26 @@
     "eq": {
       "apply": "Áp dụng",
       "saved": "Đã lưu"
+    },
+    "audio": {
+      "title": "Âm thanh",
+      "balance": "Cân bằng kênh",
+      "reset": "Đặt lại",
+      "centered": "Cân giữa",
+      "left_slightly_favored": "Hơi thiên trái",
+      "right_slightly_favored": "Hơi thiên phải",
+      "left_only": "Chỉ kênh trái",
+      "right_only": "Chỉ kênh phải",
+      "left_favored": "Thiên trái",
+      "right_favored": "Thiên phải",
+      "test": "Kiểm tra",
+      "stop_test": "Dừng",
+      "mono": "Âm thanh mono",
+      "swap": "Đổi trái/phải",
+      "dynamic_range": "Dải động",
+      "off": "Tắt",
+      "balanced": "Cân bằng",
+      "night": "Ban đêm"
     },
     "presets": {
       "flat": "Phẳng",
@@ -1109,11 +1235,33 @@
       "pin": "Ghim",
       "unpin": "Bỏ ghim"
     },
+    "calculator": {
+      "history": "Lịch sử",
+      "no_history": "Chưa có phép tính nào",
+      "clear_history": "Xóa lịch sử",
+      "copied": "Đã sao chép",
+      "deg": "Độ",
+      "rad": "Rad",
+      "grad": "Grad",
+      "inv": "Ngược",
+      "mode": {
+        "normal": "Thường",
+        "advanced": "Nâng cao"
+      },
+      "clear": "AC",
+      "error": {
+        "syntax": "Biểu thức không hợp lệ",
+        "div0": "Không thể chia cho không",
+        "domain": "Đầu vào không hợp lệ",
+        "paste": "Dán không hợp lệ"
+      }
+    },
     "tabs": {
       "draw": "Vẽ",
       "system": "Hệ thống",
       "timer": "Hẹn giờ",
       "notes": "Ghi chú",
+      "calculator": "Máy tính",
       "tab": "Tab"
     }
   },
@@ -1328,6 +1476,8 @@
       "default": "Mặc định",
       "material": "Material",
       "materialAnalog": "Material kim",
+      "lockscreen": "Lockscreen",
+      "stretched": "Stretched",
       "lumen": "Lumen",
       "lyrics": "Lời bài hát",
       "simpleLyrics": "Lời bài hát đơn giản"

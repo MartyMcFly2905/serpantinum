@@ -84,8 +84,8 @@ fi
 # 6. Riavvia serpantinumd
 echo -e "${C_CYAN}[INFO] Riavvio del demone Serpantinum...${C_RESET}"
 serpantinumd stop >/dev/null 2>&1 || true
-sleep 0.5
-nohup serpantinumd start > /dev/null 2>&1 &
+sleep 0.8
+setsid -f serpantinumd start >/dev/null 2>&1
 sleep 1.5
 
 if serpantinumd status >/dev/null 2>&1; then

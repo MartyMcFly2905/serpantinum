@@ -838,6 +838,16 @@ QtObject {
                     textColor: "mauve"
                 }
             ]
+        },
+        "notes": {
+            name: typeof I18n !== "undefined" ? I18n.t("widgets.types.notes", "Notes") : "Notes",
+            icon: String.fromCodePoint(0xF039E),
+            defaultWidth: 300,
+            defaultHeight: 280,
+            defaultVariant: "default",
+            variants: {
+                "default": { file: "faces/notes/NotesFace.qml", icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.default", "Default") : "Default" }
+            }
         }
     })
 

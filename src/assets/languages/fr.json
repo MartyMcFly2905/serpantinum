@@ -598,6 +598,10 @@
           "title": "Afficher les commandes",
           "desc": "Afficher les boutons précédent, lecture et suivant"
         },
+        "hide_when_idle": {
+          "title": "Masquer quand rien n'est en lecture",
+          "desc": "Masquer le module de la barre tant qu'aucun média n'est actif"
+        },
         "preview": {
           "title": "Titre du morceau",
           "author": "Song author"
@@ -1103,6 +1107,9 @@
       },
       "setting": {
         "show_text": "Afficher le texte"
+      },
+      "category": {
+        "lockscreen": "Écran de verrouillage"
       }
     }
   },
@@ -1514,11 +1521,21 @@
     },
     "redactor": {
       "no_widgets_active": "Aucun widget actif",
-      "click_to_add": "Cliquez sur une icône de widget dans la barre d'outils inférieure pour l'ajouter",
+      "click_to_add": "Choisissez une catégorie ou lancez une recherche dans la barre d'outils inférieure pour ajouter un widget",
       "done": "Terminé",
       "widget_singular": "widget",
       "widgets_plural": "widgets",
-      "widgets_short": "w"
+      "widgets_short": "w",
+      "category": {
+        "time": "Heure et texte",
+        "media": "Médias",
+        "system": "Système",
+        "info": "Infos",
+        "other": "Autres"
+      },
+      "search": "Rechercher des widgets",
+      "results": "Résultats",
+      "no_results": "Aucun résultat"
     },
     "types": {
       "clock": "Horloge",
@@ -1531,7 +1548,8 @@
       "battery": "Batterie",
       "github": "Github",
       "time": "Heure",
-      "notes": "Notes"
+      "notes": "Notes",
+      "text": "Texte"
     },
     "variants": {
       "digital": "Numérique",
@@ -1577,7 +1595,8 @@
     },
     "settings": {
       "lyricsLines": "Lignes",
-      "lyricsAlignment": "Alignement"
+      "lyricsAlignment": "Alignement",
+      "textContent": "Texte"
     },
     "align": {
       "left": "Gauche",
@@ -1586,6 +1605,9 @@
     },
     "notes": {
       "empty": "Aucune note pour l'instant"
+    },
+    "text": {
+      "placeholder": "Saisissez du texte"
     }
   },
   "cli": {
@@ -1663,9 +1685,9 @@
     "error_unknown_theme": "Erreur : thème inconnu '{NAME}'.",
     "error_no_wallpapers": "Erreur : aucun fond d'écran trouvé dans le dossier des fonds d'écran.",
     "error_file_not_found": "Erreur : fichier introuvable : {PATH}",
-    "info_desc": "Afficher l'état actuel d'un réglage (dnd, caffeine, dock, theme, wallpaper, monitors, updates...)",
-    "set_desc": "Modifier un réglage (dnd, caffeine, dock, sfx-mute, matugen, lang, theme, wallpaper)",
-    "trigger_desc": "Exécuter une action ponctuelle (idle, notifications-clear, firstlaunch, theme-reload, theme-generate)",
+    "info_desc": "Afficher l'état actuel d'un réglage (notifications, idle, dock, sfx, theme, lang, wallpaper, monitors, updates)",
+    "set_desc": "Modifier un réglage (notifications, idle, dock, sfx, theme, lang, wallpaper)",
+    "trigger_desc": "Exécuter une action ponctuelle (idle, notifications, theme, firstlaunch)",
     "settings_desc": "Ouvrir la fenêtre des paramètres (éventuellement sur un onglet)"
   },
   "daemon": {

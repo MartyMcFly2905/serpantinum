@@ -193,6 +193,10 @@ Item {
             popupWindowRoot.pendingPairThenConnect = "";
             popupWindowRoot.connectAfterLinkDrop = "";
             popupWindowRoot.btOpsInFlight = ({});
+            popupWindowRoot.busyTasks = ({});
+            popupWindowRoot.disconnectingDevices = ({});
+            popupWindowRoot.connectingId = "";
+            popupWindowRoot.failedId = "";
             popupWindowRoot.hoveredCardCount = 0;
             popupWindowRoot.disconnectHoverCount = 0;
             popupWindowRoot.introState = 0.0;
@@ -633,6 +637,16 @@ Item {
     property bool ignoreNextModeFileUpdate: false
 
     FileView {
+        id: modeFileWriter
+        path: popupWindowRoot.modeFilePath
+        watchChanges: true
+        onFileChanged: reload()
+        onLoadFailed: error => {
+            if (error === FileViewError.FileNotFound) modeFileWriter.setText(popupWindowRoot.activeMode + "\n");
+        }
+    }
+
+    FileView {
         id: modeFile
         path: popupWindowRoot.modeFilePath
         watchChanges: popupWindowRoot.visible
@@ -653,8 +667,6 @@ Item {
     }
 
     Component.onCompleted: {
-        Quickshell.execDetached(["bash", "-c", "mkdir -p '" + popupWindowRoot.cacheDir + "'; if [ ! -f '" + popupWindowRoot.modeFilePath + "' ]; then echo '" + activeMode + "' > '" + popupWindowRoot.modeFilePath + "'; fi"]);
-
         popupWindowRoot.findDevices();
         popupWindowRoot.rebuildEthData();
         popupWindowRoot.rebuildWifiData();
@@ -887,7 +899,7 @@ Item {
     onActiveModeChanged: {
         popupWindowRoot.cardIntroDelay = 0;
         if (!popupWindowRoot.ignoreNextModeFileUpdate) {
-            Quickshell.execDetached(["bash", "-c", "mkdir -p '" + popupWindowRoot.cacheDir + "' && echo '" + popupWindowRoot.activeMode + "' > '" + popupWindowRoot.modeFilePath + "'"]);
+            modeFileWriter.setText(popupWindowRoot.activeMode + "\n");
         }
         popupWindowRoot.ignoreNextModeFileUpdate = false;
 

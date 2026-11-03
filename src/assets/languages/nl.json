@@ -598,6 +598,10 @@
           "title": "Bediening tonen",
           "desc": "Toont de knoppen voor vorige, afspelen en volgende"
         },
+        "hide_when_idle": {
+          "title": "Verbergen als er niets speelt",
+          "desc": "Verberg de widget in de balk zolang er geen media actief is"
+        },
         "preview": {
           "title": "Titel van het nummer",
           "author": "Song author"
@@ -1103,6 +1107,9 @@
       },
       "setting": {
         "show_text": "Tekst tonen"
+      },
+      "category": {
+        "lockscreen": "Vergrendelscherm"
       }
     }
   },
@@ -1514,11 +1521,21 @@
     },
     "redactor": {
       "no_widgets_active": "Geen widgets actief",
-      "click_to_add": "Klik op een widgetpictogram in de onderste werkbalk om toe te voegen",
+      "click_to_add": "Kies een categorie of zoek in de onderste werkbalk om een widget toe te voegen",
       "done": "Klaar",
       "widget_singular": "widget",
       "widgets_plural": "widgets",
-      "widgets_short": "w"
+      "widgets_short": "w",
+      "category": {
+        "time": "Tijd en tekst",
+        "media": "Media",
+        "system": "Systeem",
+        "info": "Info",
+        "other": "Overig"
+      },
+      "search": "Widgets zoeken",
+      "results": "Resultaten",
+      "no_results": "Niets gevonden"
     },
     "types": {
       "clock": "Klok",
@@ -1531,7 +1548,8 @@
       "battery": "Batterij",
       "github": "GitHub",
       "time": "Tijd",
-      "notes": "Notities"
+      "notes": "Notities",
+      "text": "Tekst"
     },
     "variants": {
       "digital": "Digitaal",
@@ -1577,7 +1595,8 @@
     },
     "settings": {
       "lyricsLines": "Regels",
-      "lyricsAlignment": "Uitlijning"
+      "lyricsAlignment": "Uitlijning",
+      "textContent": "Tekst"
     },
     "align": {
       "left": "Links",
@@ -1586,6 +1605,9 @@
     },
     "notes": {
       "empty": "Nog geen notities"
+    },
+    "text": {
+      "placeholder": "Voer tekst in"
     }
   },
   "cli": {
@@ -1663,9 +1685,9 @@
     "error_unknown_theme": "Fout: onbekend thema '{NAME}'.",
     "error_no_wallpapers": "Fout: geen achtergronden gevonden in de achtergrondmap.",
     "error_file_not_found": "Fout: bestand niet gevonden: {PATH}",
-    "info_desc": "De huidige status van een instelling tonen (dnd, caffeine, dock, theme, wallpaper, monitors, updates...)",
-    "set_desc": "Een instelling wijzigen (dnd, caffeine, dock, sfx-mute, matugen, lang, theme, wallpaper)",
-    "trigger_desc": "Een eenmalige actie uitvoeren (idle, notifications-clear, firstlaunch, theme-reload, theme-generate)",
+    "info_desc": "De huidige status van een instelling tonen (notifications, idle, dock, sfx, theme, lang, wallpaper, monitors, updates)",
+    "set_desc": "Een instelling wijzigen (notifications, idle, dock, sfx, theme, lang, wallpaper)",
+    "trigger_desc": "Een eenmalige actie uitvoeren (idle, notifications, theme, firstlaunch)",
     "settings_desc": "Instellingenvenster openen (optioneel op een bepaald tabblad)"
   },
   "daemon": {

@@ -598,6 +598,10 @@
           "title": "Kontrolleri göster",
           "desc": "Önceki, oynat ve sonraki düğmelerini görüntüleyin"
         },
+        "hide_when_idle": {
+          "title": "Hiçbir şey çalmıyorken gizle",
+          "desc": "Etkin medya yokken bileşeni çubuktan gizle"
+        },
         "preview": {
           "title": "Şarkı adı",
           "author": "Song author"
@@ -1103,6 +1107,9 @@
       },
       "setting": {
         "show_text": "Metni göster"
+      },
+      "category": {
+        "lockscreen": "Kilit ekranı"
       }
     }
   },
@@ -1514,11 +1521,21 @@
     },
     "redactor": {
       "no_widgets_active": "Etkin widget yok",
-      "click_to_add": "Eklemek için alt araç çubuğundaki bir widget simgesine tıklayın",
+      "click_to_add": "Widget eklemek için alt araç çubuğundan bir kategori seçin veya arama yapın",
       "done": "Tamam",
       "widget_singular": "widget",
       "widgets_plural": "widget",
-      "widgets_short": "w"
+      "widgets_short": "w",
+      "category": {
+        "time": "Saat ve metin",
+        "media": "Medya",
+        "system": "Sistem",
+        "info": "Bilgi",
+        "other": "Diğer"
+      },
+      "search": "Widget ara",
+      "results": "Sonuçlar",
+      "no_results": "Hiçbir şey bulunamadı"
     },
     "types": {
       "clock": "Saat",
@@ -1531,7 +1548,8 @@
       "battery": "Pil",
       "github": "Github",
       "time": "Saat",
-      "notes": "Notlar"
+      "notes": "Notlar",
+      "text": "Metin"
     },
     "variants": {
       "digital": "Dijital",
@@ -1577,7 +1595,8 @@
     },
     "settings": {
       "lyricsLines": "Satırlar",
-      "lyricsAlignment": "Hizalama"
+      "lyricsAlignment": "Hizalama",
+      "textContent": "Metin"
     },
     "align": {
       "left": "Sol",
@@ -1586,6 +1605,9 @@
     },
     "notes": {
       "empty": "Henüz not yok"
+    },
+    "text": {
+      "placeholder": "Metin girin"
     }
   },
   "cli": {
@@ -1663,9 +1685,9 @@
     "error_unknown_theme": "Hata: bilinmeyen tema '{NAME}'.",
     "error_no_wallpapers": "Hata: duvar kağıdı dizininde duvar kağıdı bulunamadı.",
     "error_file_not_found": "Hata: dosya bulunamadı: {PATH}",
-    "info_desc": "Bir ayarın geçerli durumunu göster (dnd, caffeine, dock, theme, wallpaper, monitors, updates...)",
-    "set_desc": "Bir ayarı değiştir (dnd, caffeine, dock, sfx-mute, matugen, lang, theme, wallpaper)",
-    "trigger_desc": "Tek seferlik bir eylem çalıştır (idle, notifications-clear, firstlaunch, theme-reload, theme-generate)",
+    "info_desc": "Bir ayarın geçerli durumunu göster (notifications, idle, dock, sfx, theme, lang, wallpaper, monitors, updates)",
+    "set_desc": "Bir ayarı değiştir (notifications, idle, dock, sfx, theme, lang, wallpaper)",
+    "trigger_desc": "Tek seferlik bir eylem çalıştır (idle, notifications, theme, firstlaunch)",
     "settings_desc": "Ayarlar penceresini aç (isteğe bağlı olarak belirli bir sekmede)"
   },
   "daemon": {

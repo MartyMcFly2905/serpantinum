@@ -564,6 +564,8 @@ FocusScope {
         }
     }
 
+    readonly property bool backdropSettled: backdrop.wallpaperSettled
+
     LockBackdrop {
         id: backdrop
         screenRoot: lockScreenRoot
@@ -578,18 +580,18 @@ FocusScope {
                 property: "panelReveal"
                 from: 0.0
                 to: 1.0
-                duration: 750
-                easing.type: Easing.OutCubic
+                duration: 600
+                easing.type: Easing.Linear
             }
 
             SequentialAnimation {
-                PauseAnimation { duration: 250 }
+                PauseAnimation { duration: 460 }
                 NumberAnimation {
                     target: lockScreenRoot
                     property: "contentReveal"
                     from: 0.0
                     to: 1.0
-                    duration: 250
+                    duration: 140
                     easing.type: Easing.OutCubic
                 }
             }

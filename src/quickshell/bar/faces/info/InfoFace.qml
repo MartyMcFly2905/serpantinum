@@ -77,14 +77,14 @@ Item {
     readonly property int visibleSectionsCount: (isRecording ? 1 : 0) + (isTimerActive ? 1 : 0) + (showPomodoroItem ? 1 : 0)
     property real activeSpacing: visibleSectionsCount > 1 ? innerSpacing * (visibleSectionsCount - 1) : 0
     property real targetLength: hasActiveContent ? (recLength + timerLength + pomoLength + activeSpacing + (lengthPadding * 2)) : 0
-    property bool showLayout: false
+    property bool showLayout: (!barWindow || barWindow.isStartupReady) ? true : false
     property bool isFaceVisible: showLayout && hasActiveContent && targetLength > 0
 
     implicitWidth: isVertical ? (parent ? parent.width : 0) : targetLength
     implicitHeight: isVertical ? targetLength : (parent ? parent.height : 0)
 
     Timer {
-        running: barWindow && barWindow.isStartupReady
+        running: !root.showLayout && barWindow && barWindow.isStartupReady
         interval: 120
         onTriggered: root.showLayout = true
     }
@@ -152,7 +152,7 @@ Item {
                     id: recText
                     text: root.recTimeFormatted
                     font.family: ThemeBackend.fontFamily
-                    font.pixelSize: root.isVertical ? (barWindow ? barWindow.cs(root.isCompact ? 11 : 12) : (root.isCompact ? 11 : 12)) : (barWindow ? barWindow.cs(root.isCompact ? 13 : 14) : (barWindow ? barWindow.cs(root.isCompact ? 13 : 14))
+                    font.pixelSize: root.isVertical ? (barWindow ? barWindow.cs(root.isCompact ? 11 : 12) : (root.isCompact ? 11 : 12)) : (barWindow ? barWindow.cs(root.isCompact ? 13 : 14) : (root.isCompact ? 13 : 14))
                     font.weight: Font.Bold
                     color: root.isCompact ? Qt.lighter(ThemeBackend.red, 1.08) : ThemeBackend.red
                 }

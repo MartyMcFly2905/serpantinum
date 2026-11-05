@@ -138,7 +138,11 @@ Item {
         Config.setSetting("idle", idleObj);
     }
 
-    property real targetLength: (!module || module.moduleActive) ? ((isVertical ? buttonsFlow.implicitHeight : buttonsFlow.implicitWidth) + s(isCompact ? 6 : 8)) : 0
+    readonly property int menuCount: menuItems ? menuItems.length : 0
+    readonly property real buttonsLength: menuCount > 0
+        ? menuCount * (isVertical ? s(isCompact ? 28 : 30) : s(isCompact ? 30 : 32)) + (menuCount - 1) * s(isCompact ? 2 : 4)
+        : 0
+    property real targetLength: (!module || module.moduleActive) ? (buttonsLength + s(isCompact ? 6 : 8)) : 0
 
     implicitWidth: isVertical ? (parent ? parent.width : 0) : targetLength
     implicitHeight: isVertical ? targetLength : (parent ? parent.height : 0)
@@ -148,6 +152,7 @@ Item {
         property string glyph: ""
         property bool active: false
         property color activeColor: ThemeBackend.peach
+        property int glyphYOffset: 0
         signal clicked()
 
         width: root.isVertical ? root.s(root.isCompact ? 28 : 30) : root.s(root.isCompact ? 30 : 32)
@@ -165,6 +170,7 @@ Item {
             visible: !root.iconOnly
             cornerRadius: Math.max(0, ThemeBackend.borderRadius - root.s(2))
             buttonIcon: menuBtn.glyph
+            iconOffsetY: menuBtn.glyphYOffset
             iconFontSize: root.s(root.isCompact ? 14 : 15)
             accentColor: menuBtn.active ? menuBtn.activeColor : (root.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0)
             bgOpacity: menuBtn.active ? 1.0 : root.barOpacity
@@ -174,6 +180,7 @@ Item {
 
         Text {
             anchors.centerIn: parent
+            anchors.verticalCenterOffset: menuBtn.glyphYOffset
             visible: root.iconOnly
             text: menuBtn.glyph
             font.family: ThemeBackend.iconFont
@@ -214,6 +221,7 @@ Item {
                 required property string modelData
                 readonly property string itemId: modelData
                 glyph: BarModuleRegistry.menuItemIcon(itemId)
+                glyphYOffset: itemId === "nightlight" ? -1 : 0
                 active: itemId === "nightlight" ? root.nightLightActive : (itemId === "caffeine" ? root.caffeineActive : false)
                 activeColor: itemId === "caffeine" ? Qt.tint(ThemeBackend.peach, "#5c3016") : ThemeBackend.peach
                 onClicked: {

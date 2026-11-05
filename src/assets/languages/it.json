@@ -1586,6 +1586,7 @@
       "agenda": "Agenda e Attività",
       "time": "Ora",
       "notes": "Note",
+      "todo": "Lista attività",
       "text": "Testo"
     },
     "variants": {
@@ -1663,6 +1664,28 @@
     },
     "notes": {
       "empty": "Ancora nessuna nota"
+    },
+    "todo": {
+      "title": "To-Do",
+      "new_placeholder": "Nuova attività... (premi Invio)",
+      "filter_all": "Tutte",
+      "filter_active": "Attive",
+      "filter_done": "Completate",
+      "empty": "Nessuna attività. Aggiungine una o importa un CSV.",
+      "no_active": "Nessuna attività in sospeso!",
+      "no_completed": "Nessuna attività completata",
+      "btn_import_csv": "Importa CSV",
+      "csv_manage_title": "Importa & Esporta CSV",
+      "csv_help": "Supporta CSV con intestazioni (title, done, priority, category) o elenchi semplici delimitati da virgola o punto e virgola.",
+      "mode_merge": "Unisci (Merge)",
+      "mode_replace": "Sostituisci (Replace)",
+      "browse_file": "Sfoglia file CSV...",
+      "or_manual_path": "oppure inserisci percorso",
+      "import_btn": "Importa",
+      "export_btn": "Esporta attività correnti in CSV",
+      "cleared": "Completate rimosse",
+      "imported_count": "Importate %1 attività",
+      "exported_ok": "Attività esportate in CSV"
     },
     "text": {
       "placeholder": "Inserisci testo"

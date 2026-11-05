@@ -938,6 +938,17 @@ QtObject {
                 "default": { file: "faces/notes/NotesFace.qml", icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.default", "Default") : "Default" }
             }
         },
+        "todo": {
+            name: typeof I18n !== "undefined" ? I18n.t("widgets.types.todo", "Todo List") : "Todo List",
+            icon: String.fromCodePoint(0xF0133),
+            category: "time",
+            defaultWidth: 340,
+            defaultHeight: 320,
+            defaultVariant: "default",
+            variants: {
+                "default": { file: "faces/todo/TodoFace.qml", icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.default", "Default") : "Default" }
+            }
+        },
         "text": {
             name: I18n.t("widgets.types.text", "Text"),
             icon: String.fromCodePoint(0xF0284),

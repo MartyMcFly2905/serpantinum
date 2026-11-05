@@ -1622,6 +1622,7 @@
       "agenda": "Agenda & Tasks",
       "time": "Time",
       "notes": "Notes",
+      "todo": "Todo List",
       "text": "Text"
     },
     "variants": {
@@ -1705,6 +1706,28 @@
     },
     "notes": {
       "empty": "No notes yet"
+    },
+    "todo": {
+      "title": "To-Do",
+      "new_placeholder": "New task... (press Enter)",
+      "filter_all": "All",
+      "filter_active": "Active",
+      "filter_done": "Completed",
+      "empty": "No tasks yet. Add one or import a CSV.",
+      "no_active": "No pending tasks!",
+      "no_completed": "No completed tasks",
+      "btn_import_csv": "Import CSV",
+      "csv_manage_title": "Import & Export CSV",
+      "csv_help": "Supports CSV with headers (title, done, priority, category) or plain lists separated by commas or semicolons.",
+      "mode_merge": "Merge",
+      "mode_replace": "Replace",
+      "browse_file": "Browse CSV file...",
+      "or_manual_path": "or enter file path",
+      "import_btn": "Import",
+      "export_btn": "Export current tasks to CSV",
+      "cleared": "Completed tasks cleared",
+      "imported_count": "Imported %1 tasks",
+      "exported_ok": "Tasks exported to CSV"
     },
     "text": {
       "placeholder": "Enter text"

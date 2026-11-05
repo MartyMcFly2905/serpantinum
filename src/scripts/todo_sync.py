@@ -1,48 +1,275 @@
 #!/usr/bin/env python3
 """
 Serpantinum Todo Sync & CSV Engine
-Manages persistent tasks and full CSV import/export for the desktop Todo widget.
+Manages persistent tasks, intelligent date parsing/grouping, and full Todoist CSV import/export.
 """
 
 import sys
 import os
+import re
 import csv
 import json
 import time
 import subprocess
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 CONFIG_DIR = os.path.expanduser(os.environ.get("XDG_CONFIG_HOME", "~/.config") + "/serpantinum")
 TODOS_FILE = os.path.join(CONFIG_DIR, "todos.json")
 
-TITLE_HEADERS = {
-    "title", "titolo", "task", "attivita", "attività", "todo", "name", "nome",
-    "text", "testo", "content", "descrizione", "description", "item", "summary", "voce"
+MONTHS = {
+    "gen": 1, "jan": 1, "gennaio": 1, "january": 1,
+    "feb": 2, "febbraio": 2, "february": 2,
+    "mar": 3, "marzo": 3, "march": 3,
+    "apr": 4, "aprile": 4, "april": 4,
+    "mag": 5, "may": 5, "maggio": 5,
+    "giu": 6, "jun": 6, "giugno": 6, "june": 6,
+    "lug": 7, "jul": 7, "luglio": 7, "july": 7,
+    "ago": 8, "aug": 8, "agosto": 8, "august": 8,
+    "set": 9, "sep": 9, "settembre": 9, "september": 9,
+    "ott": 10, "oct": 10, "ottobre": 10, "october": 10,
+    "nov": 11, "novembre": 11, "november": 11,
+    "dic": 12, "dec": 12, "dicembre": 12, "december": 12
 }
-DONE_HEADERS = {
-    "completed", "completato", "done", "fatto", "status", "stato", "complete",
-    "check", "checked", "success"
+
+WEEKDAYS_IT = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"]
+MONTHS_ABBR_IT = ["", "Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
+
+WEEKDAY_NAMES = {
+    "lun": 0, "lunedì": 0, "lunedi": 0, "mon": 0, "monday": 0,
+    "mar": 1, "martedì": 1, "martedi": 1, "tue": 1, "tuesday": 1,
+    "mer": 2, "mercoledì": 2, "mercoledi": 2, "wed": 2, "wednesday": 2,
+    "gio": 3, "giovedì": 3, "giovedi": 3, "thu": 3, "thursday": 3,
+    "ven": 4, "venerdì": 4, "venerdi": 4, "fri": 4, "friday": 4,
+    "sab": 5, "sabato": 5, "sat": 5, "saturday": 5,
+    "dom": 6, "domenica": 6, "sun": 6, "sunday": 6
 }
-PRIORITY_HEADERS = {"priority", "priorita", "priorità", "prio", "livello"}
-CATEGORY_HEADERS = {"category", "categoria", "tag", "tags", "project", "progetto", "gruppo"}
-DUE_HEADERS = {"due", "due_date", "scadenza", "data", "date"}
 
 TRUE_VALUES = {"1", "true", "yes", "si", "sì", "done", "x", "checked", "completato", "fatto", "t", "y"}
 
 def ensure_config_dir():
     os.makedirs(CONFIG_DIR, exist_ok=True)
 
+def parse_natural_date(raw_str, ref_date=None):
+    """
+    Parses natural language date strings (Italian & English) or standard ISO dates.
+    Returns (date_obj, time_str) or (None, None).
+    """
+    if not raw_str or not str(raw_str).strip():
+        return None, ""
+
+    if ref_date is None:
+        ref_date = date.today()
+
+    s = str(raw_str).strip().lower()
+
+    # Extract time component if present (e.g. 14:30 or 2:30pm)
+    time_part = ""
+    m_time = re.search(r"\b(\d{1,2}):(\d{2})(?::\d{2})?\b", s)
+    if m_time:
+        hh = int(m_time.group(1))
+        mm = m_time.group(2)
+        time_part = f"{hh:02d}:{mm}"
+        s = re.sub(r"\b\d{1,2}:\d{2}(?::\d{2})?\b", "", s).strip()
+    else:
+        m_ampm = re.search(r"\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b", s)
+        if m_ampm:
+            hh = int(m_ampm.group(1))
+            mm = m_ampm.group(2) or "00"
+            ampm = m_ampm.group(3)
+            if ampm == "pm" and hh < 12:
+                hh += 12
+            elif ampm == "am" and hh == 12:
+                hh = 0
+            time_part = f"{hh:02d}:{mm}"
+            s = re.sub(r"\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b", "", s).strip()
+
+    # Clean auxiliary words
+    s = re.sub(r"\b(at|alle|ore|h|il|in|on|at the)\b", "", s).strip()
+
+    if s in ("today", "oggi"):
+        return ref_date, time_part
+    if s in ("tomorrow", "domani"):
+        return ref_date + timedelta(days=1), time_part
+    if s in ("yesterday", "ieri"):
+        return ref_date - timedelta(days=1), time_part
+    if s in ("dopodomani", "day after tomorrow"):
+        return ref_date + timedelta(days=2), time_part
+
+    # Weekday check (e.g. "venerdì", "next friday")
+    is_next = "next" in s or "prossim" in s
+    for w_name, w_idx in WEEKDAY_NAMES.items():
+        if re.search(r"\b" + re.escape(w_name) + r"\b", s):
+            days_ahead = (w_idx - ref_date.weekday()) % 7
+            if days_ahead == 0 or is_next:
+                days_ahead += 7
+            return ref_date + timedelta(days=days_ahead), time_part
+
+    # Standard ISO (YYYY-MM-DD or YYYY/MM/DD)
+    m_iso = re.match(r"^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:\b.*)?$", s)
+    if m_iso:
+        try:
+            return date(int(m_iso.group(1)), int(m_iso.group(2)), int(m_iso.group(3))), time_part
+        except ValueError:
+            pass
+
+    # European format (DD/MM/YYYY or DD-MM-YYYY)
+    m_eur = re.match(r"^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})(?:\b.*)?$", s)
+    if m_eur:
+        try:
+            return date(int(m_eur.group(3)), int(m_eur.group(2)), int(m_eur.group(1))), time_part
+        except ValueError:
+            pass
+
+    # Format like "15 nov", "15 novembre 2026", "nov 15"
+    tokens = re.findall(r"[a-zA-Zà-ù]+|\d+", s)
+    if len(tokens) >= 2:
+        d_val = None
+        m_val = None
+        y_val = ref_date.year
+        for tok in tokens:
+            if tok.isdigit():
+                val = int(tok)
+                if val > 1900:
+                    y_val = val
+                elif d_val is None and 1 <= val <= 31:
+                    d_val = val
+            elif tok in MONTHS:
+                m_val = MONTHS[tok]
+
+        if d_val and m_val:
+            try:
+                # If date is earlier in the year and no year specified, assume current year or next
+                return date(y_val, m_val, d_val), time_part
+            except ValueError:
+                pass
+
+    return None, time_part
+
+def compute_date_meta(date_obj, time_part, raw_str, today=None):
+    if today is None:
+        today = date.today()
+
+    if not date_obj:
+        return {
+            "due_date": "",
+            "due_time": time_part or "",
+            "due_raw": (raw_str or "").strip(),
+            "day_category": "nodate",
+            "relative_label": (raw_str or "").strip(),
+            "days_diff": 999
+        }
+
+    iso_date = date_obj.strftime("%Y-%m-%d")
+    diff = (date_obj - today).days
+
+    time_suffix = f" {time_part}" if time_part else ""
+
+    if diff < 0:
+        day_cat = "overdue"
+        if diff == -1:
+            rel = "Ieri" + time_suffix
+        else:
+            rel = f"Scaduta ({abs(diff)} gg fa)"
+    elif diff == 0:
+        day_cat = "today"
+        rel = "Oggi" + time_suffix
+    elif diff == 1:
+        day_cat = "tomorrow"
+        rel = "Domani" + time_suffix
+    elif 2 <= diff <= 6:
+        day_cat = "upcoming"
+        wk = WEEKDAYS_IT[date_obj.weekday()]
+        rel = f"{wk} {date_obj.day} {MONTHS_ABBR_IT[date_obj.month]}" + time_suffix
+    else:
+        day_cat = "future"
+        rel = f"{date_obj.day} {MONTHS_ABBR_IT[date_obj.month]}" + time_suffix
+
+    return {
+        "due_date": iso_date,
+        "due_time": time_part or "",
+        "due_raw": (raw_str or "").strip(),
+        "day_category": day_cat,
+        "relative_label": rel,
+        "days_diff": diff
+    }
+
+def normalize_priority(val):
+    """
+    Normalizes priority into Todoist standards:
+    1 = P1 (Highest / Urgent / Red)
+    2 = P2 (High / Orange)
+    3 = P3 (Medium / Blue)
+    4 = P4 (Normal / Default)
+    """
+    if val is None or str(val).strip() == "":
+        return 4, "P4", "#a6adc8"
+    s = str(val).strip().lower()
+    if s in ("1", "p1", "urgent", "urgente", "critica", "max"):
+        return 1, "P1", "#f38ba8"
+    if s in ("2", "p2", "high", "alta"):
+        return 2, "P2", "#fab387"
+    if s in ("3", "p3", "medium", "media", "med"):
+        return 3, "P3", "#89b4fa"
+    return 4, "P4", "#a6adc8"
+
+def extract_labels(content):
+    """
+    Extracts @label and #project from task content string.
+    """
+    labels = []
+    category = ""
+    for match in re.finditer(r"@([\w\-]+)", content):
+        labels.append(match.group(1))
+    cat_match = re.search(r"#([\w\-]+)", content)
+    if cat_match:
+        category = cat_match.group(1)
+    return labels, category
+
+def refresh_task_dates(task, today=None):
+    """
+    Recomputes day_category and relative_label for an existing task.
+    """
+    if today is None:
+        today = date.today()
+
+    due_date_str = task.get("due_date", "")
+    time_part = task.get("due_time", "")
+    raw_str = task.get("due_raw", "") or due_date_str
+
+    if due_date_str:
+        try:
+            d_obj = datetime.strptime(due_date_str, "%Y-%m-%d").date()
+            meta = compute_date_meta(d_obj, time_part, raw_str, today)
+        except ValueError:
+            meta = compute_date_meta(None, time_part, raw_str, today)
+    elif raw_str:
+        d_obj, t_part = parse_natural_date(raw_str, today)
+        meta = compute_date_meta(d_obj, t_part or time_part, raw_str, today)
+    else:
+        meta = compute_date_meta(None, "", "", today)
+
+    task.update(meta)
+    p_num, p_lbl, p_col = normalize_priority(task.get("priority", 4))
+    task["priority"] = p_num
+    task["priority_label"] = p_lbl
+    task["priority_color"] = p_col
+    return task
+
 def load_todos():
     ensure_config_dir()
+    today = date.today()
     if os.path.isfile(TODOS_FILE):
         try:
             with open(TODOS_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if isinstance(data, dict) and "todos" in data:
+                    todos = [refresh_task_dates(t, today) for t in data["todos"] if isinstance(t, dict)]
+                    data["todos"] = todos
                     return data
                 elif isinstance(data, list):
-                    return {"updated_at": int(time.time()), "todos": data}
-        except Exception as e:
+                    todos = [refresh_task_dates(t, today) for t in data if isinstance(t, dict)]
+                    return {"updated_at": int(time.time()), "todos": todos}
+        except Exception:
             pass
     return {"updated_at": int(time.time()), "todos": []}
 
@@ -55,19 +282,38 @@ def save_todos(data):
     os.replace(tmp_path, TODOS_FILE)
     return data
 
-def add_todo(title, priority="normal", category="", due_date=""):
+def add_todo(title, priority=4, category="", due_date="", description=""):
     clean_title = (title or "").strip()
     if not clean_title:
-        return {"status": "error", "message": "Empty title"}
+        return {"status": "error", "message": "Titolo attività vuoto"}
+
+    labels, auto_cat = extract_labels(clean_title)
+    final_cat = (category or auto_cat or "").strip()
+
+    today = date.today()
+    d_obj, t_part = parse_natural_date(due_date, today)
+    date_meta = compute_date_meta(d_obj, t_part, due_date, today)
+
+    p_num, p_lbl, p_col = normalize_priority(priority)
+
     data = load_todos()
     now_ms = int(time.time() * 1000)
     new_item = {
         "id": f"todo_{now_ms}_{len(data['todos'])}",
         "title": clean_title,
+        "description": (description or "").strip(),
         "completed": False,
-        "priority": priority if priority in ("high", "normal", "low") else "normal",
-        "category": (category or "").strip(),
-        "due_date": (due_date or "").strip(),
+        "priority": p_num,
+        "priority_label": p_lbl,
+        "priority_color": p_col,
+        "category": final_cat,
+        "labels": labels,
+        "due_date": date_meta["due_date"],
+        "due_time": date_meta["due_time"],
+        "due_raw": date_meta["due_raw"],
+        "day_category": date_meta["day_category"],
+        "relative_label": date_meta["relative_label"],
+        "days_diff": date_meta["days_diff"],
         "created_at": int(time.time())
     }
     data["todos"].insert(0, new_item)
@@ -86,7 +332,7 @@ def toggle_todo(todo_id):
     if found is not None:
         save_todos(data)
         return {"status": "ok", "action": "toggled", "item": found}
-    return {"status": "error", "message": "Item not found"}
+    return {"status": "error", "message": "Elemento non trovato"}
 
 def delete_todo(todo_id):
     data = load_todos()
@@ -96,7 +342,7 @@ def delete_todo(todo_id):
     if len(data["todos"]) < orig_len:
         save_todos(data)
         return {"status": "ok", "action": "deleted", "total": len(data["todos"])}
-    return {"status": "error", "message": "Item not found"}
+    return {"status": "error", "message": "Elemento non trovato"}
 
 def clear_completed():
     data = load_todos()
@@ -107,14 +353,13 @@ def clear_completed():
     return {"status": "ok", "action": "cleared", "cleared": cleared_count, "total": len(data["todos"])}
 
 def detect_delimiter(sample_text):
-    for delim in [",", ";", "\t", "|"]:
+    for delim in [";", ",", "\t", "|"]:
         lines = [line for line in sample_text.splitlines() if line.strip()][:5]
         if lines and all(delim in line for line in lines):
             return delim
     try:
         sniffer = csv.Sniffer()
-        dialect = sniffer.sniff(sample_text)
-        return dialect.delimiter
+        return sniffer.sniff(sample_text).delimiter
     except Exception:
         return ","
 
@@ -129,85 +374,143 @@ def read_file_with_encodings(filepath):
     with open(filepath, "r", encoding="utf-8", errors="replace") as f:
         return f.read()
 
-def parse_csv_content(content):
+def parse_todoist_or_generic_csv(content):
+    """
+    Parses CSV content matching Todoist templates or generic CSV formats.
+    """
     if not content or not content.strip():
         return []
-    delimiter = detect_delimiter(content)
-    reader = csv.reader(content.splitlines(), delimiter=delimiter)
+
+    delim = detect_delimiter(content)
+    reader = csv.reader(content.splitlines(), delimiter=delim)
     rows = [r for r in reader if r and any(cell.strip() for cell in r)]
     if not rows:
         return []
 
-    first_row = [c.strip().lower() for c in rows[0]]
-    has_header = False
-    title_idx = -1
-    done_idx = -1
-    prio_idx = -1
-    cat_idx = -1
-    due_idx = -1
+    header = [c.strip().upper() for c in rows[0]]
 
-    for idx, col in enumerate(first_row):
-        col_clean = col.replace(" ", "_").replace("-", "_")
-        if title_idx == -1 and col_clean in TITLE_HEADERS:
-            title_idx = idx
-            has_header = True
-        elif done_idx == -1 and col_clean in DONE_HEADERS:
-            done_idx = idx
-            has_header = True
-        elif prio_idx == -1 and col_clean in PRIORITY_HEADERS:
-            prio_idx = idx
-            has_header = True
-        elif cat_idx == -1 and col_clean in CATEGORY_HEADERS:
-            cat_idx = idx
-            has_header = True
-        elif due_idx == -1 and col_clean in DUE_HEADERS:
-            due_idx = idx
-            has_header = True
+    # Detect Todoist standard template columns
+    is_todoist_format = "CONTENT" in header or "TYPE" in header
+    col_map = {}
+    for idx, col in enumerate(header):
+        col_map[col] = idx
 
-    start_idx = 1 if has_header else 0
-    if title_idx == -1:
-        # Default first column as title
-        title_idx = 0
-        if len(first_row) > 1 and first_row[1] in TRUE_VALUES or first_row[1] in {"false", "0", "no"}:
-            done_idx = 1
-
-    parsed = []
+    today = date.today()
+    parsed_items = []
+    current_section = ""
+    last_task = None
     base_time = int(time.time() * 1000)
 
-    for row_num, row in enumerate(rows[start_idx:]):
+    start_idx = 1 if (is_todoist_format or any(h in header for h in ("TITLE", "TASK", "NAME", "TESTO", "TITOLO"))) else 0
+
+    for r_idx, row in enumerate(rows[start_idx:]):
         if not row:
             continue
-        title = row[title_idx].strip() if title_idx < len(row) else ""
-        if not title:
-            continue
 
-        completed = False
-        if done_idx != -1 and done_idx < len(row):
-            val = row[done_idx].strip().lower()
-            completed = val in TRUE_VALUES
+        if is_todoist_format:
+            row_type = row[col_map.get("TYPE", 0)].strip().lower() if "TYPE" in col_map and col_map["TYPE"] < len(row) else "task"
+            content_val = row[col_map.get("CONTENT", 1)].strip() if "CONTENT" in col_map and col_map["CONTENT"] < len(row) else ""
+            desc_val = row[col_map.get("DESCRIPTION", -1)].strip() if "DESCRIPTION" in col_map and col_map["DESCRIPTION"] < len(row) else ""
+            prio_val = row[col_map.get("PRIORITY", -1)].strip() if "PRIORITY" in col_map and col_map["PRIORITY"] < len(row) else "4"
+            date_val = row[col_map.get("DATE", -1)].strip() if "DATE" in col_map and col_map["DATE"] < len(row) else ""
 
-        priority = "normal"
-        if prio_idx != -1 and prio_idx < len(row):
-            pval = row[prio_idx].strip().lower()
-            if pval in {"high", "alta", "urgent", "urgente", "1", "max"}:
-                priority = "high"
-            elif pval in {"low", "bassa", "min", "3"}:
-                priority = "low"
+            if row_type == "section":
+                if content_val:
+                    current_section = content_val
+                continue
 
-        category = row[cat_idx].strip() if (cat_idx != -1 and cat_idx < len(row)) else ""
-        due_date = row[due_idx].strip() if (due_idx != -1 and due_idx < len(row)) else ""
+            if row_type == "note":
+                if last_task and content_val:
+                    if last_task.get("description"):
+                        last_task["description"] += "\n" + content_val
+                    else:
+                        last_task["description"] = content_val
+                continue
 
-        parsed.append({
-            "id": f"todo_{base_time}_{row_num}",
-            "title": title,
-            "completed": completed,
-            "priority": priority,
-            "category": category,
-            "due_date": due_date,
-            "created_at": int(time.time())
-        })
+            if not content_val:
+                continue
 
-    return parsed
+            labels, auto_cat = extract_labels(content_val)
+            d_obj, t_part = parse_natural_date(date_val, today)
+            date_meta = compute_date_meta(d_obj, t_part, date_val, today)
+            p_num, p_lbl, p_col = normalize_priority(prio_val)
+
+            item = {
+                "id": f"todo_{base_time}_{r_idx}",
+                "title": content_val,
+                "description": desc_val,
+                "completed": False,
+                "priority": p_num,
+                "priority_label": p_lbl,
+                "priority_color": p_col,
+                "category": current_section or auto_cat or "",
+                "labels": labels,
+                "due_date": date_meta["due_date"],
+                "due_time": date_meta["due_time"],
+                "due_raw": date_meta["due_raw"],
+                "day_category": date_meta["day_category"],
+                "relative_label": date_meta["relative_label"],
+                "days_diff": date_meta["days_diff"],
+                "created_at": int(time.time())
+            }
+            parsed_items.append(item)
+            last_task = item
+
+        else:
+            # Generic CSV parser
+            title = row[0].strip()
+            if not title:
+                continue
+
+            done = False
+            prio = "4"
+            cat = ""
+            due = ""
+
+            for c_idx, cell in enumerate(row[1:], start=1):
+                val = cell.strip()
+                if not val:
+                    continue
+                if val.lower() in TRUE_VALUES or val.lower() in ("false", "0", "no"):
+                    done = val.lower() in TRUE_VALUES
+                elif val.lower() in ("1", "2", "3", "4", "p1", "p2", "p3", "p4", "high", "alta", "low", "bassa"):
+                    prio = val
+                elif not due:
+                    d_test, _ = parse_natural_date(val, today)
+                    if d_test:
+                        due = val
+                    elif not cat:
+                        cat = val
+                elif not cat:
+                    cat = val
+
+            labels, auto_cat = extract_labels(title)
+            d_obj, t_part = parse_natural_date(due, today)
+            date_meta = compute_date_meta(d_obj, t_part, due, today)
+            p_num, p_lbl, p_col = normalize_priority(prio)
+
+            item = {
+                "id": f"todo_{base_time}_{r_idx}",
+                "title": title,
+                "description": "",
+                "completed": done,
+                "priority": p_num,
+                "priority_label": p_lbl,
+                "priority_color": p_col,
+                "category": cat or auto_cat or "",
+                "labels": labels,
+                "due_date": date_meta["due_date"],
+                "due_time": date_meta["due_time"],
+                "due_raw": date_meta["due_raw"],
+                "day_category": date_meta["day_category"],
+                "relative_label": date_meta["relative_label"],
+                "days_diff": date_meta["days_diff"],
+                "created_at": int(time.time())
+            }
+            parsed_items.append(item)
+            last_task = item
+
+    return parsed_items
 
 def import_csv_file(filepath, mode="merge"):
     clean_path = os.path.expanduser(filepath.strip())
@@ -216,16 +519,15 @@ def import_csv_file(filepath, mode="merge"):
 
     try:
         content = read_file_with_encodings(clean_path)
-        new_items = parse_csv_content(content)
+        new_items = parse_todoist_or_generic_csv(content)
         if not new_items:
-            return {"status": "error", "message": "Nessuna voce valida trovata nel file CSV"}
+            return {"status": "error", "message": "Nessuna attività valida trovata nel file CSV"}
 
         data = load_todos()
         if mode == "replace":
             data["todos"] = new_items
             imported_count = len(new_items)
         else:
-            # Merge: skip items with duplicate normalized title and category
             existing_signatures = {
                 (it.get("title", "").strip().lower(), it.get("category", "").strip().lower())
                 for it in data["todos"]
@@ -252,11 +554,15 @@ def import_csv_file(filepath, mode="merge"):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-def export_csv_file(destination=None):
+def export_csv_todoist(destination=None):
+    """
+    Exports tasks matching Todoist official template schema:
+    TYPE,CONTENT,DESCRIPTION,PRIORITY,INDENT,AUTHOR,RESPONSIBLE,DATE,DATE_LANG,TIMEZONE
+    """
     data = load_todos()
     ensure_config_dir()
     if not destination or not str(destination).strip():
-        dest_path = os.path.join(CONFIG_DIR, "todos_export.csv")
+        dest_path = os.path.join(CONFIG_DIR, "todoist_export.csv")
     else:
         dest_path = os.path.expanduser(str(destination).strip())
 
@@ -265,21 +571,42 @@ def export_csv_file(destination=None):
         if dest_dir:
             os.makedirs(dest_dir, exist_ok=True)
 
+        # Group tasks by section/category
+        sections = {}
+        for it in data["todos"]:
+            cat = it.get("category", "").strip() or "Generale"
+            if cat not in sections:
+                sections[cat] = []
+            sections[cat].append(it)
+
         with open(dest_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["title", "completed", "priority", "category", "due_date", "created_at"])
-            for it in data["todos"]:
-                writer.writerow([
-                    it.get("title", ""),
-                    "true" if it.get("completed") else "false",
-                    it.get("priority", "normal"),
-                    it.get("category", ""),
-                    it.get("due_date", ""),
-                    datetime.fromtimestamp(it.get("created_at", time.time())).strftime("%Y-%m-%d %H:%M:%S")
-                ])
+            writer = csv.writer(f, delimiter=";")
+            writer.writerow(["TYPE", "CONTENT", "DESCRIPTION", "PRIORITY", "INDENT", "AUTHOR", "RESPONSIBLE", "DATE", "DATE_LANG", "TIMEZONE"])
+
+            for sec_name, tasks in sections.items():
+                if sec_name != "Generale":
+                    writer.writerow(["section", sec_name, "", "", "1", "", "", "", "", ""])
+                for task in tasks:
+                    due_str = task.get("due_date", "")
+                    if task.get("due_time"):
+                        due_str += f" {task.get('due_time')}"
+                    writer.writerow([
+                        "task",
+                        task.get("title", ""),
+                        task.get("description", ""),
+                        str(task.get("priority", 4)),
+                        "1",
+                        "",
+                        "",
+                        due_str,
+                        "it",
+                        "Europe/Rome"
+                    ])
+
         return {
             "status": "ok",
             "action": "exported",
+            "format": "todoist",
             "path": dest_path,
             "exported_count": len(data["todos"])
         }
@@ -290,8 +617,8 @@ def pick_csv_dialog(mode="merge"):
     try:
         res = subprocess.run([
             "zenity", "--file-selection",
-            "--title=Seleziona file CSV da importare",
-            "--file-filter=File CSV (*.csv) | *.csv",
+            "--title=Seleziona file CSV Todoist da importare",
+            "--file-filter=File CSV Todoist (*.csv) | *.csv",
             "--file-filter=Tutti i file | *"
         ], capture_output=True, text=True, check=False)
         selected = res.stdout.strip()
@@ -305,8 +632,8 @@ def pick_export_dialog():
     try:
         res = subprocess.run([
             "zenity", "--file-selection", "--save", "--confirm-overwrite",
-            "--title=Esporta attività in CSV",
-            "--filename=todos.csv",
+            "--title=Esporta attività in formato Todoist CSV",
+            "--filename=todoist_tasks.csv",
             "--file-filter=File CSV (*.csv) | *.csv",
             "--file-filter=Tutti i file | *"
         ], capture_output=True, text=True, check=False)
@@ -315,7 +642,7 @@ def pick_export_dialog():
             return {"status": "cancelled", "message": "Salvataggio annullato"}
         if not selected.lower().endswith(".csv"):
             selected += ".csv"
-        return export_csv_file(selected)
+        return export_csv_todoist(selected)
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -328,10 +655,11 @@ def main():
     cmd = sys.argv[1]
     if cmd == "--add":
         title = sys.argv[2] if len(sys.argv) > 2 else ""
-        prio = sys.argv[3] if len(sys.argv) > 3 else "normal"
+        prio = sys.argv[3] if len(sys.argv) > 3 else "4"
         cat = sys.argv[4] if len(sys.argv) > 4 else ""
         due = sys.argv[5] if len(sys.argv) > 5 else ""
-        res = add_todo(title, priority=prio, category=cat, due_date=due)
+        desc = sys.argv[6] if len(sys.argv) > 6 else ""
+        res = add_todo(title, priority=prio, category=cat, due_date=due, description=desc)
         print(json.dumps(res, ensure_ascii=False))
 
     elif cmd == "--toggle":
@@ -358,9 +686,9 @@ def main():
         res = import_csv_file(path, mode=mode)
         print(json.dumps(res, ensure_ascii=False))
 
-    elif cmd == "--export-csv":
+    elif cmd in ("--export-csv", "--export-todoist"):
         path = sys.argv[2] if len(sys.argv) > 2 else None
-        res = export_csv_file(path)
+        res = export_csv_todoist(path)
         print(json.dumps(res, ensure_ascii=False))
 
     elif cmd == "--pick-csv":

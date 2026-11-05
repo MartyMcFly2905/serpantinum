@@ -4,16 +4,12 @@ import Quickshell
 import Quickshell.Io
 import "../../"
 
-Item {
+CompositorStateBase {
     id: root
 
-    readonly property bool isMango: Boolean(Quickshell.env("MANGO_INSTANCE_SIGNATURE")) || ((typeof SystemInfo !== "undefined" && SystemInfo.desktopEnv) ? (SystemInfo.desktopEnv.toLowerCase().indexOf("mango") !== -1) : false)
 
-    property int activeIndex: 0
     property int tagCount: 0
-    property var activeIndicesByOutput: ({})
     property var occupiedByOutput: ({})
-    property var occupiedMap: ({})
 
     property var clients: []
     signal clientsUpdated()
@@ -42,17 +38,10 @@ Item {
     }
 
     function _syncStreams() {
-        let wantTags = isMango && tagSubscribers > 0;
-        let wantClients = isMango && clientSubscribers > 0;
+        let wantTags = Compositor.name === "mango" && tagSubscribers > 0;
+        let wantClients = Compositor.name === "mango" && clientSubscribers > 0;
         if (tagStream.running !== wantTags) tagStream.running = wantTags;
         if (clientStream.running !== wantClients) clientStream.running = wantClients;
-    }
-
-    function activeIndexFor(outputName) {
-        if (outputName && activeIndicesByOutput && activeIndicesByOutput[outputName] !== undefined) {
-            return activeIndicesByOutput[outputName];
-        }
-        return activeIndex;
     }
 
     function isOccupied(outputName, index) {
@@ -119,7 +108,7 @@ Item {
             }
         }
         onExited: {
-            if (root.isMango && root.tagSubscribers > 0) tagRestartTimer.restart();
+            if (Compositor.name === "mango" && root.tagSubscribers > 0) tagRestartTimer.restart();
         }
     }
 
@@ -138,7 +127,7 @@ Item {
             }
         }
         onExited: {
-            if (root.isMango && root.clientSubscribers > 0) clientRestartTimer.restart();
+            if (Compositor.name === "mango" && root.clientSubscribers > 0) clientRestartTimer.restart();
         }
     }
 
@@ -147,7 +136,7 @@ Item {
         interval: 1000
         repeat: false
         onTriggered: {
-            if (root.isMango && root.tagSubscribers > 0) {
+            if (Compositor.name === "mango" && root.tagSubscribers > 0) {
                 tagStream.running = false;
                 tagStream.running = true;
             }
@@ -159,7 +148,7 @@ Item {
         interval: 1000
         repeat: false
         onTriggered: {
-            if (root.isMango && root.clientSubscribers > 0) {
+            if (Compositor.name === "mango" && root.clientSubscribers > 0) {
                 clientStream.running = false;
                 clientStream.running = true;
             }

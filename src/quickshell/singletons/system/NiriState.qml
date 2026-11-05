@@ -4,14 +4,10 @@ import Quickshell
 import Quickshell.Io
 import "../../"
 
-Item {
+CompositorStateBase {
     id: root
 
-    readonly property bool isNiri: Boolean(Quickshell.env("NIRI_SOCKET")) || ((typeof SystemInfo !== "undefined" && SystemInfo.desktopEnv) ? (SystemInfo.desktopEnv.toLowerCase().indexOf("niri") !== -1) : false)
 
-    property int activeIndex: 0
-    property var activeIndicesByOutput: ({})
-    property var occupiedMap: ({})
     property var existingMap: ({})
     property int maxWorkspaceIndex: 0
     property var windowsMap: ({})
@@ -37,28 +33,17 @@ Item {
     }
 
     function _syncStream() {
-        let want = isNiri && subscribers > 0;
-        if (want) {
-            niriWindowsPoller.running = true;
-            niriWorkspacesPoller.running = true;
-        }
+        let want = Compositor.name === "niri" && subscribers > 0;
         if (eventStream.running !== want) {
             eventStream.running = want;
         }
     }
 
     function refreshWindows() {
-        if (isNiri) {
+        if (Compositor.name === "niri") {
             niriWindowsPoller.running = true;
             niriWorkspacesPoller.running = true;
         }
-    }
-
-    function activeIndexFor(outputName) {
-        if (outputName && activeIndicesByOutput && activeIndicesByOutput[outputName] !== undefined) {
-            return activeIndicesByOutput[outputName];
-        }
-        return activeIndex;
     }
 
     property var _workspaces: ({})
@@ -267,7 +252,7 @@ Item {
             }
         }
         onExited: {
-            if (root.isNiri && root.subscribers > 0) restartTimer.restart();
+            if (Compositor.name === "niri" && root.subscribers > 0) restartTimer.restart();
         }
     }
 
@@ -276,7 +261,7 @@ Item {
         interval: 1000
         repeat: false
         onTriggered: {
-            if (root.isNiri && root.subscribers > 0) {
+            if (Compositor.name === "niri" && root.subscribers > 0) {
                 eventStream.running = false;
                 eventStream.running = true;
             }

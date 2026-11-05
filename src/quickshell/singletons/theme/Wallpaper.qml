@@ -57,32 +57,53 @@ Item {
         root.wallpaperCleared(screenName);
     }
 
-    Process {
-        id: remoteSync
-        command: ["bash", "-c",
-            'main="$1"; shift; for s in "$@"; do p="$(quickshell -p "$main" ipc call wallpaper getWallpaperPath "$s" 2>/dev/null)"; [[ "$p" == /* ]] && printf "%s\t%s\n" "$s" "$p"; done',
-            "bash", Caching.mainQml].concat(Quickshell.screens.map(s => s.name))
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let map = {};
-                let lines = this.text.trim().split("\n");
-                for (let i = 0; i < lines.length; i++) {
-                    let parts = lines[i].split("\t");
-                    if (parts.length === 2 && parts[1] !== "") map[parts[0]] = parts[1];
-                }
-                if (JSON.stringify(map) !== JSON.stringify(root.screenWallpaperPaths)) {
-                    root.screenWallpaperPaths = map;
-                }
-            }
+    function shuffle(screenName: string, transition: string): void {
+        let scrName = screenName || "all";
+        let cacheDir = (typeof Caching !== "undefined" && typeof Caching.getCacheDir === "function") ? Caching.getCacheDir("wallpaper") : "";
+        let stateFile = cacheDir ? (cacheDir + "/current_" + scrName) : "";
+        let customDir = "";
+        if (typeof Config !== "undefined") {
+            if (Config.wallpaperDir) customDir = Config.wallpaperDir;
+            else if (Config.wallpapersDir) customDir = Config.wallpapersDir;
         }
+        let script =
+            "STATE_FILE=\"$1\"; CUSTOM_DIR=\"$2\"; DIR=''; " +
+            "if [ -n \"$CUSTOM_DIR\" ] && [ -d \"$CUSTOM_DIR\" ]; then " +
+            "    DIR=\"$CUSTOM_DIR\"; " +
+            "elif [ -n \"$STATE_FILE\" ] && [ -f \"$STATE_FILE\" ]; then " +
+            "    CUR=$(cat \"$STATE_FILE\" 2>/dev/null); " +
+            "    if [ -n \"$CUR\" ]; then " +
+            "        CANDIDATE=$(dirname \"$CUR\"); " +
+            "        if [ -d \"$CANDIDATE\" ]; then DIR=\"$CANDIDATE\"; fi; " +
+            "    fi; " +
+            "fi; " +
+            "if [ -z \"$DIR\" ] || [ ! -d \"$DIR\" ]; then " +
+            "    for d in \"$HOME/Pictures/Wallpapers\" \"$HOME/Pictures/wallpapers\" \"$HOME/Wallpapers\" \"$HOME/Pictures\" \"${XDG_CONFIG_HOME:-$HOME/.config}/serpantinum/wallpapers\" \"/usr/share/backgrounds\"; do " +
+            "        if [ -d \"$d\" ]; then DIR=\"$d\"; break; fi; " +
+            "    done; " +
+            "fi; " +
+            "if [ -n \"$DIR\" ] && [ -d \"$DIR\" ]; then " +
+            "    find -L \"$DIR\" -maxdepth 2 -type f \\( -iname \"*.jpg\" -o -iname \"*.jpeg\" -o -iname \"*.png\" -o -iname \"*.webp\" -o -iname \"*.bmp\" -o -iname \"*.avif\" \\) 2>/dev/null | shuf -n 1; " +
+            "fi";
+        shuffleProcess.targetScreenName = scrName;
+        shuffleProcess.transition = transition || "";
+        shuffleProcess.command = ["bash", "-c", script, "shuffle", stateFile, customDir];
+        shuffleProcess.running = false;
+        shuffleProcess.running = true;
     }
 
-    Timer {
-        interval: 3000
-        repeat: true
-        running: Caching.isStandalone && Caching.mainQml !== ""
-        triggeredOnStart: true
-        onTriggered: if (!remoteSync.running) remoteSync.running = true
+    Process {
+        id: shuffleProcess
+        running: false
+        property string targetScreenName: ""
+        property string transition: ""
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let picked = this.text.trim();
+                if (picked !== "") root.setWallpaper(shuffleProcess.targetScreenName, picked, shuffleProcess.transition);
+            }
+        }
     }
 
     IpcHandler {

@@ -3,7 +3,6 @@
 , callPackage
 , makeWrapper
 , python3
-, qt5
 , qt6
 , acpi
 , adw-gtk3
@@ -44,7 +43,6 @@
 , wget
 , wireplumber
 , wl-clipboard
-, wl-gammarelay-rs
 , wmctrl
 , xdg-desktop-portal-gtk
 , tesseract
@@ -53,6 +51,7 @@
 , libpulseaudio
 , pipewire
 , serpantinum-audio ? callPackage ./audio.nix { }
+, serpantinum-gamma ? callPackage ./gamma.nix { }
 , ...
 }:
 let
@@ -99,19 +98,18 @@ let
     wget
     wireplumber
     wl-clipboard
-    wl-gammarelay-rs
     wmctrl
     xdg-desktop-portal-gtk
     tesseract
     zbar
     quickshell
     serpantinum-audio
+    serpantinum-gamma
   ];
   qtDeps = [
     quickshell
     qt6.qtwayland
     qt6.qtmultimedia
-    qt6.qt5compat
     qt6.qtwebsockets
   ];
   qmlImportPath = lib.concatMapStringsSep ":" (pkg: "${pkg}/lib/qt-6/qml") qtDeps;
@@ -122,7 +120,7 @@ stdenv.mkDerivation (finalAttrs: {
   src = lib.fileset.toSource {
     root = ../.;
     fileset = lib.fileset.unions (
-      map (p: ../. + "/${p}") [ "bin" "src" "config" "compositors" "packaging/desktop" "version.txt" ]
+      map (p: ../. + "/${p}") [ "bin" "src" "config" "compositors" "version.txt" ]
     );
   };
   nativeBuildInputs = [ makeWrapper qt6.wrapQtAppsHook ];
@@ -138,13 +136,10 @@ stdenv.mkDerivation (finalAttrs: {
     cp -r config "$out/share/${finalAttrs.pname}/config"
     cp version.txt "$out/share/${finalAttrs.pname}/version.txt"
     find "$out/share/${finalAttrs.pname}" -type f \( -name "*.sh" -o -name "*.py" \) -exec chmod +x {} +
-    install -Dm644 packaging/desktop/serpantinum-settings.desktop "$out/share/applications/serpantinum-settings.desktop"
-    substituteInPlace "$out/share/applications/serpantinum-settings.desktop" \
-      --replace-fail "Exec=serpantinum settings" "Exec=$out/bin/serpantinum settings"
-    install -Dm644 packaging/desktop/serpantinum-settings.svg "$out/share/icons/hicolor/scalable/apps/serpantinum-settings.svg"
     install -Dm755 bin/serpantinum  "$out/bin/.serpantinum-wrapped"
     install -Dm755 bin/serpantinumd "$out/bin/.serpantinumd-wrapped"
     ln -s "${lib.getExe serpantinum-audio}" "$out/bin/serpantinum-audio"
+    ln -s "${lib.getExe serpantinum-gamma}" "$out/bin/serpantinum-gamma"
     runHook postInstall
   '';
   postFixup = ''
@@ -158,7 +153,7 @@ stdenv.mkDerivation (finalAttrs: {
         --prefix PATH : "${lib.makeBinPath pathDeps}"
     done
   '';
-  passthru = { inherit pathDeps qtDeps pythonEnv serpantinum-audio; };
+  passthru = { inherit pathDeps qtDeps pythonEnv serpantinum-audio serpantinum-gamma; };
   meta = with lib; {
     description = "A desktop shell built for YOU";
     homepage = "https://github.com/ilyamiro/serpantinum";

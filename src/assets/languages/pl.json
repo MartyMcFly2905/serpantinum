@@ -452,7 +452,8 @@
       "generating_thumbnails": "Generowanie miniatur...",
       "no_wallpapers_found": "Nie znaleziono tapet",
       "videos": "Wideo",
-      "history": "Ostatnio zastosowane"
+      "history": "Ostatnio zastosowane",
+      "favorites": "Ulubione"
     },
     "filters": {
       "all": "Wszystkie",
@@ -640,7 +641,7 @@
     "description": "Powłoka pulpitu dla kompozytorów Wayland.",
     "commands": "Polecenia:",
     "script_commands": "Polecenia skryptów:",
-    "launch_desc": "Uruchom samodzielne komponenty (start, widgetredactor, lock-redactor)",
+    "launch_desc": "Uruchom samodzielne komponenty (start)",
     "msg_desc": "Wyślij polecenia lub przełącz obszary robocze w menedżerze UI",
     "ipc_desc": "Przekaż wywołania IPC bezpośrednio do powłoki",
     "kill_desc": "Bezpiecznie zatrzymaj działającego demona",
@@ -654,18 +655,16 @@
     "daemon_restarted": "Demon Serpantinum został uruchomiony ponownie.",
     "starting_daemon": "Demon nie jest uruchomiony. Uruchamianie serpantinumd w tle...",
     "error_missing_qml": "Błąd: brak celu do uruchomienia.",
-    "launch_usage": "Użycie: serpantinum launch <start|widgetredactor|lock-redactor> [argumenty...]",
+    "launch_usage": "Użycie: serpantinum launch <start> [argumenty...]",
     "error_qml_not_found": "Błąd: nie można odnaleźć {NAME}.qml w {DIR}",
     "error_shell_qml_not_found": "Błąd: nie można odnaleźć ścieżki do shell.qml w {DIR}",
     "error_unknown_command": "Błąd: nieznane polecenie '{CMD}'.",
     "error_unknown_target": "Błąd: nieznany cel '{TARGET}'.",
     "launch_help": {
-      "usage": "Użycie: serpantinum launch <start|widgetredactor|lock-redactor> [argumenty...]",
+      "usage": "Użycie: serpantinum launch <start> [argumenty...]",
       "description": "Uruchom komponenty bezpośrednio w trybie wykonawczym.",
       "available_targets": "Dostępne cele:",
-      "target_start": "Uruchom interfejs konfiguracji startowej",
-      "target_widgetredactor": "Uruchom edytor widżetów pulpitu",
-      "target_lock_redactor": "Przełącz, otwórz lub zamknij edytor układu ekranu blokady"
+      "target_start": "Uruchom interfejs konfiguracji startowej"
     },
     "msg_help": {
       "usage": "Użycie: serpantinum msg <polecenie|workspace> [argumenty...]",
@@ -698,7 +697,8 @@
       "hibernate": "Hibernuj system",
       "reboot": "Uruchom system ponownie",
       "poweroff": "Wyłącz system",
-      "redactor": "Otwórz lub przełącz edytor układu widżetów pulpitu"
+      "redactor": "Otwórz lub przełącz edytor układu widżetów pulpitu",
+      "lock_redactor": "Przełącz, otwórz lub zamknij edytor układu ekranu blokady"
     },
     "usage_label": "Użycie:",
     "config_desc": "Odczytaj i zmień ustawienia (get, set, dump, path, edit)",
@@ -713,7 +713,8 @@
     "info_desc": "Pokaż bieżący stan ustawienia (notifications, idle, dock, sfx, theme, lang, wallpaper, monitors, updates)",
     "set_desc": "Zmień ustawienie (notifications, idle, dock, sfx, theme, lang, wallpaper)",
     "trigger_desc": "Uruchom jednorazową akcję (idle, notifications, theme, firstlaunch)",
-    "settings_desc": "Otwórz okno ustawień (opcjonalnie na wybranej karcie)"
+    "settings_desc": "Otwórz okno ustawień (opcjonalnie na wybranej karcie)",
+    "error_unknown_app": "Błąd: nieznana aplikacja '{ID}'."
   },
   "daemon": {
     "already_running": "Demon jest już uruchomiony. Kończenie pracy...",
@@ -897,7 +898,9 @@
       "bar_modules": "Moduły",
       "bar_side_modules": "Moduły boczne",
       "display_lockscreen": "Ekran blokady",
-      "screenshot": "Zrzut ekranu"
+      "screenshot": "Zrzut ekranu",
+      "theme_appearance": "Wygląd",
+      "theme_apps": "Motywy aplikacji"
     },
     "launcher": {
       "position": {
@@ -1072,10 +1075,6 @@
         "title": "Szybkie akcje",
         "desc": "Włącz pływającą nakładkę szybkich akcji"
       },
-      "separatewindow": {
-        "title": "Otwieraj ustawienia w osobnym oknie",
-        "desc": "Otwieraj ustawienia jako zwykłe okno aplikacji o zmiennym rozmiarze zamiast panelu w powłoce"
-      },
       "location": {
         "title": "Lokalizacja",
         "desc": "Skonfiguruj lokalizację dla automatycznego cyklu słońca i pogody",
@@ -1134,6 +1133,10 @@
         "hide_bar": {
           "title": "Ukryj pasek w edytorze",
           "desc": "Automatycznie ukrywaj pasek podczas edycji widżetów w trybie edytora"
+        },
+        "show_distances": {
+          "title": "Pokazuj odległości",
+          "desc": "Pokazuj odległości między widżetami podczas ich przesuwania lub zmiany rozmiaru w edytorze"
         },
         "hide_presets": "Ukryj szablony",
         "choose_preset": "Wybierz szablon",
@@ -1271,6 +1274,7 @@
         "desc": "Kliknij prawym przyciskiem myszy element, aby rozpocząć grupowanie, kliknij prawym przyciskiem inny, aby go dodać. Kliknij prawym przyciskiem zgrupowany element, aby go usunąć.",
         "reset": "Zresetuj",
         "available": "Dostępne",
+        "shown": "Widoczne",
         "left": "Lewo",
         "center": "Środek",
         "right": "Prawo"
@@ -1317,21 +1321,13 @@
           "wave": "Fala",
           "circle": "Okrąg"
         },
-        "cpu": {
-          "title": "Użycie procesora",
-          "desc": "Wyświetlaj pierścień obciążenia procesora"
-        },
-        "ram": {
-          "title": "Użycie pamięci",
-          "desc": "Wyświetlaj pierścień wykorzystania pamięci (RAM)"
-        },
-        "temp": {
-          "title": "Temperatura",
-          "desc": "Wyświetlaj pierścień temperatury systemu"
-        },
-        "disk": {
-          "title": "Użycie dysku",
-          "desc": "Wyświetlaj pierścień zajętości dysku"
+        "items": {
+          "title": "Statystyki",
+          "desc": "Przeciągaj statystyki, aby zmienić kolejność, lub przenieś je do dostępnych, aby je ukryć",
+          "cpu": "CPU",
+          "ram": "Pamięć",
+          "temp": "Temperatura",
+          "disk": "Dysk"
         }
       },
       "bat": {
@@ -1465,13 +1461,14 @@
         "desc": "Zmień grubość paska, moduły dostosują się do niej"
       },
       "menu": {
-        "show_settings": {
-          "title": "Pokaż ikonę ustawień",
-          "desc": "Wyświetla przycisk otwierający ustawienia"
-        },
-        "show_launcher": {
-          "title": "Pokaż ikonę launchera",
-          "desc": "Wyświetla przycisk wyszukiwania otwierający launcher"
+        "items": {
+          "title": "Przyciski",
+          "desc": "Przeciągaj przyciski, aby zmienić kolejność, lub przenieś je do dostępnych, aby je ukryć",
+          "settings": "Ustawienia",
+          "launcher": "Launcher",
+          "night_light": "Światło nocne",
+          "caffeine": "Kofeina",
+          "shuffle": "Losowa tapeta"
         },
         "style": {
           "title": "Styl",
@@ -1520,6 +1517,43 @@
           "blur": "Rozmycie",
           "liquid": "Płynne szkło"
         }
+      },
+      "apps": {
+        "loading": "Wyszukiwanie zainstalowanych aplikacji...",
+        "status": {
+          "error": "Nie udało się zastosować: {detail}"
+        },
+        "issue": {
+          "missing_config": "Nie znaleziono konfiguracji. Dodaj to do {file}: {line}",
+          "system_config": "Twoja konfiguracja to {file}. Dodaj do niej: {line}",
+          "read_only": "{file} jest tylko do odczytu. Dodaj do niego: {line}",
+          "manual": "Nie można bezpiecznie edytować konfiguracji. Dodaj to do {file}: {line}",
+          "no_theme": "Zainstaluj motyw {line}, aby aplikacje GTK 3 też korzystały z palety",
+          "env": "Ustaw {line} w środowisku sesji",
+          "requires": "Zainstaluj {line}, aby zmienić motyw aplikacji Qt",
+          "failed": "Nie udało się zaktualizować konfiguracji: {line}"
+        },
+        "hint": {
+          "select_in_app": "Wybierz motyw Serpantinum w ustawieniach aplikacji",
+          "restart": "Uruchom ponownie otwarte okna, aby zobaczyć nowe kolory",
+          "neovim": "Uruchom :colorscheme serpantinum, aby go użyć",
+          "helix": "Uruchom :config-reload w otwartych edytorach, aby zobaczyć nowe kolory",
+          "fastfetch": "Uruchom fastfetch -c serpantinum, aby go użyć",
+          "spicetify": "Uruchom spicetify config current_theme Serpantinum, a potem spicetify apply",
+          "discord": "Włącz Serpantinum w ustawieniach motywów klienta",
+          "emacs": "Uruchom M-x load-theme serpantinum, aby go użyć",
+          "steam": "Zainstaluj Material-Theme przez Millennium, a potem wybierz Matugen w jego ustawieniach kolorów",
+          "heroic": "Ustaw w Heroic ścieżkę własnych motywów na jego folder motywów, a potem wybierz serpantinum",
+          "telegram": "Wczytaj plik motywu z ustawień czatu w Telegramie"
+        },
+        "list": {
+          "title": "Aplikacje z motywem",
+          "desc": "Aplikacje, które korzystają z kolorów powłoki. Dodaj więcej z listy"
+        },
+        "add": {
+          "title": "Dodaj aplikację"
+        },
+        "empty": "Brak aplikacji z motywem. Dodaj jedną z listy"
       }
     },
     "file_picker": {
@@ -1827,6 +1861,11 @@
         "failed": "Pobieranie nie powiodło się. Sprawdź połączenie.",
         "offline": "Nie można połączyć się z listą języków. Wyświetlane są tylko zainstalowane języki.",
         "loading": "Ładowanie języków..."
+      },
+      "directory": {
+        "title": "Folder zrzutów ekranu",
+        "desc": "Folder, w którym zapisywane są zrzuty ekranu",
+        "select_dir": "Wybierz katalog..."
       }
     }
   }

@@ -44,7 +44,9 @@
       "bar_modules": "Mô-đun",
       "bar_side_modules": "Mô-đun bên cạnh",
       "display_lockscreen": "Màn hình khóa",
-      "screenshot": "Ảnh chụp màn hình"
+      "screenshot": "Ảnh chụp màn hình",
+      "theme_appearance": "Giao diện",
+      "theme_apps": "Giao diện ứng dụng"
     },
     "launcher": {
       "position": {
@@ -219,10 +221,6 @@
         "title": "Thao tác nhanh",
         "desc": "Bật lớp phủ thao tác nhanh nổi"
       },
-      "separatewindow": {
-        "title": "Mở cài đặt trong cửa sổ riêng",
-        "desc": "Mở cài đặt dưới dạng cửa sổ ứng dụng có thể thay đổi kích thước thay vì bảng bên trong shell"
-      },
       "location": {
         "title": "Vị trí",
         "desc": "Cấu hình vị trí cho lịch trình mặt trời tự động và thời tiết",
@@ -281,6 +279,10 @@
         "hide_bar": {
           "title": "Ẩn thanh trong trình chỉnh sửa",
           "desc": "Tự động ẩn thanh khi chỉnh sửa tiện ích con ở chế độ biên tập"
+        },
+        "show_distances": {
+          "title": "Hiển thị khoảng cách",
+          "desc": "Hiển thị khoảng cách giữa các widget khi di chuyển hoặc thay đổi kích thước trong trình chỉnh sửa"
         },
         "hide_presets": "Ẩn mẫu có sẵn",
         "choose_preset": "Chọn mẫu có sẵn",
@@ -418,6 +420,7 @@
         "desc": "Nhấp chuột phải vào một mục để bắt đầu nhóm, nhấp chuột phải vào mục khác để thêm vào. Nhấp chuột phải vào mục đã nhóm để xóa.",
         "reset": "Đặt lại",
         "available": "Có sẵn",
+        "shown": "Đang hiển thị",
         "left": "Trái",
         "center": "Giữa",
         "right": "Phải"
@@ -464,21 +467,13 @@
           "wave": "Sóng",
           "circle": "Vòng tròn"
         },
-        "cpu": {
-          "title": "Sử dụng CPU",
-          "desc": "Hiển thị vòng mức sử dụng bộ vi xử lý"
-        },
-        "ram": {
-          "title": "Sử dụng bộ nhớ",
-          "desc": "Hiển thị vòng mức sử dụng RAM"
-        },
-        "temp": {
-          "title": "Nhiệt độ",
-          "desc": "Hiển thị vòng nhiệt độ hệ thống"
-        },
-        "disk": {
-          "title": "Sử dụng ổ đĩa",
-          "desc": "Hiển thị vòng mức sử dụng bộ nhớ lưu trữ"
+        "items": {
+          "title": "Chỉ số",
+          "desc": "Kéo các chỉ số để sắp xếp lại, hoặc chuyển sang mục có sẵn để ẩn",
+          "cpu": "CPU",
+          "ram": "Bộ nhớ",
+          "temp": "Nhiệt độ",
+          "disk": "Ổ đĩa"
         }
       },
       "bat": {
@@ -612,13 +607,14 @@
         "desc": "Thay đổi độ dày của thanh, các mô-đun sẽ tự điều chỉnh"
       },
       "menu": {
-        "show_settings": {
-          "title": "Hiện biểu tượng cài đặt",
-          "desc": "Hiển thị nút mở cài đặt"
-        },
-        "show_launcher": {
-          "title": "Hiện biểu tượng trình khởi chạy",
-          "desc": "Hiển thị nút tìm kiếm mở trình khởi chạy"
+        "items": {
+          "title": "Nút",
+          "desc": "Kéo các nút để sắp xếp lại, hoặc chuyển sang mục có sẵn để ẩn",
+          "settings": "Cài đặt",
+          "launcher": "Trình khởi chạy",
+          "night_light": "Ánh sáng ban đêm",
+          "caffeine": "Caffeine",
+          "shuffle": "Hình nền ngẫu nhiên"
         },
         "style": {
           "title": "Kiểu dáng",
@@ -667,6 +663,43 @@
           "blur": "Làm mờ",
           "liquid": "Kính lỏng"
         }
+      },
+      "apps": {
+        "loading": "Đang tìm ứng dụng đã cài...",
+        "status": {
+          "error": "Không thể áp dụng: {detail}"
+        },
+        "issue": {
+          "missing_config": "Không tìm thấy cấu hình. Thêm dòng này vào {file}: {line}",
+          "system_config": "Cấu hình của bạn là {file}. Thêm dòng này vào: {line}",
+          "read_only": "{file} chỉ đọc. Thêm dòng này vào: {line}",
+          "manual": "Không thể sửa cấu hình an toàn. Thêm dòng này vào {file}: {line}",
+          "no_theme": "Cài giao diện {line} để ứng dụng GTK 3 cũng theo bảng màu",
+          "env": "Đặt {line} trong môi trường phiên",
+          "requires": "Cài {line} để áp dụng giao diện cho ứng dụng Qt",
+          "failed": "Không thể cập nhật cấu hình: {line}"
+        },
+        "hint": {
+          "select_in_app": "Chọn giao diện Serpantinum trong cài đặt của ứng dụng",
+          "restart": "Khởi động lại các cửa sổ đang mở để thấy màu mới",
+          "neovim": "Chạy :colorscheme serpantinum để sử dụng",
+          "helix": "Chạy :config-reload trong trình soạn thảo đang mở để thấy màu mới",
+          "fastfetch": "Chạy fastfetch -c serpantinum để sử dụng",
+          "spicetify": "Chạy spicetify config current_theme Serpantinum, rồi spicetify apply",
+          "discord": "Bật Serpantinum trong cài đặt giao diện của ứng dụng",
+          "emacs": "Chạy M-x load-theme serpantinum để dùng",
+          "steam": "Cài Material-Theme bằng Millennium, rồi chọn Matugen trong phần cài đặt màu của nó",
+          "heroic": "Đặt đường dẫn chủ đề tùy chỉnh của Heroic tới thư mục chủ đề của nó, rồi chọn serpantinum",
+          "telegram": "Tải tệp chủ đề từ cài đặt trò chuyện của Telegram"
+        },
+        "list": {
+          "title": "Ứng dụng có giao diện",
+          "desc": "Ứng dụng theo màu của shell. Thêm ứng dụng khác từ danh sách"
+        },
+        "add": {
+          "title": "Thêm ứng dụng"
+        },
+        "empty": "Chưa có ứng dụng nào có giao diện. Thêm một ứng dụng từ danh sách"
       }
     },
     "file_picker": {
@@ -974,6 +1007,11 @@
         "failed": "Tải xuống thất bại. Hãy kiểm tra kết nối của bạn.",
         "offline": "Không thể truy cập danh sách ngôn ngữ. Chỉ hiển thị các ngôn ngữ đã cài.",
         "loading": "Đang tải ngôn ngữ..."
+      },
+      "directory": {
+        "title": "Thư mục ảnh chụp màn hình",
+        "desc": "Thư mục lưu ảnh chụp màn hình",
+        "select_dir": "Chọn thư mục..."
       }
     }
   },
@@ -1424,7 +1462,8 @@
       "generating_thumbnails": "Đang tạo ảnh thu nhỏ...",
       "no_wallpapers_found": "Không tìm thấy hình nền nào",
       "videos": "Video",
-      "history": "Đã áp dụng gần đây"
+      "history": "Đã áp dụng gần đây",
+      "favorites": "Yêu thích"
     },
     "filters": {
       "all": "Tất cả",
@@ -1615,7 +1654,7 @@
     "description": "Một desktop shell dành cho các Wayland compositor.",
     "commands": "Các lệnh:",
     "script_commands": "Các lệnh tập lệnh:",
-    "launch_desc": "Khởi chạy các thành phần độc lập (start, widgetredactor, lock-redactor)",
+    "launch_desc": "Khởi chạy các thành phần độc lập (start)",
     "msg_desc": "Gửi lệnh hoặc chuyển không gian làm việc đến trình quản lý giao diện",
     "ipc_desc": "Chuyển tiếp lệnh gọi IPC trực tiếp đến shell",
     "kill_desc": "Dừng daemon đang chạy một cách sạch sẽ",
@@ -1629,18 +1668,16 @@
     "daemon_restarted": "Đã khởi động lại daemon Serpantinum.",
     "starting_daemon": "Daemon không chạy. Đang khởi động serpantinumd ở nền...",
     "error_missing_qml": "Lỗi: thiếu mục tiêu để khởi chạy.",
-    "launch_usage": "Cách dùng: serpantinum launch <start|widgetredactor|lock-redactor> [đối số...]",
+    "launch_usage": "Cách dùng: serpantinum launch <start> [đối số...]",
     "error_qml_not_found": "Lỗi: không tìm thấy {NAME}.qml trong {DIR}",
     "error_shell_qml_not_found": "Lỗi: không tìm thấy đường dẫn đến shell.qml trong {DIR}",
     "error_unknown_command": "Lỗi: lệnh không xác định '{CMD}'.",
     "error_unknown_target": "Lỗi: mục tiêu không xác định '{TARGET}'.",
     "launch_help": {
-      "usage": "Cách dùng: serpantinum launch <start|widgetredactor|lock-redactor> [đối số...]",
+      "usage": "Cách dùng: serpantinum launch <start> [đối số...]",
       "description": "Khởi chạy trực tiếp các thành phần độc lập ở chế độ chạy.",
       "available_targets": "Các mục tiêu khả dụng:",
-      "target_start": "Khởi chạy giao diện thiết lập ban đầu",
-      "target_widgetredactor": "Khởi chạy giao diện chỉnh sửa tiện ích màn hình",
-      "target_lock_redactor": "Bật/tắt, mở hoặc đóng trình chỉnh sửa bố cục màn hình khóa"
+      "target_start": "Khởi chạy giao diện thiết lập ban đầu"
     },
     "msg_help": {
       "usage": "Cách dùng: serpantinum msg <lệnh|không_gian_làm_việc> [đối số...]",
@@ -1673,7 +1710,8 @@
       "hibernate": "Ngủ đông hệ thống",
       "reboot": "Khởi động lại hệ thống",
       "poweroff": "Tắt hệ thống",
-      "redactor": "Mở hoặc bật/tắt trình chỉnh sửa bố cục widget màn hình nền"
+      "redactor": "Mở hoặc bật/tắt trình chỉnh sửa bố cục widget màn hình nền",
+      "lock_redactor": "Bật/tắt, mở hoặc đóng trình chỉnh sửa bố cục màn hình khóa"
     },
     "usage_label": "Cách dùng:",
     "config_desc": "Đọc và thay đổi cài đặt (get, set, dump, path, edit)",
@@ -1688,7 +1726,8 @@
     "info_desc": "Hiển thị trạng thái hiện tại của một cài đặt (notifications, idle, dock, sfx, theme, lang, wallpaper, monitors, updates)",
     "set_desc": "Thay đổi một cài đặt (notifications, idle, dock, sfx, theme, lang, wallpaper)",
     "trigger_desc": "Chạy một hành động một lần (idle, notifications, theme, firstlaunch)",
-    "settings_desc": "Mở cửa sổ cài đặt (có thể chọn tab cụ thể)"
+    "settings_desc": "Mở cửa sổ cài đặt (có thể chọn tab cụ thể)",
+    "error_unknown_app": "Lỗi: ứng dụng không xác định '{ID}'."
   },
   "daemon": {
     "already_running": "Daemon đang chạy rồi. Đang thoát...",

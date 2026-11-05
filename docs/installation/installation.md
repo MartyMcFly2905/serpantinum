@@ -31,7 +31,7 @@ To update, when or if you receive a notification about a new version being avail
 
 ## Fedora
 
-Fedora and its derivatives, such as **Nobara** and **Ultramarine**, are installed with `dnf`. Fedora does not package `gpu-screen-recorder` or `wl-gammarelay-rs`, so screen recording and the blue light filter are unavailable there. SDDM is set up with its Wayland greeter, since Fedora ships no Xorg server.
+Fedora and its derivatives, such as **Nobara** and **Ultramarine**, are installed with `dnf`. Fedora does not package `gpu-screen-recorder`, so screen recording is unavailable there. SDDM is set up with its Wayland greeter, since Fedora ships no Xorg server.
 
 ## Void Linux
 
@@ -61,15 +61,10 @@ The repository contains two PKGBUILDs in `packaging/aur`, and they conflict with
 | `serpantinum` | The latest tagged release |
 | `serpantinum-git` | The latest commit on `master` |
 
-Install the build tools and `wl-gammarelay-rs`, the one dependency that is not in the official repositories:
+Install the build tools:
 
 ```bash
 sudo pacman -S --needed base-devel git
-
-git clone https://aur.archlinux.org/wl-gammarelay-rs.git
-cd wl-gammarelay-rs
-makepkg -si
-cd ..
 ```
 
 Then clone the repository and build the package:
@@ -94,6 +89,7 @@ Do not run the installer script on a system where Serpantinum is installed this 
 | Replace `quickshell-git` with `quickshell` | Done, the package conflicts with `quickshell-git` and installs `quickshell` |
 | Install `serpantinum` and `serpantinumd` | Done, in `/usr/bin` |
 | Install the [audio engine](/audio) | Done, `serpantinum-audio` in `/usr/bin` |
+| Install the blue light filter | Done, `serpantinum-gamma` in `/usr/bin` |
 | Lock screen PAM service | Done, `/etc/pam.d/serpantinum` |
 | SDDM theme files | Done, in `/usr/share/sddm/themes/material-you` |
 | Compositor configs | Manual, step 1 |
@@ -205,7 +201,7 @@ On OpenRC, dinit, runit, or s6, enable `NetworkManager` and `power-profiles-daem
 #### 6. Qt icon theme
 
 ```bash
-for qt in qt5ct qt6ct; do
+for qt in qt6ct; do
     mkdir -p "$cfg/$qt"
     [ -f "$cfg/$qt/$qt.conf" ] || printf '[Appearance]\nicon_theme=Adwaita\n' > "$cfg/$qt/$qt.conf"
 done
@@ -216,7 +212,7 @@ if [ -z "$QT_QPA_PLATFORMTHEME" ] && ! grep -rqs '^QT_QPA_PLATFORMTHEME=' "$cfg/
 fi
 ```
 
-If you already have a `qt5ct.conf` or `qt6ct.conf`, set `icon_theme=Adwaita` under `[Appearance]` yourself. Log out and back in for the environment variable to apply.
+If you already have a `qt6ct.conf`, set `icon_theme=Adwaita` under `[Appearance]` yourself. Log out and back in for the environment variable to apply.
 
 #### 7. SDDM login screen (optional)
 

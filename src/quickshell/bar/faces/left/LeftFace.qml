@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import "../../../reusables"
 import "../../../"
+import "../../"
 
 Item {
     id: root
@@ -41,24 +42,101 @@ Item {
         return "button";
     }
 
-    property bool showSettings: {
-        if (widget && widget !== root && widget.menuShowSettings !== undefined) return widget.menuShowSettings;
+    property var menuItems: {
+        if (widget && widget !== root && widget.menuItems !== undefined) return widget.menuItems;
         let dummy = configRevision;
-        if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.menuShowSettings !== undefined) return Boolean(Config.rawSettings.bar.menuShowSettings);
-        return true;
+        let bs = (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar) ? Config.rawSettings.bar : {};
+        return BarModuleRegistry.menuItemsFromSettings(bs);
     }
 
-    property bool showLauncher: {
-        if (widget && widget !== root && widget.menuShowLauncher !== undefined) return widget.menuShowLauncher;
-        let dummy = configRevision;
-        if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.menuShowLauncher !== undefined) return Boolean(Config.rawSettings.bar.menuShowLauncher);
-        return true;
-    }
-
-    readonly property bool effectiveShowSettings: showSettings || !showLauncher
+    readonly property bool showCaffeine: menuItems.indexOf("caffeine") !== -1
     readonly property bool iconOnly: menuStyle === "icon"
 
-    readonly property var helpButton: effectiveShowSettings ? settingsBtn : launcherBtn
+    readonly property var helpButton: {
+        let dummy = menuRepeater.count;
+        let found = null;
+        for (let i = 0; i < menuRepeater.count; i++) {
+            let it = menuRepeater.itemAt(i);
+            if (!it) continue;
+            if (it.itemId === "settings") return it;
+            if (!found && it.itemId === "launcher") found = it;
+        }
+        return found || menuRepeater.itemAt(0);
+    }
+
+    property bool nightLightActive: {
+        let dummy = configRevision;
+        return (typeof BlueLight !== "undefined" && typeof BlueLight.isAnyEnabled === "function") ? BlueLight.isAnyEnabled() : false;
+    }
+
+    property bool caffeineActive: {
+        let dummy = configRevision;
+        let idleObj = (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.idle) ? Config.rawSettings.idle : null;
+        if (!idleObj || !idleObj.manualInhibit) return false;
+        let endTime = Number(idleObj.caffeineEndTime) || 0;
+        return endTime <= 0 || endTime > Date.now();
+    }
+
+    Connections {
+        target: (typeof BlueLight !== "undefined") ? BlueLight : null
+        ignoreUnknownSignals: true
+        function onSettingsChanged() { root.configRevision++; }
+    }
+
+    Timer {
+        interval: 15000
+        repeat: true
+        running: root.showCaffeine && root.caffeineActive && !root.isPreview
+        onTriggered: {
+            let idleObj = Config.getSetting("idle", {}) || {};
+            let endTime = Number(idleObj.caffeineEndTime) || 0;
+            if (endTime > 0 && endTime <= Date.now()) root.setCaffeine(false);
+        }
+    }
+
+    function toggleNightLight() {
+        if (typeof BlueLight === "undefined" || typeof BlueLight.setEnabled !== "function") return;
+        let target = !root.nightLightActive;
+        let monNames = [];
+        let ds = Config.getSetting("display", {"monitors": {}});
+        let mons = (ds && ds.monitors) ? ds.monitors : {};
+        for (let m in mons) {
+            if (monNames.indexOf(m) === -1) monNames.push(m);
+        }
+        if (Quickshell.screens) {
+            for (let i = 0; i < Quickshell.screens.length; i++) {
+                let scr = Quickshell.screens[i];
+                if (scr && scr.name && monNames.indexOf(scr.name) === -1) monNames.push(scr.name);
+            }
+        }
+        if (monNames.length > 0) {
+            for (let i = 0; i < monNames.length; i++) BlueLight.setEnabled(monNames[i], target);
+        } else {
+            BlueLight.setEnabled("", target);
+        }
+    }
+
+    function shuffleWallpaper(btn) {
+        let scr = barWindow ? barWindow.screen : null;
+        let transition = "circle";
+        if (btn && scr && scr.width > 0 && scr.height > 0) {
+            let pt = btn.mapToItem(null, btn.width / 2, btn.height / 2);
+            let pos = barWindow.barPosition;
+            let x = pt.x + (pos === "right" ? scr.width - barWindow.width : 0);
+            let y = pt.y + (pos === "bottom" ? scr.height - barWindow.height : 0);
+            transition = "circle:" + Math.max(0, Math.min(1, x / scr.width)) + ":" + Math.max(0, Math.min(1, y / scr.height));
+        }
+        Wallpaper.shuffle(scr && scr.name ? scr.name : "", transition);
+    }
+
+    function setCaffeine(enabled) {
+        let now = Date.now();
+        let idleObj = Object.assign({}, Config.getSetting("idle", {}));
+        idleObj.manualInhibit = enabled;
+        idleObj.caffeineStartTime = enabled ? now : 0;
+        idleObj.caffeineEndTime = enabled ? now + 3600 * 1000 : 0;
+        Config.setSetting("idle", idleObj);
+    }
 
     property real targetLength: (!module || module.moduleActive) ? ((isVertical ? buttonsFlow.implicitHeight : buttonsFlow.implicitWidth) + s(isCompact ? 6 : 8)) : 0
 
@@ -68,6 +146,8 @@ Item {
     component MenuButton: Item {
         id: menuBtn
         property string glyph: ""
+        property bool active: false
+        property color activeColor: ThemeBackend.peach
         signal clicked()
 
         width: root.isVertical ? root.s(root.isCompact ? 28 : 30) : root.s(root.isCompact ? 30 : 32)
@@ -86,9 +166,9 @@ Item {
             cornerRadius: Math.max(0, ThemeBackend.borderRadius - root.s(2))
             buttonIcon: menuBtn.glyph
             iconFontSize: root.s(root.isCompact ? 14 : 15)
-            accentColor: root.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0
-            bgOpacity: root.barOpacity
-            textColor: isHoveredOrHighlighted ? ThemeBackend.text : (root.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
+            accentColor: menuBtn.active ? menuBtn.activeColor : (root.isCompact ? Qt.lighter(ThemeBackend.surface0, 1.18) : ThemeBackend.surface0)
+            bgOpacity: menuBtn.active ? 1.0 : root.barOpacity
+            textColor: menuBtn.active ? ThemeBackend.crust : (isHoveredOrHighlighted ? ThemeBackend.text : (root.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2))
             onClicked: menuBtn.clicked()
         }
 
@@ -100,7 +180,7 @@ Item {
             font.pixelSize: root.s(root.isCompact ? 15 : 16)
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            color: iconMouse.containsMouse ? ThemeBackend.text : (root.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2)
+            color: menuBtn.active ? menuBtn.activeColor : (iconMouse.containsMouse ? ThemeBackend.text : (root.isCompact ? ThemeBackend.subtext0 : ThemeBackend.overlay2))
             Behavior on color { ColorAnimation { duration: 150 } }
         }
 
@@ -125,18 +205,26 @@ Item {
         anchors.left: root.isVertical ? undefined : parent.left
         anchors.leftMargin: root.isVertical ? 0 : root.s(root.isCompact ? 3 : 4)
 
-        MenuButton {
-            id: settingsBtn
-            visible: root.effectiveShowSettings
-            glyph: "󰒓"
-            onClicked: if (!root.isPreview) Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh" + (Config.getSetting("general", {}).settingsSeparateWindow ? " open" : " toggle") + " settings"])
-        }
+        Repeater {
+            id: menuRepeater
+            model: root.menuItems
 
-        MenuButton {
-            id: launcherBtn
-            visible: root.showLauncher
-            glyph: "󰍉"
-            onClicked: if (!root.isPreview) Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle launcher"])
+            MenuButton {
+                id: menuItem
+                required property string modelData
+                readonly property string itemId: modelData
+                glyph: BarModuleRegistry.menuItemIcon(itemId)
+                active: itemId === "nightlight" ? root.nightLightActive : (itemId === "caffeine" ? root.caffeineActive : false)
+                activeColor: itemId === "caffeine" ? Qt.tint(ThemeBackend.peach, "#5c3016") : ThemeBackend.peach
+                onClicked: {
+                    if (root.isPreview) return;
+                    if (itemId === "settings") Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle settings"]);
+                    else if (itemId === "launcher") Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle launcher"]);
+                    else if (itemId === "nightlight") root.toggleNightLight();
+                    else if (itemId === "caffeine") root.setCaffeine(!root.caffeineActive);
+                    else if (itemId === "shuffle") root.shuffleWallpaper(menuItem);
+                }
+            }
         }
     }
 }

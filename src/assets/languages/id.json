@@ -44,7 +44,9 @@
       "bar_modules": "Modul",
       "bar_side_modules": "Modul samping",
       "display_lockscreen": "Layar kunci",
-      "screenshot": "Tangkapan layar"
+      "screenshot": "Tangkapan layar",
+      "theme_appearance": "Tampilan",
+      "theme_apps": "Tema aplikasi"
     },
     "launcher": {
       "position": {
@@ -219,10 +221,6 @@
         "title": "Tindakan cepat",
         "desc": "Aktifkan hamparan tindakan cepat mengambang"
       },
-      "separatewindow": {
-        "title": "Buka pengaturan di jendela terpisah",
-        "desc": "Buka pengaturan sebagai jendela aplikasi biasa yang dapat diubah ukurannya, bukan panel di dalam shell"
-      },
       "location": {
         "title": "Lokasi",
         "desc": "Konfigurasikan lokasi untuk jadwal matahari otomatis dan cuaca",
@@ -282,7 +280,11 @@
           "title": "Sembunyikan bilah di redaktur",
           "desc": "Sembunyikan bilah secara otomatis saat mengedit widget dalam mode redaktur"
         },
-        "hide_presets": "Sembunyikan Prasetel",
+        "show_distances": {
+          "title": "Tampilkan jarak",
+          "desc": "Tampilkan jarak antar widget saat memindahkan atau mengubah ukurannya di redaktur"
+        },
+        "hide_presets": "Sembunyikan prasetel",
         "choose_preset": "Pilih prasetel",
         "presets": {
           "title": "Prasetel Widget"
@@ -418,6 +420,7 @@
         "desc": "Klik kanan sebuah item untuk mulai mengelompokkan, klik kanan item lain untuk menambahkannya. Klik kanan item yang dikelompokkan untuk menghapusnya.",
         "reset": "Atur ulang",
         "available": "Tersedia",
+        "shown": "Ditampilkan",
         "left": "Kiri",
         "center": "Tengah",
         "right": "Kanan"
@@ -464,21 +467,13 @@
           "wave": "Gelombang",
           "circle": "Lingkaran"
         },
-        "cpu": {
-          "title": "Penggunaan CPU",
-          "desc": "Tampilkan cincin utilisasi prosesor"
-        },
-        "ram": {
-          "title": "Penggunaan memori",
-          "desc": "Tampilkan cincin utilisasi memori (RAM)"
-        },
-        "temp": {
-          "title": "Suhu",
-          "desc": "Tampilkan cincin suhu sistem"
-        },
-        "disk": {
-          "title": "Penggunaan disk",
-          "desc": "Tampilkan cincin utilisasi penyimpanan disk"
+        "items": {
+          "title": "Statistik",
+          "desc": "Seret statistik untuk mengurutkan ulang, atau pindahkan ke tersedia untuk menyembunyikannya",
+          "cpu": "CPU",
+          "ram": "Memori",
+          "temp": "Suhu",
+          "disk": "Disk"
         }
       },
       "bat": {
@@ -612,13 +607,14 @@
         "desc": "Ubah ketebalan bar, modul menyesuaikan"
       },
       "menu": {
-        "show_settings": {
-          "title": "Tampilkan ikon pengaturan",
-          "desc": "Menampilkan tombol yang membuka pengaturan"
-        },
-        "show_launcher": {
-          "title": "Tampilkan ikon peluncur",
-          "desc": "Menampilkan tombol pencarian yang membuka peluncur"
+        "items": {
+          "title": "Tombol",
+          "desc": "Seret tombol untuk mengurutkan ulang, atau pindahkan ke tersedia untuk menyembunyikannya",
+          "settings": "Pengaturan",
+          "launcher": "Peluncur",
+          "night_light": "Lampu malam",
+          "caffeine": "Kafein",
+          "shuffle": "Acak wallpaper"
         },
         "style": {
           "title": "Gaya",
@@ -667,6 +663,43 @@
           "blur": "Buram",
           "liquid": "Kaca cair"
         }
+      },
+      "apps": {
+        "loading": "Mencari aplikasi yang terpasang...",
+        "status": {
+          "error": "Gagal menerapkan: {detail}"
+        },
+        "issue": {
+          "missing_config": "Konfigurasi tidak ditemukan. Tambahkan ini ke {file}: {line}",
+          "system_config": "Konfigurasi Anda adalah {file}. Tambahkan ini ke sana: {line}",
+          "read_only": "{file} hanya-baca. Tambahkan ini ke sana: {line}",
+          "manual": "Tidak dapat mengubah konfigurasi dengan aman. Tambahkan ini ke {file}: {line}",
+          "no_theme": "Pasang tema {line} agar aplikasi GTK 3 juga mengikuti palet",
+          "env": "Atur {line} di lingkungan sesi",
+          "requires": "Pasang {line} untuk memberi tema aplikasi Qt",
+          "failed": "Gagal memperbarui konfigurasi: {line}"
+        },
+        "hint": {
+          "select_in_app": "Pilih tema Serpantinum di pengaturan aplikasi",
+          "restart": "Mulai ulang jendela yang terbuka untuk melihat warna baru",
+          "neovim": "Jalankan :colorscheme serpantinum untuk memakainya",
+          "helix": "Jalankan :config-reload di editor yang terbuka untuk melihat warna baru",
+          "fastfetch": "Jalankan fastfetch -c serpantinum untuk memakainya",
+          "spicetify": "Jalankan spicetify config current_theme Serpantinum, lalu spicetify apply",
+          "discord": "Aktifkan Serpantinum di pengaturan tema klien",
+          "emacs": "Jalankan M-x load-theme serpantinum untuk menggunakannya",
+          "steam": "Pasang Material-Theme dengan Millennium, lalu pilih Matugen di pengaturan warnanya",
+          "heroic": "Atur jalur tema kustom Heroic ke folder temanya, lalu pilih serpantinum",
+          "telegram": "Muat file tema dari pengaturan obrolan Telegram"
+        },
+        "list": {
+          "title": "Aplikasi bertema",
+          "desc": "Aplikasi yang mengikuti warna shell. Tambahkan lainnya dari daftar"
+        },
+        "add": {
+          "title": "Tambah aplikasi"
+        },
+        "empty": "Belum ada aplikasi bertema. Tambahkan dari daftar"
       }
     },
     "file_picker": {
@@ -974,6 +1007,11 @@
         "failed": "Unduhan gagal. Periksa koneksi Anda.",
         "offline": "Tidak dapat menjangkau daftar bahasa. Hanya menampilkan bahasa yang terpasang.",
         "loading": "Memuat bahasa..."
+      },
+      "directory": {
+        "title": "Folder tangkapan layar",
+        "desc": "Folder tempat tangkapan layar disimpan",
+        "select_dir": "Pilih direktori..."
       }
     }
   },
@@ -1427,7 +1465,8 @@
       "generating_thumbnails": "Membuat gambar mini...",
       "no_wallpapers_found": "Gambar latar tidak ditemukan",
       "videos": "Video",
-      "history": "Baru saja diterapkan"
+      "history": "Baru saja diterapkan",
+      "favorites": "Favorit"
     },
     "filters": {
       "all": "Semua",
@@ -1615,7 +1654,7 @@
     "description": "Shell desktop untuk kompositor Wayland.",
     "commands": "Perintah:",
     "script_commands": "Perintah skrip:",
-    "launch_desc": "Luncurkan komponen mandiri (start, widgetredactor, lock-redactor)",
+    "launch_desc": "Luncurkan komponen mandiri (start)",
     "msg_desc": "Kirim perintah atau peralihan ruang kerja ke pengelola UI",
     "ipc_desc": "Teruskan panggilan IPC langsung ke shell",
     "kill_desc": "Hentikan daemon yang sedang berjalan secara bersih",
@@ -1629,18 +1668,16 @@
     "daemon_restarted": "Daemon Serpantinum dimulai ulang.",
     "starting_daemon": "Daemon tidak berjalan. Memulai serpantinumd di latar belakang...",
     "error_missing_qml": "Kesalahan: target untuk diluncurkan tidak ada.",
-    "launch_usage": "Penggunaan: serpantinum launch <start|widgetredactor|lock-redactor> [arg...]",
+    "launch_usage": "Penggunaan: serpantinum launch <start> [arg...]",
     "error_qml_not_found": "Kesalahan: tidak dapat menemukan {NAME}.qml di {DIR}",
     "error_shell_qml_not_found": "Kesalahan: tidak dapat menemukan jalur ke shell.qml di {DIR}",
     "error_unknown_command": "Kesalahan: perintah tidak dikenal '{CMD}'.",
     "error_unknown_target": "Kesalahan: target tidak dikenal '{TARGET}'.",
     "launch_help": {
-      "usage": "Penggunaan: serpantinum launch <start|widgetredactor|lock-redactor> [argumen...]",
+      "usage": "Penggunaan: serpantinum launch <start> [argumen...]",
       "description": "Luncurkan komponen mandiri langsung dalam mode eksekusi.",
       "available_targets": "Target yang tersedia:",
-      "target_start": "Luncurkan antarmuka pengaturan awal",
-      "target_widgetredactor": "Luncurkan antarmuka editor widget desktop",
-      "target_lock_redactor": "Alihkan, buka, atau tutup editor tata letak layar kunci"
+      "target_start": "Luncurkan antarmuka pengaturan awal"
     },
     "msg_help": {
       "usage": "Penggunaan: serpantinum msg <command|workspace> [argumen...]",
@@ -1673,7 +1710,8 @@
       "hibernate": "Hibernasi sistem",
       "reboot": "Mulai ulang sistem",
       "poweroff": "Matikan sistem",
-      "redactor": "Buka atau alihkan editor tata letak widget desktop"
+      "redactor": "Buka atau alihkan editor tata letak widget desktop",
+      "lock_redactor": "Alihkan, buka, atau tutup editor tata letak layar kunci"
     },
     "usage_label": "Penggunaan:",
     "config_desc": "Baca dan ubah pengaturan (get, set, dump, path, edit)",
@@ -1688,7 +1726,8 @@
     "info_desc": "Tampilkan status pengaturan saat ini (notifications, idle, dock, sfx, theme, lang, wallpaper, monitors, updates)",
     "set_desc": "Ubah pengaturan (notifications, idle, dock, sfx, theme, lang, wallpaper)",
     "trigger_desc": "Jalankan tindakan sekali jalan (idle, notifications, theme, firstlaunch)",
-    "settings_desc": "Buka jendela pengaturan (opsional pada tab tertentu)"
+    "settings_desc": "Buka jendela pengaturan (opsional pada tab tertentu)",
+    "error_unknown_app": "Kesalahan: aplikasi tidak dikenal '{ID}'."
   },
   "daemon": {
     "already_running": "Daemon sudah berjalan. Keluar...",

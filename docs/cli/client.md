@@ -67,22 +67,18 @@ Dispatches layout, workspace, and overlay actions to the shell:
 
 ### `settings`
 
-Opens the settings. By default they open as a fixed-size panel inside the shell, like other popups. Enable **Make settings a separate window** in **General** (`general.settingsSeparateWindow`) to open them as a regular application window instead. The window runs as its own process, so it can be moved, resized and tiled like any other window. The settings are also available from your application launcher as **Serpantinum settings**.
+Opens the settings as a panel inside the shell, like other popups.
 
-- `serpantinum settings`: Open the settings, or focus them if they are already open.
+- `serpantinum settings`: Open the settings.
 - `serpantinum settings <tab> [subtab]`: Open directly on a tab, for example `serpantinum settings theme`.
 - `serpantinum settings toggle [tab]`: Close the settings if they are open, otherwise open them.
 - `serpantinum settings close`: Close the settings.
-
-In separate window mode, the window class is `serpantinum-settings`. To open it floating and centered, add a window rule for the class `serpantinum-settings` in your compositor configuration.
 
 ### `launch`
 
 Runs standalone interface components in runner mode:
 
 - `serpantinum launch start [args...]`: Launch first-time setup and onboarding wizard.
-- `serpantinum launch widgetredactor [args...]`: Launch desktop widget editor.
-- `serpantinum launch lock-redactor [toggle|open [monitor]|close]`: Toggle the lock screen layout editor in the running shell.
 
 ### `ipc`
 
@@ -123,7 +119,7 @@ Prints the current state of a group as JSON. Add a key to print just that value,
 - `serpantinum info idle [key]`: Idle system state: whether idle is active, caffeine and its seconds remaining (`0` when it has no time limit), app and media inhibitors, and each action's timeout and status.
 - `serpantinum info dock [enabled|autohide]`: Dock visibility and autohide.
 - `serpantinum info sfx [mute]`: Interface sound effects muted.
-- `serpantinum info theme [preset|matugen|presets]`: Active preset, wallpaper-derived colors and bundled presets.
+- `serpantinum info theme [preset|matugen|apps|presets]`: Active preset, wallpaper-derived colors, apps that follow the palette and bundled presets.
 - `serpantinum info lang [current|available]`: Active language code and available codes.
 - `serpantinum info wallpaper [screen]`: Current wallpaper path.
 - `serpantinum info monitors [--json]`: Active outputs, with width, height and refresh rate as JSON.
@@ -140,6 +136,7 @@ Changes a setting. Switches take `on`, `off` or `toggle` and default to `toggle`
 - `serpantinum set sfx mute [on|off|toggle]`
 - `serpantinum set theme matugen [on|off|toggle]`
 - `serpantinum set theme preset <name>`: Apply a bundled preset and turn Matugen off.
+- `serpantinum set theme app <id> [on|off|toggle]`: Recolor an app with the shell palette. See [App theming](../configure/AppTheming.md).
 - `serpantinum set lang <code>`
 - `serpantinum set wallpaper <path|random|next|prev|play|pause|clear> [screen]`: `screen` is a monitor name and defaults to `all`. A path may also take a transition after the screen.
 
@@ -230,12 +227,14 @@ Sets geographic coordinates manually:
 
 ### `blue_light_filter`
 
-Controls color temperature and day/night schedule via DBus:
+Controls color temperature and the day/night schedule through [serpantinum-gamma](https://github.com/ilyamiro/serpantinum-gamma), which it starts when needed. Serpantinum stops it on exit, and the compositor then restores normal colors.
 
-- `serpantinum blue_light_filter set <temperature> [output] [mode] [latitude] [longitude]`: Set temperature (1000-10000K) manually (`mode=manual`) or automatically with solar schedule (`mode=auto`).
-- `serpantinum blue_light_filter reset [output]`: Reset color temperature to 6500K daylight neutral and stop auto loop.
+- `serpantinum blue_light_filter set <temperature> [output] [mode] [latitude] [longitude]`: Set temperature (1000-10000K) manually (`mode=manual`), or use it as the night temperature of the solar schedule (`mode=auto`). Without coordinates, or with `0 0`, the schedule fades to night at 19:00 and to day at 06:30. Without an output, every output is changed.
+- `serpantinum blue_light_filter reset [output]`: Reset color temperature to 6500K daylight neutral and turn the schedule off.
 - `serpantinum blue_light_filter status [output]`: Print status (`running` or `stopped`).
-- `serpantinum blue_light_filter --verbose` (`-v`): Print verbose output with current Kelvin and brightness levels.
+- `serpantinum blue_light_filter start`: Start serpantinum-gamma if it is not running.
+- `serpantinum blue_light_filter stop`: Stop serpantinum-gamma.
+- `serpantinum blue_light_filter --verbose` (`-v`): Print verbose output with current Kelvin, brightness and schedule state.
 
 ### `monitors_detect`
 
@@ -255,6 +254,21 @@ Runs active window focus tracking daemon:
 Activates lock screen:
 
 - `serpantinum lock`: Trigger lock screen interface immediately.
+
+### `redactor`
+
+Opens the desktop widget layout editor in the running shell:
+
+- `serpantinum redactor`: Open the editor.
+- `serpantinum redactor <monitor> [widget]`: Open the editor on a monitor, optionally with a widget selected.
+
+### `lock-redactor`
+
+Opens the lock screen layout editor in the running shell:
+
+- `serpantinum lock-redactor`: Close the editor if it is open, otherwise open it.
+- `serpantinum lock-redactor open [monitor]`: Open the editor, optionally on a given monitor.
+- `serpantinum lock-redactor close`: Close the editor.
 
 ### `reload`
 

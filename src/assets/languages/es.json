@@ -45,7 +45,9 @@
       "bar_modules": "Módulos",
       "bar_side_modules": "Módulos laterales",
       "display_lockscreen": "Pantalla de bloqueo",
-      "screenshot": "Captura de pantalla"
+      "screenshot": "Captura de pantalla",
+      "theme_appearance": "Apariencia",
+      "theme_apps": "Tema de aplicaciones"
     },
     "launcher": {
       "position": {
@@ -220,10 +222,6 @@
         "title": "Acciones rápidas",
         "desc": "Habilitar panel flotante de acciones rápidas"
       },
-      "separatewindow": {
-        "title": "Abrir los ajustes en una ventana separada",
-        "desc": "Abrir los ajustes como una ventana de aplicación redimensionable en lugar de un panel dentro del shell"
-      },
       "location": {
         "title": "Ubicación",
         "desc": "Configurar ubicación para horario solar automático y clima",
@@ -282,6 +280,10 @@
         "hide_bar": {
           "title": "Ocultar barra en el redactor",
           "desc": "Ocultar automáticamente la barra al editar widgets en el modo redactor"
+        },
+        "show_distances": {
+          "title": "Mostrar distancias",
+          "desc": "Mostrar las distancias entre widgets al moverlos o cambiar su tamaño en el redactor"
         },
         "hide_presets": "Ocultar preajustes",
         "choose_preset": "Elegir un preajuste",
@@ -419,6 +421,7 @@
         "desc": "Clic derecho en un elemento para iniciar la agrupación, clic derecho en otro para añadirlo. Clic derecho en un elemento agrupado para eliminarlo.",
         "reset": "Restablecer",
         "available": "Disponibles",
+        "shown": "Mostrados",
         "left": "Izquierda",
         "center": "Centro",
         "right": "Derecha"
@@ -465,21 +468,13 @@
           "wave": "Onda",
           "circle": "Círculo"
         },
-        "cpu": {
-          "title": "Uso de CPU",
-          "desc": "Mostrar el anillo de uso del procesador"
-        },
-        "ram": {
-          "title": "Uso de memoria",
-          "desc": "Mostrar el anillo de uso de memoria (RAM)"
-        },
-        "temp": {
-          "title": "Temperatura",
-          "desc": "Mostrar el anillo de temperatura del sistema"
-        },
-        "disk": {
-          "title": "Uso del disco",
-          "desc": "Mostrar el anillo de uso de almacenamiento"
+        "items": {
+          "title": "Estadísticas",
+          "desc": "Arrastra las estadísticas para reordenarlas, o muévelas a disponibles para ocultarlas",
+          "cpu": "CPU",
+          "ram": "Memoria",
+          "temp": "Temperatura",
+          "disk": "Disco"
         }
       },
       "bat": {
@@ -613,13 +608,14 @@
         "desc": "Cambia el grosor de la barra, los módulos se ajustan"
       },
       "menu": {
-        "show_settings": {
-          "title": "Mostrar icono de ajustes",
-          "desc": "Muestra el botón que abre los ajustes"
-        },
-        "show_launcher": {
-          "title": "Mostrar icono del lanzador",
-          "desc": "Muestra el botón de búsqueda que abre el lanzador"
+        "items": {
+          "title": "Botones",
+          "desc": "Arrastra los botones para reordenarlos, o muévelos a disponibles para ocultarlos",
+          "settings": "Ajustes",
+          "launcher": "Lanzador",
+          "night_light": "Luz nocturna",
+          "caffeine": "Cafeína",
+          "shuffle": "Fondo aleatorio"
         },
         "style": {
           "title": "Estilo",
@@ -668,6 +664,43 @@
           "blur": "Desenfoque",
           "liquid": "Cristal líquido"
         }
+      },
+      "apps": {
+        "loading": "Buscando aplicaciones instaladas...",
+        "status": {
+          "error": "No se pudo aplicar: {detail}"
+        },
+        "issue": {
+          "missing_config": "No se encontró la configuración. Añade esto a {file}: {line}",
+          "system_config": "Tu configuración es {file}. Añádele esto: {line}",
+          "read_only": "{file} es de solo lectura. Añádele esto: {line}",
+          "manual": "No se pudo editar la configuración de forma segura. Añade esto a {file}: {line}",
+          "no_theme": "Instala el tema {line} para que las aplicaciones GTK 3 también sigan la paleta",
+          "env": "Define {line} en el entorno de la sesión",
+          "requires": "Instala {line} para aplicar el tema a las aplicaciones Qt",
+          "failed": "No se pudo actualizar la configuración: {line}"
+        },
+        "hint": {
+          "select_in_app": "Elige el tema Serpantinum en los ajustes de la aplicación",
+          "restart": "Reinicia las ventanas abiertas para ver los nuevos colores",
+          "neovim": "Ejecuta :colorscheme serpantinum para usarlo",
+          "helix": "Ejecuta :config-reload en los editores abiertos para ver los nuevos colores",
+          "fastfetch": "Ejecuta fastfetch -c serpantinum para usarlo",
+          "spicetify": "Ejecuta spicetify config current_theme Serpantinum y luego spicetify apply",
+          "discord": "Activa Serpantinum en los ajustes de temas del cliente",
+          "emacs": "Ejecuta M-x load-theme serpantinum para usarlo",
+          "steam": "Instala Material-Theme con Millennium y luego elige Matugen en sus ajustes de color",
+          "heroic": "Configura la ruta de temas personalizados de Heroic en su carpeta de temas y luego elige serpantinum",
+          "telegram": "Carga el archivo del tema desde los ajustes de chat de Telegram"
+        },
+        "list": {
+          "title": "Aplicaciones con tema",
+          "desc": "Aplicaciones que siguen los colores del entorno. Añade más desde la lista"
+        },
+        "add": {
+          "title": "Añadir aplicación"
+        },
+        "empty": "Aún no hay aplicaciones con tema. Añade una desde la lista"
       }
     },
     "file_picker": {
@@ -1018,6 +1051,11 @@
         "failed": "Falló la descarga. Comprueba tu conexión.",
         "offline": "No se puede acceder a la lista de idiomas. Solo se muestran los idiomas instalados.",
         "loading": "Cargando idiomas..."
+      },
+      "directory": {
+        "title": "Carpeta de capturas de pantalla",
+        "desc": "Carpeta donde se guardan las capturas de pantalla",
+        "select_dir": "Seleccionar directorio..."
       }
     }
   },
@@ -1468,7 +1506,8 @@
       "generating_thumbnails": "Generando miniaturas...",
       "no_wallpapers_found": "No se encontraron fondos de pantalla",
       "videos": "Videos",
-      "history": "Aplicados recientemente"
+      "history": "Aplicados recientemente",
+      "favorites": "Favoritos"
     },
     "filters": {
       "all": "Todos",
@@ -1659,7 +1698,7 @@
     "description": "Un entorno de escritorio para compositores de wayland.",
     "commands": "Comandos:",
     "script_commands": "Comandos de scripts:",
-    "launch_desc": "Lanzar componentes independientes (start, widgetredactor, lock-redactor)",
+    "launch_desc": "Lanzar componentes independientes (start)",
     "msg_desc": "Enviar comandos o cambios de espacio de trabajo al gestor de UI",
     "ipc_desc": "Reenviar llamadas IPC directamente al shell",
     "kill_desc": "Detener limpiamente el demonio en ejecución",
@@ -1673,18 +1712,16 @@
     "daemon_restarted": "Demonio de serpantinum reiniciado.",
     "starting_daemon": "El demonio no está en ejecución. Iniciando serpantinumd en segundo plano...",
     "error_missing_qml": "Error: falta el destino a ejecutar.",
-    "launch_usage": "Uso: serpantinum launch <start|widgetredactor|lock-redactor> [argumentos...]",
+    "launch_usage": "Uso: serpantinum launch <start> [argumentos...]",
     "error_qml_not_found": "Error: no se pudo encontrar {NAME}.qml en {DIR}",
     "error_shell_qml_not_found": "Error: no se pudo resolver la ruta a shell.qml en {DIR}",
     "error_unknown_command": "Error: comando desconocido '{CMD}'.",
     "error_unknown_target": "Error: destino desconocido '{TARGET}'.",
     "launch_help": {
-      "usage": "Uso: serpantinum launch <start|widgetredactor|lock-redactor> [argumentos...]",
+      "usage": "Uso: serpantinum launch <start> [argumentos...]",
       "description": "Lanzar componentes independientes directamente en modo runner.",
       "available_targets": "Destinos disponibles:",
-      "target_start": "Lanzar la interfaz de configuración inicial",
-      "target_widgetredactor": "Lanzar el editor de widgets de escritorio",
-      "target_lock_redactor": "Alternar, abrir o cerrar el editor de diseño de la pantalla de bloqueo"
+      "target_start": "Lanzar la interfaz de configuración inicial"
     },
     "msg_help": {
       "usage": "Uso: serpantinum msg <comando|espaciodetrabajo> [argumentos...]",
@@ -1717,7 +1754,8 @@
       "hibernate": "Hibernar el sistema",
       "reboot": "Reiniciar el sistema",
       "poweroff": "Apagar el sistema",
-      "redactor": "Abrir o alternar el editor de diseño de widgets del escritorio"
+      "redactor": "Abrir o alternar el editor de diseño de widgets del escritorio",
+      "lock_redactor": "Alternar, abrir o cerrar el editor de diseño de la pantalla de bloqueo"
     },
     "usage_label": "Uso:",
     "config_desc": "Leer y cambiar la configuración (get, set, dump, path, edit)",
@@ -1732,7 +1770,8 @@
     "info_desc": "Mostrar el estado actual de un ajuste (notifications, idle, dock, sfx, theme, lang, wallpaper, monitors, updates)",
     "set_desc": "Cambiar un ajuste (notifications, idle, dock, sfx, theme, lang, wallpaper)",
     "trigger_desc": "Ejecutar una acción puntual (idle, notifications, theme, firstlaunch)",
-    "settings_desc": "Abrir la ventana de ajustes (opcionalmente en una pestaña)"
+    "settings_desc": "Abrir la ventana de ajustes (opcionalmente en una pestaña)",
+    "error_unknown_app": "Error: aplicación desconocida '{ID}'."
   },
   "daemon": {
     "already_running": "El demonio ya está en ejecución. Saliendo...",

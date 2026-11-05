@@ -48,7 +48,7 @@ Item {
         }
         return false;
     }
-    readonly property bool isPomodoroHighlighted: PomodoroService.isRunning || PomodoroService.isPausedMidSession || PomodoroController.isVisible
+    readonly property bool isPomodoroHighlighted: PomodoroService.isRunning || PomodoroService.isPausedMidSession
     readonly property bool showPomodoroItem: !hidePomodoroWhenIdle || isPomodoroHighlighted
 
     readonly property bool hasActiveContent: isRecording || isTimerActive || showPomodoroItem
@@ -90,23 +90,9 @@ Item {
     }
 
     function togglePomodoroNotch() {
-        let targetItem = module ? module : pomoContainer;
-        let pt = targetItem.mapToItem(null, 0, 0);
-        let scr = (barWindow && barWindow.screen) ? barWindow.screen : null;
-        let globX = root.isVertical
-            ? (root.isRightBar ? pt.x : (pt.x + targetItem.width))
-            : (pt.x + (targetItem.width / 2));
-        let globY = root.isVertical
-            ? (pt.y + (targetItem.height / 2))
-            : (root.isBottomBar ? pt.y : (pt.y + targetItem.height));
-        PomodoroController.toggle(
-            scr,
-            globX,
-            globY,
-            root.isVertical && root.isRightBar,
-            !root.isVertical && root.isBottomBar,
-            root.isVertical
-        );
+        if (Caching.serpantinumDir) {
+            Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle pomodoro"]);
+        }
     }
 
     Item {
@@ -222,30 +208,6 @@ Item {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
-
-                    onEntered: {
-                        let targetItem = module ? module : pomoContainer;
-                        let pt = targetItem.mapToItem(null, 0, 0);
-                        let scr = (barWindow && barWindow.screen) ? barWindow.screen : null;
-                        let globX = root.isVertical
-                            ? (root.isRightBar ? pt.x : (pt.x + targetItem.width))
-                            : (pt.x + (targetItem.width / 2));
-                        let globY = root.isVertical
-                            ? (pt.y + (targetItem.height / 2))
-                            : (root.isBottomBar ? pt.y : (pt.y + targetItem.height));
-                        PomodoroController.itemEntered(
-                            scr,
-                            globX,
-                            globY,
-                            root.isVertical && root.isRightBar,
-                            !root.isVertical && root.isBottomBar,
-                            root.isVertical
-                        );
-                    }
-
-                    onExited: {
-                        PomodoroController.itemExited();
-                    }
 
                     onClicked: function(mouse) {
                         if (mouse.button === Qt.LeftButton) {

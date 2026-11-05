@@ -59,6 +59,13 @@ function getWidgetLauncherEntries(i18n) {
             description: tr("widgets.system.desc", "Performance monitor, power, and quick settings"),
             icon: "preferences-system",
             fontIcon: "󰒓"
+        },
+        {
+            id: "pomodoro",
+            name: tr("widgets.pomodoro.name", "Pomodoro Timer"),
+            description: tr("widgets.pomodoro.desc", "Focus timer with customizable work and break intervals"),
+            icon: "alarm-symbolic",
+            fontIcon: "󰔟"
         }
     ];
 }
@@ -138,6 +145,24 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
                 "bottom": { anchor: "right" }, 
                 "left": { anchor: "right" }, 
                 "right": { anchor: "left" } 
+            } 
+        },
+        "pomodoro": { 
+            w: 330, h: 225, comp: "pomodoro/PomodoroPopup.qml", 
+            pos: { 
+                "top": { anchor: "top-center", mt: 52 }, 
+                "bottom": { anchor: "bottom-center", mb: 52 }, 
+                "left": { anchor: "center-left", ml: 52 }, 
+                "right": { anchor: "center-right", mr: 52 } 
+            } 
+        },
+        "timer": { 
+            w: 330, h: 225, comp: "pomodoro/PomodoroPopup.qml", 
+            pos: { 
+                "top": { anchor: "top-center", mt: 52 }, 
+                "bottom": { anchor: "bottom-center", mb: 52 }, 
+                "left": { anchor: "center-left", ml: 52 }, 
+                "right": { anchor: "center-right", mr: 52 } 
             } 
         },
         "hidden": { 

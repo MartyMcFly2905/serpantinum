@@ -20,6 +20,7 @@ Osd 1.0 popouts/Osd.qml
 PopoutManager 1.0 popouts/PopoutManager.qml
 SideMusicPopout 1.0 popouts/SideMusicPopout.qml
 PomodoroNotch 1.0 popouts/PomodoroNotch.qml
+PomodoroPopup 1.0 pomodoro/PomodoroPopup.qml
 TrayBase 1.0 popouts/TrayBase.qml
 DesktopMenu 1.0 popouts/DesktopMenu.qml
 DockAppMenu 1.0 popouts/DockAppMenu.qml

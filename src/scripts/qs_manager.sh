@@ -40,6 +40,7 @@ log_widget_launch() {
             music) app_name="$(t "widgets.music.name")" ;;
             notifications) app_name="$(t "widgets.notifications.name")" ;;
             system) app_name="$(t "widgets.system.name")" ;;
+            pomodoro|timer) app_name="Pomodoro" ;;
         esac
     fi
 

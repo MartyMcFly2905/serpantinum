@@ -167,11 +167,15 @@ Item {
                 width: implicitWidth
                 height: implicitHeight
 
+                readonly property bool isSessionActive: PomodoroService.isRunning || PomodoroService.isPausedMidSession
                 readonly property color activeColor: {
-                    if (root.isPomodoroHighlighted || pomoMouse.containsMouse) {
+                    if (isSessionActive) {
                         return root.isCompact ? Qt.lighter(PomodoroService.phaseColor, 1.08) : PomodoroService.phaseColor;
                     }
-                    return root.isCompact ? ThemeBackend.subtext1 : ThemeBackend.subtext0;
+                    if (pomoMouse.containsMouse) {
+                        return ThemeBackend.text;
+                    }
+                    return Qt.alpha(ThemeBackend.subtext0, 0.45);
                 }
 
                 AxisFlow {
@@ -193,7 +197,9 @@ Item {
                             ? (barWindow ? barWindow.cs(root.isCompact ? 11 : 12) : (root.isCompact ? 11 : 12))
                             : (barWindow ? barWindow.cs(root.isCompact ? 12 : 13) : (root.isCompact ? 12 : 13))
                         color: pomoContainer.activeColor
+                        opacity: pomoContainer.isSessionActive ? 1.0 : (pomoMouse.containsMouse ? 0.9 : 0.6)
                         Behavior on color { ColorAnimation { duration: 200 } }
+                        Behavior on opacity { NumberAnimation { duration: 200 } }
                     }
 
                     Text {
@@ -202,10 +208,9 @@ Item {
                         font.pixelSize: root.isVertical
                             ? (barWindow ? barWindow.cs(root.isCompact ? 10.5 : 11.5) : (root.isCompact ? 10.5 : 11.5))
                             : (barWindow ? barWindow.cs(root.isCompact ? 12.5 : 13.5) : (root.isCompact ? 12.5 : 13.5))
-                        font.weight: root.isPomodoroHighlighted ? Font.Black : Font.Bold
-                        color: root.isPomodoroHighlighted
-                            ? pomoContainer.activeColor
-                            : (pomoMouse.containsMouse ? ThemeBackend.text : pomoContainer.activeColor)
+                        font.weight: pomoContainer.isSessionActive ? Font.Black : Font.Bold
+                        color: pomoContainer.activeColor
+                        visible: pomoContainer.isSessionActive
                         Behavior on color { ColorAnimation { duration: 200 } }
                     }
                 }

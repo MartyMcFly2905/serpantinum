@@ -620,7 +620,7 @@ PanelWindow {
                                     color: PomodoroService.soundEnabled ? PomodoroService.phaseColor : ThemeBackend.subtext0
                                 }
                                 Text {
-                                    text: (typeof I18n !== "undefined") ? I18n.t("pomodoro.settings.sound", "Audio") : "Audio"
+                                    text: "Audio"
                                     font.family: ThemeBackend.fontFamily
                                     font.pixelSize: pomodoroNotch.s(10.5)
                                     font.bold: true
@@ -653,7 +653,7 @@ PanelWindow {
                                     color: PomodoroService.autoStartNext ? PomodoroService.phaseColor : ThemeBackend.subtext0
                                 }
                                 Text {
-                                    text: (typeof I18n !== "undefined") ? I18n.t("pomodoro.settings.autostart", "Auto-avvio") : "Auto-avvio"
+                                    text: "Auto start"
                                     font.family: ThemeBackend.fontFamily
                                     font.pixelSize: pomodoroNotch.s(10.5)
                                     font.bold: true

@@ -19,6 +19,7 @@ Serpantinum 1.0 serp/Serpantinum.qml
 Osd 1.0 popouts/Osd.qml
 PopoutManager 1.0 popouts/PopoutManager.qml
 SideMusicPopout 1.0 popouts/SideMusicPopout.qml
+PomodoroNotch 1.0 popouts/PomodoroNotch.qml
 TrayBase 1.0 popouts/TrayBase.qml
 DesktopMenu 1.0 popouts/DesktopMenu.qml
 DockAppMenu 1.0 popouts/DockAppMenu.qml
@@ -61,6 +62,7 @@ singleton SwayState 1.0 singletons/system/SwayState.qml
 singleton RecordingState 1.0 singletons/system/RecordingState.qml
 singleton SysNotif 1.0 singletons/system/SysNotif.qml
 singleton TimerState 1.0 singletons/system/TimerState.qml
+singleton PomodoroService 1.0 singletons/system/PomodoroService.qml
 singleton Updater 1.0 singletons/system/Updater.qml
 singleton WindowTracker 1.0 singletons/system/WindowTracker.qml
 
@@ -72,6 +74,7 @@ singleton FloatingController 1.0 singletons/widgetcontrols/FloatingController.qm
 singleton LauncherController 1.0 singletons/widgetcontrols/LauncherController.qml
 singleton OsdController 1.0 singletons/widgetcontrols/OsdController.qml
 singleton SideMusicController 1.0 singletons/widgetcontrols/SideMusicController.qml
+singleton PomodoroController 1.0 singletons/widgetcontrols/PomodoroController.qml
 singleton TrayMenuController 1.0 singletons/widgetcontrols/TrayMenuController.qml
 singleton WidgetSync 1.0 singletons/widgetcontrols/WidgetSync.qml
 singleton DesktopMenuController singletons/widgetcontrols/DesktopMenuController.qml

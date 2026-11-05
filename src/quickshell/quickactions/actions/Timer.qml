@@ -225,9 +225,6 @@ Item {
         if (stateCache.swStartEpoch > 0) {
             list.push({ icon: "\uF2F2", time: root.formatTime(stopwatchView.currentDisplayMs, false), colorType: "mauve" });
         }
-        if (stateCache.pomoTargetEpoch > 0) {
-            list.push({ icon: "\uF085", time: root.formatTime(stateCache.pomoRemainingMs, false), colorType: stateCache.pomoState !== 0 ? "green" : "mauve" });
-        }
 
         let key = JSON.stringify(list);
         if (key === root.exportedStateKey) return;
@@ -260,11 +257,8 @@ Item {
                 stateCache.swStartEpoch = now;
             }
         } else if (stateCache.activeMode === 2) {
-            if (stateCache.pomoTargetEpoch > 0) {
-                stateCache.pomoTargetEpoch = 0;
-            } else {
-                stateCache.pomoTargetEpoch = now + stateCache.pomoRemainingMs;
-            }
+            PomodoroService.toggle();
+            return;
         }
         root.saveFullState();
         root.updateExportedState();
@@ -648,38 +642,19 @@ Item {
                 opacity: visible ? 1.0 : 0.0
                 Behavior on opacity { NumberAnimation { duration: 250 } }
 
-                property bool isRunning: stateCache.pomoTargetEpoch > 0
+                property bool isRunning: PomodoroService.isRunning
                 property bool showSettings: false
 
                 function getPhaseColor() {
-                    if (stateCache.pomoState === 0) return ThemeBackend.mauve;
-                    if (stateCache.pomoState === 1) return Qt.rgba(166/255, 227/255, 161/255, 1.0);
-                    return ThemeBackend.surface1;
+                    return PomodoroService.phaseColor;
                 }
 
                 function getPhaseLabel() {
-                    if (stateCache.pomoState === 0) return I18n.t("quickactions.timer.pomodoro.phases.focus");
-                    if (stateCache.pomoState === 1) return I18n.t("quickactions.timer.pomodoro.phases.short_break");
-                    return I18n.t("quickactions.timer.pomodoro.phases.long_break");
+                    return PomodoroService.phaseLabel;
                 }
 
                 function handleSessionComplete() {
-                    if (stateCache.pomoState === 0) {
-                        stateCache.pomoSessionsCount++;
-                        if (stateCache.pomoSessionsCount >= stateCache.pomoTargetSessions) {
-                            stateCache.pomoState = 2;
-                            stateCache.pomoSessionsCount = 0;
-                            stateCache.pomoRemainingMs = stateCache.pomoLongBreakLimit * 60 * 1000;
-                        } else {
-                            stateCache.pomoState = 1;
-                            stateCache.pomoRemainingMs = stateCache.pomoShortBreakLimit * 60 * 1000;
-                        }
-                    } else {
-                        stateCache.pomoState = 0;
-                        stateCache.pomoRemainingMs = stateCache.pomoWorkLimit * 60 * 1000;
-                    }
-                    root.saveFullState();
-                    root.updateExportedState();
+                    PomodoroService.skip();
                 }
 
                 Item {
@@ -695,14 +670,14 @@ Item {
 
                         Text {
                             Layout.alignment: Qt.AlignHCenter
-                            text: pomodoroView.getPhaseLabel() + " (" + stateCache.pomoSessionsCount + "/" + stateCache.pomoTargetSessions + ")"
+                            text: PomodoroService.phaseLabel + " (" + PomodoroService.sessionsCount + "/" + PomodoroService.targetSessions + ")"
                             font.family: ThemeBackend.fontFamily; font.bold: true; font.pixelSize: root.s(14)
-                            color: pomodoroView.getPhaseColor()
+                            color: PomodoroService.phaseColor
                         }
 
                         Text {
                             Layout.alignment: Qt.AlignHCenter
-                            text: root.formatTime(stateCache.pomoRemainingMs, false)
+                            text: PomodoroService.formattedTime
                             font.family: ThemeBackend.fontFamily; font.weight: Font.Black; font.pixelSize: root.s(68)
                             color: ThemeBackend.text
                         }
@@ -730,10 +705,10 @@ Item {
 
                             Repeater {
                                 model: [
-                                    { label: I18n.t("quickactions.timer.pomodoro.settings.work"), target: "pomoWorkLimit", step: 5, min: 5, max: 60 },
-                                    { label: I18n.t("quickactions.timer.pomodoro.settings.short_break"), target: "pomoShortBreakLimit", step: 1, min: 1, max: 15 },
-                                    { label: I18n.t("quickactions.timer.pomodoro.settings.long_break"), target: "pomoLongBreakLimit", step: 5, min: 5, max: 45 },
-                                    { label: I18n.t("quickactions.timer.pomodoro.settings.sessions"), target: "pomoTargetSessions", step: 1, min: 1, max: 10 }
+                                    { label: I18n.t("quickactions.timer.pomodoro.settings.work"), target: "workDuration", step: 5, min: 5, max: 120 },
+                                    { label: I18n.t("quickactions.timer.pomodoro.settings.short_break"), target: "shortBreakDuration", step: 1, min: 1, max: 30 },
+                                    { label: I18n.t("quickactions.timer.pomodoro.settings.long_break"), target: "longBreakDuration", step: 5, min: 5, max: 60 },
+                                    { label: I18n.t("quickactions.timer.pomodoro.settings.sessions"), target: "targetSessions", step: 1, min: 1, max: 10 }
                                 ]
                                 RowLayout {
                                     width: root.s(230)
@@ -747,11 +722,14 @@ Item {
                                         bgOpacity: ThemeBackend.elementOpacity
                                         textColor: ThemeBackend.text
                                         onClicked: {
-                                            stateCache[modelData.target] = Math.max(modelData.min, stateCache[modelData.target] - modelData.step);
-                                            root.saveFullState();
+                                            let next = Math.max(modelData.min, PomodoroService[modelData.target] - modelData.step);
+                                            if (modelData.target === "workDuration") PomodoroService.setWorkDuration(next);
+                                            else if (modelData.target === "shortBreakDuration") PomodoroService.setShortBreakDuration(next);
+                                            else if (modelData.target === "longBreakDuration") PomodoroService.setLongBreakDuration(next);
+                                            else if (modelData.target === "targetSessions") PomodoroService.setTargetSessions(next);
                                         }
                                     }
-                                    Text { text: stateCache[modelData.target]; color: ThemeBackend.text; font.family: ThemeBackend.fontFamily; font.bold: true; font.pixelSize: root.s(14); Layout.minimumWidth: root.s(24); horizontalAlignment: Text.AlignHCenter }
+                                    Text { text: PomodoroService[modelData.target]; color: ThemeBackend.text; font.family: ThemeBackend.fontFamily; font.bold: true; font.pixelSize: root.s(14); Layout.minimumWidth: root.s(24); horizontalAlignment: Text.AlignHCenter }
                                     IconButton {
                                         size: root.s(24)
                                         cornerRadius: ThemeBackend.borderRadius
@@ -761,8 +739,11 @@ Item {
                                         bgOpacity: ThemeBackend.elementOpacity
                                         textColor: ThemeBackend.text
                                         onClicked: {
-                                            stateCache[modelData.target] = Math.min(modelData.max, stateCache[modelData.target] + modelData.step);
-                                            root.saveFullState();
+                                            let next = Math.min(modelData.max, PomodoroService[modelData.target] + modelData.step);
+                                            if (modelData.target === "workDuration") PomodoroService.setWorkDuration(next);
+                                            else if (modelData.target === "shortBreakDuration") PomodoroService.setShortBreakDuration(next);
+                                            else if (modelData.target === "longBreakDuration") PomodoroService.setLongBreakDuration(next);
+                                            else if (modelData.target === "targetSessions") PomodoroService.setTargetSessions(next);
                                         }
                                     }
                                 }
@@ -797,15 +778,15 @@ Item {
                         id: pomoPlayBtn
                         size: root.s(64)
                         cornerRadius: ThemeBackend.borderRadius
-                        buttonIcon: pomodoroView.isRunning ? "\uF04C" : "\uF04B"
+                        buttonIcon: PomodoroService.isRunning ? "\uF04C" : "\uF04B"
                         iconFontSize: root.s(24)
-                        accentColor: pomodoroView.getPhaseColor()
+                        accentColor: PomodoroService.phaseColor
                         bgOpacity: ThemeBackend.elementOpacity
                         textColor: ThemeBackend.mantle
                         anchors.centerIn: parent
                         onClicked: {
                             if (pomodoroView.showSettings) pomodoroView.showSettings = false;
-                            root.toggleActiveTabState();
+                            PomodoroService.toggle();
                         }
                     }
 
@@ -820,24 +801,7 @@ Item {
                         anchors.left: pomoPlayBtn.right
                         anchors.leftMargin: root.s(20)
                         anchors.verticalCenter: pomoPlayBtn.verticalCenter
-                        onClicked: {
-                            stateCache.pomoTargetEpoch = 0;
-                            let phase = stateCache.pomoState;
-                            if (phase === 0) {
-                                root.notify(
-                                    I18n.t("quickactions.timer.notification.pomo_skipped_title"),
-                                    I18n.t("quickactions.timer.notification.pomo_skipped_focus_body"),
-                                    "media-skip-forward"
-                                );
-                            } else {
-                                root.notify(
-                                    I18n.t("quickactions.timer.notification.pomo_skipped_title"),
-                                    I18n.t("quickactions.timer.notification.pomo_skipped_break_body"),
-                                    "media-skip-forward"
-                                );
-                            }
-                            pomodoroView.handleSessionComplete();
-                        }
+                        onClicked: PomodoroService.skip()
                     }
                 }
             }

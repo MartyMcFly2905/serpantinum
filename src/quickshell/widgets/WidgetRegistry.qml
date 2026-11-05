@@ -892,9 +892,10 @@ QtObject {
         "calendar": {
             name: typeof I18n !== "undefined" ? I18n.t("widgets.types.calendar", "Calendar") : "Calendar",
             icon: String.fromCodePoint(0xF00ED),
+            category: "time",
             iconOffsetX: 0,
             defaultWidth: 340,
-            defaultHeight: 320,
+            defaultHeight: 280,
             defaultVariant: "month",
             variants: {
                 "month":   { file: "faces/calendar/CalendarFaceMonth.qml",   icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.month", "Month") : "Month" },
@@ -912,6 +913,19 @@ QtObject {
                     textColor: "mauve"
                 }
             ]
+        },
+        "agenda": {
+            name: typeof I18n !== "undefined" ? I18n.t("widgets.types.agenda", "Agenda & Tasks") : "Agenda & Tasks",
+            icon: String.fromCodePoint(0xF0134),
+            category: "time",
+            defaultWidth: 340,
+            defaultHeight: 240,
+            defaultVariant: "agenda",
+            variants: {
+                "agenda":  { file: "faces/calendar/CalendarFaceAgenda.qml",  icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.agenda", "Agenda") : "Agenda" },
+                "month":   { file: "faces/calendar/CalendarFaceMonth.qml",   icon: "2", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.month", "Month") : "Month" },
+                "compact": { file: "faces/calendar/CalendarFaceCompact.qml", icon: "3", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.compact", "Compact") : "Compact" }
+            }
         },
         "notes": {
             name: typeof I18n !== "undefined" ? I18n.t("widgets.types.notes", "Notes") : "Notes",

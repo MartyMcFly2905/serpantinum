@@ -1572,6 +1572,7 @@
       "battery": "Battery",
       "github": "Github",
       "calendar": "Calendar",
+      "agenda": "Agenda & Tasks",
       "time": "Time",
       "notes": "Notes",
       "text": "Text"
@@ -1630,7 +1631,12 @@
       "agenda_title": "Agenda",
       "today": "Today",
       "tomorrow": "Tomorrow",
-      "next_event": "Next Event"
+      "next_event": "Next Event",
+      "upcoming": "Upcoming Schedule",
+      "no_events_day": "No events for this day",
+      "show_upcoming": "Show upcoming events",
+      "add_event": "Add event or task",
+      "new_task_placeholder": "New quick task..."
     },
     "settings": {
       "lyricsLines": "Lines",
@@ -1905,5 +1911,24 @@
   },
   "common": {
     "select": "Select..."
+  },
+  "pomodoro": {
+    "phase": {
+      "work": "Focus",
+      "short_break": "Short Break",
+      "long_break": "Long Break"
+    },
+    "settings": {
+      "sound": "Completion sound",
+      "autostart": "Auto-start phases"
+    },
+    "notification": {
+      "app_name": "Pomodoro Timer",
+      "work_done_title": "Focus session completed!",
+      "work_done_body_short": "Great job! Time for a short break.",
+      "work_done_body_long": "Cycle completed! Enjoy a long break.",
+      "break_done_title": "Break finished!",
+      "break_done_body": "Time to get back to focus."
+    }
   }
 }

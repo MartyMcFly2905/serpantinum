@@ -1544,6 +1544,7 @@
       "battery": "Batteria",
       "github": "Github",
       "calendar": "Calendario",
+      "agenda": "Agenda e Attività",
       "time": "Ora",
       "notes": "Note",
       "text": "Testo"
@@ -1604,7 +1605,12 @@
       "agenda_title": "Agenda",
       "today": "Oggi",
       "tomorrow": "Domani",
-      "next_event": "Prossimo evento"
+      "next_event": "Prossimo evento",
+      "upcoming": "Prossimi impegni",
+      "no_events_day": "Nessun impegno per questo giorno",
+      "show_upcoming": "Mostra prossimi impegni",
+      "add_event": "Aggiungi impegno o attività",
+      "new_task_placeholder": "Nuova attività rapida..."
     },
     "settings": {
       "lyricsLines": "Righe",
@@ -1842,5 +1848,24 @@
   },
   "datetime": {
     "full_date": "dddd, d MMMM"
+  },
+  "pomodoro": {
+    "phase": {
+      "work": "Lavoro",
+      "short_break": "Pausa Breve",
+      "long_break": "Pausa Lunga"
+    },
+    "settings": {
+      "sound": "Audio completamento",
+      "autostart": "Avvio automatico fasi"
+    },
+    "notification": {
+      "app_name": "Pomodoro Timer",
+      "work_done_title": "Sessione di lavoro completata!",
+      "work_done_body_short": "Ottimo lavoro! Inizia una pausa breve.",
+      "work_done_body_long": "Ciclo completato! Goditi una pausa lunga.",
+      "break_done_title": "Pausa terminata!",
+      "break_done_body": "È il momento di tornare a concentrarsi."
+    }
   }
 }

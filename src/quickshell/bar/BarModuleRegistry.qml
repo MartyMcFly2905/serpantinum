@@ -10,7 +10,7 @@ QtObject {
         if (!id) return "";
         let s = String(id).toLowerCase().trim();
         if (s === "timedate" || s === "time" || s === "clock") return "timedate";
-        if (s === "info" || s === "indicator" || s === "indicators" || s === "record") return "info";
+        if (s === "info" || s === "indicator" || s === "indicators" || s === "record" || s === "pomodoro" || s === "timer") return "info";
         if (s === "volume" || s === "vol") return "vol";
         if (s === "battery" || s === "bat") return "bat";
         if (s === "visualizer" || s === "viswidget" || s === "vis") return "vis";

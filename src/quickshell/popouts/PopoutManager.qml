@@ -8,6 +8,7 @@ Item {
     Osd {}
     TrayBase {}
     SideMusicPopout {}
+    PomodoroNotch {}
     DesktopMenu {}
     DockAppMenu {}
 }

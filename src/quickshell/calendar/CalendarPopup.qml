@@ -435,17 +435,17 @@ Item {
             let pDay = daysInPrevMonth - i;
             let pDate = new Date(targetYear, targetMonth - 1, pDay);
             let hasEvs = typeof CalendarService !== "undefined" ? CalendarService.hasEventsOnDate(pDate.getFullYear(), pDate.getMonth() + 1, pDay) : false;
-            calendarModel.append({ dayNum: pDay.toString(), isCurrentMonth: false, isToday: false, hasEvents: hasEvs });
+            calendarModel.append({ dayNum: pDay.toString(), dayVal: pDay, year: pDate.getFullYear(), month: pDate.getMonth(), isCurrentMonth: false, isToday: false, hasEvents: hasEvs });
         }
         for (let i = 1; i <= daysInMonth; i++) {
             let hasEvs = typeof CalendarService !== "undefined" ? CalendarService.hasEventsOnDate(targetYear, targetMonth + 1, i) : false;
-            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: true, isToday: (isRealCurrentMonth && i === todayDate), hasEvents: hasEvs });
+            calendarModel.append({ dayNum: i.toString(), dayVal: i, year: targetYear, month: targetMonth, isCurrentMonth: true, isToday: (isRealCurrentMonth && i === todayDate), hasEvents: hasEvs });
         }
         let remaining = 42 - calendarModel.count;
         for (let i = 1; i <= remaining; i++) {
             let nDate = new Date(targetYear, targetMonth + 1, i);
             let hasEvs = typeof CalendarService !== "undefined" ? CalendarService.hasEventsOnDate(nDate.getFullYear(), nDate.getMonth() + 1, i) : false;
-            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: false, isToday: false, hasEvents: hasEvs });
+            calendarModel.append({ dayNum: i.toString(), dayVal: i, year: nDate.getFullYear(), month: nDate.getMonth(), isCurrentMonth: false, isToday: false, hasEvents: hasEvs });
         }
     }
 
@@ -901,6 +901,24 @@ Item {
                             textColor: window.text
                             onClicked: window.setMonthOffset(window.targetMonthOffset + 1)
                         }
+
+                        IconButton {
+                            Layout.preferredWidth: window.s(28)
+                            Layout.preferredHeight: window.s(28)
+                            size: window.s(28)
+                            cornerRadius: window.s(8)
+                            buttonIcon: "󰊭"
+                            iconFontSize: window.s(13)
+                            accentColor: window.surface0
+                            textColor: window.sapphire
+                            onClicked: {
+                                if (typeof CalendarService !== "undefined") {
+                                    CalendarService.openGoogleCalendarWeb();
+                                } else {
+                                    Quickshell.execDetached(["xdg-open", "https://calendar.google.com"]);
+                                }
+                            }
+                        }
                     }
 
                     RowLayout {
@@ -938,16 +956,30 @@ Item {
                             Item {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
+                                readonly property bool isSelectedDay: typeof CalendarService !== "undefined"
+                                    && CalendarService.selectedYear === year
+                                    && CalendarService.selectedMonth === month
+                                    && CalendarService.selectedDay === dayVal
+
                                 ClickButton {
                                     anchors.fill: parent
-                                    enabled: false
+                                    enabled: true
                                     buttonText: dayNum
                                     textFontSize: window.s(11.5)
                                     cornerRadius: window.s(5)
                                     horizontalPadding: 0
-                                    accentColor: isToday ? window.textAccent : ((ThemeBackend.liquidGlass && !isCurrentMonth) ? window.surface0 : "transparent")
+                                    accentColor: isToday
+                                        ? window.textAccent
+                                        : (isSelectedDay ? Qt.alpha(window.textAccent, 0.28) : ((ThemeBackend.liquidGlass && !isCurrentMonth) ? window.surface0 : "transparent"))
                                     glassTintScale: isToday ? 2.6 : 1.0
-                                    textColor: ThemeBackend.liquidGlass ? (isCurrentMonth ? window.text : window.subtext0) : (isToday ? window.base : (isCurrentMonth ? window.text : window.surface0))
+                                    textColor: ThemeBackend.liquidGlass
+                                        ? (isCurrentMonth ? window.text : window.subtext0)
+                                        : (isToday ? window.base : (isSelectedDay ? window.textAccent : (isCurrentMonth ? window.text : window.surface0)))
+                                    onClicked: {
+                                        if (typeof CalendarService !== "undefined") {
+                                            CalendarService.selectDate(year, month, dayVal, true);
+                                        }
+                                    }
                                 }
 
                                 Rectangle {

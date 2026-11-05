@@ -19,17 +19,39 @@ Item {
 
     readonly property bool isCompact: module ? module.isCompact : false
     readonly property var barWindow: module ? module.barWindow : null
+    readonly property bool isBottomBar: barWindow ? (barWindow.barPosition === "bottom") : false
+    readonly property bool isRightBar: module ? module.isRightBar : (barWindow ? (barWindow.barPosition === "right") : false)
 
     readonly property bool isRecording: RecordingState.isRecording
     readonly property string recTimeFormatted: RecordingState.recTimeFormatted
     readonly property bool wantsRecording: !module || module.moduleActive
     property bool recSubscribed: false
 
-    readonly property var timerEntries: TimerState.entries
+    // Filter out legacy Pomodoro entries from TimerState since PomodoroService is rendered natively
+    readonly property var timerEntries: {
+        let raw = TimerState.entries || [];
+        let filtered = [];
+        for (let i = 0; i < raw.length; i++) {
+            if (raw[i] && raw[i].icon !== "\uF085" && raw[i].type !== "pomodoro") {
+                filtered.push(raw[i]);
+            }
+        }
+        return filtered;
+    }
     readonly property bool isTimerActive: timerEntries.length > 0
     readonly property color greenColor: (typeof ThemeBackend !== "undefined" && ThemeBackend.green !== undefined) ? ThemeBackend.green : Qt.rgba(166/255, 227/255, 161/255, 1.0)
 
-    readonly property bool hasActiveContent: isRecording || isTimerActive
+    // Pomodoro bar integration (always available on bar unless explicitly hidden in config)
+    readonly property bool hidePomodoroWhenIdle: {
+        if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar) {
+            if (Config.rawSettings.bar.pomodoroHideWhenIdle === true) return true;
+        }
+        return false;
+    }
+    readonly property bool isPomodoroHighlighted: PomodoroService.isRunning || PomodoroService.isPausedMidSession || PomodoroController.isVisible
+    readonly property bool showPomodoroItem: !hidePomodoroWhenIdle || isPomodoroHighlighted
+
+    readonly property bool hasActiveContent: isRecording || isTimerActive || showPomodoroItem
 
     property alias recRow: recLayout
     property alias recCol: recLayout
@@ -50,8 +72,11 @@ Item {
 
     property real recLength: isRecording ? (isVertical ? recLayout.implicitHeight : recLayout.implicitWidth) : 0
     property real timerLength: isTimerActive ? (isVertical ? timerLayout.implicitHeight : timerLayout.implicitWidth) : 0
-    property real activeSpacing: (isRecording && isTimerActive) ? innerSpacing : 0
-    property real targetLength: hasActiveContent ? (recLength + timerLength + activeSpacing + (lengthPadding * 2)) : 0
+    property real pomoLength: showPomodoroItem ? (isVertical ? pomoContainer.implicitHeight : pomoContainer.implicitWidth) : 0
+
+    readonly property int visibleSectionsCount: (isRecording ? 1 : 0) + (isTimerActive ? 1 : 0) + (showPomodoroItem ? 1 : 0)
+    property real activeSpacing: visibleSectionsCount > 1 ? innerSpacing * (visibleSectionsCount - 1) : 0
+    property real targetLength: hasActiveContent ? (recLength + timerLength + pomoLength + activeSpacing + (lengthPadding * 2)) : 0
     property bool showLayout: false
     property bool isFaceVisible: showLayout && hasActiveContent && targetLength > 0
 
@@ -62,6 +87,26 @@ Item {
         running: barWindow && barWindow.isStartupReady
         interval: 120
         onTriggered: root.showLayout = true
+    }
+
+    function togglePomodoroNotch() {
+        let targetItem = module ? module : pomoContainer;
+        let pt = targetItem.mapToItem(null, 0, 0);
+        let scr = (barWindow && barWindow.screen) ? barWindow.screen : null;
+        let globX = root.isVertical
+            ? (root.isRightBar ? pt.x : (pt.x + targetItem.width))
+            : (pt.x + (targetItem.width / 2));
+        let globY = root.isVertical
+            ? (pt.y + (targetItem.height / 2))
+            : (root.isBottomBar ? pt.y : (pt.y + targetItem.height));
+        PomodoroController.toggle(
+            scr,
+            globX,
+            globY,
+            root.isVertical && root.isRightBar,
+            !root.isVertical && root.isBottomBar,
+            root.isVertical
+        );
     }
 
     Item {
@@ -107,9 +152,103 @@ Item {
                     id: recText
                     text: root.recTimeFormatted
                     font.family: ThemeBackend.fontFamily
-                    font.pixelSize: root.isVertical ? (barWindow ? barWindow.cs(root.isCompact ? 11 : 12) : (root.isCompact ? 11 : 12)) : (barWindow ? barWindow.cs(root.isCompact ? 13 : 14) : (root.isCompact ? 13 : 14))
+                    font.pixelSize: root.isVertical ? (barWindow ? barWindow.cs(root.isCompact ? 11 : 12) : (root.isCompact ? 11 : 12)) : (barWindow ? barWindow.cs(root.isCompact ? 13 : 14) : (barWindow ? barWindow.cs(root.isCompact ? 13 : 14))
                     font.weight: Font.Bold
                     color: root.isCompact ? Qt.lighter(ThemeBackend.red, 1.08) : ThemeBackend.red
+                }
+            }
+
+            // Interactive Pomodoro Bar Control
+            Item {
+                id: pomoContainer
+                visible: root.showPomodoroItem
+                implicitWidth: pomoLayout.implicitWidth
+                implicitHeight: pomoLayout.implicitHeight
+                width: implicitWidth
+                height: implicitHeight
+
+                readonly property color activeColor: {
+                    if (root.isPomodoroHighlighted || pomoMouse.containsMouse) {
+                        return root.isCompact ? Qt.lighter(PomodoroService.phaseColor, 1.08) : PomodoroService.phaseColor;
+                    }
+                    return root.isCompact ? ThemeBackend.subtext1 : ThemeBackend.subtext0;
+                }
+
+                AxisFlow {
+                    id: pomoLayout
+                    vertical: root.isVertical
+                    horizontalItemAlignment: Grid.AlignHCenter
+                    verticalItemAlignment: Grid.AlignVCenter
+                    spacing: root.isVertical
+                        ? (barWindow ? barWindow.cs(root.isCompact ? 3 : 4) : (root.isCompact ? 3 : 4))
+                        : (barWindow ? barWindow.cs(root.isCompact ? 5 : 6) : (root.isCompact ? 5 : 6))
+
+                    scale: pomoMouse.pressed ? 0.95 : (pomoMouse.containsMouse ? 1.04 : 1.0)
+                    Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+
+                    Text {
+                        text: PomodoroService.phaseIcon
+                        font.family: ThemeBackend.iconFont
+                        font.pixelSize: root.isVertical
+                            ? (barWindow ? barWindow.cs(root.isCompact ? 11 : 12) : (root.isCompact ? 11 : 12))
+                            : (barWindow ? barWindow.cs(root.isCompact ? 12 : 13) : (root.isCompact ? 12 : 13))
+                        color: pomoContainer.activeColor
+                        Behavior on color { ColorAnimation { duration: 200 } }
+                    }
+
+                    Text {
+                        text: PomodoroService.formattedTime
+                        font.family: ThemeBackend.fontFamily
+                        font.pixelSize: root.isVertical
+                            ? (barWindow ? barWindow.cs(root.isCompact ? 10.5 : 11.5) : (root.isCompact ? 10.5 : 11.5))
+                            : (barWindow ? barWindow.cs(root.isCompact ? 12.5 : 13.5) : (root.isCompact ? 12.5 : 13.5))
+                        font.weight: root.isPomodoroHighlighted ? Font.Black : Font.Bold
+                        color: root.isPomodoroHighlighted
+                            ? pomoContainer.activeColor
+                            : (pomoMouse.containsMouse ? ThemeBackend.text : pomoContainer.activeColor)
+                        Behavior on color { ColorAnimation { duration: 200 } }
+                    }
+                }
+
+                MouseArea {
+                    id: pomoMouse
+                    anchors.fill: parent
+                    anchors.margins: -(barWindow ? barWindow.cs(6) : 6)
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+
+                    onEntered: {
+                        let targetItem = module ? module : pomoContainer;
+                        let pt = targetItem.mapToItem(null, 0, 0);
+                        let scr = (barWindow && barWindow.screen) ? barWindow.screen : null;
+                        let globX = root.isVertical
+                            ? (root.isRightBar ? pt.x : (pt.x + targetItem.width))
+                            : (pt.x + (targetItem.width / 2));
+                        let globY = root.isVertical
+                            ? (pt.y + (targetItem.height / 2))
+                            : (root.isBottomBar ? pt.y : (pt.y + targetItem.height));
+                        PomodoroController.itemEntered(
+                            scr,
+                            globX,
+                            globY,
+                            root.isVertical && root.isRightBar,
+                            !root.isVertical && root.isBottomBar,
+                            root.isVertical
+                        );
+                    }
+
+                    onExited: {
+                        PomodoroController.itemExited();
+                    }
+
+                    onClicked: function(mouse) {
+                        if (mouse.button === Qt.LeftButton) {
+                            root.togglePomodoroNotch();
+                        } else if (mouse.button === Qt.MiddleButton || mouse.button === Qt.RightButton) {
+                            PomodoroService.toggle();
+                        }
+                    }
                 }
             }
 

@@ -6,23 +6,29 @@ import Quickshell.Wayland
 import "../../../reusables"
 import "../../../"
 
+/**
+ * CalendarFaceMonth (Widget A - Full Calendar Month View)
+ * Glassmorphic monthly grid widget with event indicator dots, fast month/today
+ * navigation, direct Google Calendar Web launcher, and interconnected day
+ * filtering with CalendarFaceAgenda.
+ */
 Item {
     id: root
     anchors.fill: parent
     clip: true
 
-    property real minWidth: Scaler.s(260)
-    property real minHeight: Scaler.s(240)
+    property real minWidth: Scaler.s(250)
+    property real minHeight: Scaler.s(210)
     property real maxWidth: Scaler.s(1200)
     property real maxHeight: Scaler.s(900)
     property real minAspect: 0.6
-    property real maxAspect: 3.0
+    property real maxAspect: 3.2
     property bool isRound: false
 
     property int monthOffset: 0
-    property int selectedDay: new Date().getDate()
-    property int selectedMonth: new Date().getMonth()
-    property int selectedYear: new Date().getFullYear()
+    readonly property int selectedDay: (typeof CalendarService !== "undefined") ? CalendarService.selectedDay : new Date().getDate()
+    readonly property int selectedMonth: (typeof CalendarService !== "undefined") ? CalendarService.selectedMonth : new Date().getMonth()
+    readonly property int selectedYear: (typeof CalendarService !== "undefined") ? CalendarService.selectedYear : new Date().getFullYear()
 
     property bool isConfiguring: false
     property bool wantsKeyboardFocus: isConfiguring
@@ -59,7 +65,7 @@ Item {
                     t.requestActivate();
                 }
             }
-        } catch(e) {}
+        } catch (e) {}
     }
 
     readonly property var currentMonthDate: {
@@ -73,7 +79,9 @@ Item {
     readonly property int displayMonth: currentMonthDate.getMonth()
     readonly property string displayMonthTitle: {
         try {
-            return currentMonthDate.toLocaleDateString(Qt.locale(typeof I18n !== "undefined" ? I18n.currentLang : "en"), "MMMM yyyy");
+            let loc = Qt.locale(typeof I18n !== "undefined" ? I18n.currentLang : "it");
+            let mName = loc.standaloneMonthName(displayMonth, Locale.LongFormat);
+            return mName.charAt(0).toUpperCase() + mName.slice(1) + " " + displayYear;
         } catch (e) {
             return currentMonthDate.toLocaleDateString(Qt.locale(), "MMMM yyyy");
         }
@@ -169,15 +177,32 @@ Item {
 
     readonly property var selectedDayEvents: {
         if (typeof CalendarService === "undefined") return [];
+        let dummy = CalendarService.eventsCount;
         return CalendarService.getEventsForDate(root.selectedYear, root.selectedMonth + 1, root.selectedDay);
     }
 
     Rectangle {
         id: bgCard
         anchors.fill: parent
-        color: ThemeBackend.surface0
+        color: Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
         radius: ThemeBackend.clampedBorderRadius !== undefined ? ThemeBackend.clampedBorderRadius : ThemeBackend.borderRadius
+        border.width: 1
+        border.color: Qt.alpha(ThemeBackend.surface2, 0.38)
         clip: true
+
+        WallpaperBlur {
+            z: -2
+            anchors.fill: parent
+            radius: parent.radius
+        }
+
+        GlassFill {
+            z: -1
+            anchors.fill: parent
+            radius: parent.radius
+            tintColor: ThemeBackend.surface0
+            tintAmount: 0.22
+        }
 
         // Main Widget View
         RowLayout {
@@ -192,95 +217,158 @@ Item {
                 Layout.fillHeight: true
                 spacing: Scaler.s(6)
 
-                // Header bar (Month title + Prev/Today/Next + Sync/Config)
+                // Header bar (Month title + Today + Prev/Next + Google Calendar Web + Sync + Config)
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Scaler.s(32)
+                    Layout.preferredHeight: Scaler.s(30)
                     spacing: Scaler.s(4)
 
                     Text {
                         text: root.displayMonthTitle
                         font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Scaler.s(14)
-                        font.bold: true
+                        font.pixelSize: Scaler.s(13.5)
+                        font.weight: Font.Black
                         color: ThemeBackend.text
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                     }
 
-                    // Reset to Today button (visible if navigated away)
-                    IconButton {
-                        visible: root.monthOffset !== 0
-                        size: Scaler.s(28)
-                        cornerRadius: ThemeBackend.borderRadius
-                        buttonIcon: "󰁝"
-                        iconFontSize: Scaler.s(13)
-                        accentColor: ThemeBackend.surface1
-                        textColor: ThemeBackend.mauve
-                        onClicked: root.monthOffset = 0
+                    // "Oggi" (Today) quick pill button
+                    Rectangle {
+                        visible: root.monthOffset !== 0 || (typeof CalendarService !== "undefined" && !CalendarService.isSelectedToday)
+                        Layout.preferredHeight: Scaler.s(26)
+                        Layout.preferredWidth: todayBtnLabel.implicitWidth + Scaler.s(14)
+                        radius: ThemeBackend.borderRadius
+                        color: todayBtnMa.containsMouse ? ThemeBackend.mauve : Qt.alpha(ThemeBackend.surface1, 0.75)
+                        border.width: 1
+                        border.color: Qt.alpha(ThemeBackend.mauve, 0.45)
+
+                        Behavior on color { ColorAnimation { duration: 150 } }
+
+                        Text {
+                            id: todayBtnLabel
+                            anchors.centerIn: parent
+                            text: typeof I18n !== "undefined" ? I18n.t("widgets.calendar.today", "Oggi") : "Oggi"
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: Scaler.s(10)
+                            font.bold: true
+                            color: todayBtnMa.containsMouse ? ThemeBackend.crust : ThemeBackend.mauve
+                        }
+
+                        MouseArea {
+                            id: todayBtnMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                root.monthOffset = 0;
+                                if (typeof CalendarService !== "undefined") {
+                                    CalendarService.resetSelectionToToday(true);
+                                }
+                            }
+                        }
                     }
 
                     // Prev Month
                     IconButton {
-                        size: Scaler.s(28)
+                        size: Scaler.s(26)
                         cornerRadius: ThemeBackend.borderRadius
                         buttonIcon: "󰅁"
-                        iconFontSize: Scaler.s(14)
+                        iconFontSize: Scaler.s(13)
                         accentColor: ThemeBackend.surface1
+                        bgOpacity: ThemeBackend.elementOpacity
                         textColor: ThemeBackend.subtext0
                         onClicked: root.monthOffset--
                     }
 
                     // Next Month
                     IconButton {
-                        size: Scaler.s(28)
+                        size: Scaler.s(26)
                         cornerRadius: ThemeBackend.borderRadius
                         buttonIcon: "󰅂"
-                        iconFontSize: Scaler.s(14)
+                        iconFontSize: Scaler.s(13)
                         accentColor: ThemeBackend.surface1
+                        bgOpacity: ThemeBackend.elementOpacity
                         textColor: ThemeBackend.subtext0
                         onClicked: root.monthOffset++
                     }
 
-                    // Sync button
+                    // Open Google Calendar in Browser (xdg-open "https://calendar.google.com")
                     IconButton {
-                        size: Scaler.s(28)
+                        size: Scaler.s(26)
                         cornerRadius: ThemeBackend.borderRadius
-                        buttonIcon: "󰑐"
-                        iconFontSize: Scaler.s(13)
+                        buttonIcon: "󰊭"
+                        iconFontSize: Scaler.s(12)
                         accentColor: ThemeBackend.surface1
-                        textColor: (typeof CalendarService !== "undefined" && CalendarService.isLoading) ? ThemeBackend.mauve : ThemeBackend.subtext0
+                        bgOpacity: ThemeBackend.elementOpacity
+                        textColor: ThemeBackend.sapphire !== undefined ? ThemeBackend.sapphire : ThemeBackend.blue
                         onClicked: {
                             if (typeof CalendarService !== "undefined") {
-                                CalendarService.sync(true, true);
+                                CalendarService.openGoogleCalendarWeb();
+                            } else {
+                                Quickshell.execDetached(["xdg-open", "https://calendar.google.com"]);
                             }
+                        }
+                    }
+
+                    // Manual Async Sync button with rotation feedback
+                    Item {
+                        Layout.preferredWidth: Scaler.s(26)
+                        Layout.preferredHeight: Scaler.s(26)
+
+                        IconButton {
+                            id: syncBtn
+                            anchors.fill: parent
+                            size: Scaler.s(26)
+                            cornerRadius: ThemeBackend.borderRadius
+                            buttonIcon: "󰑐"
+                            iconFontSize: Scaler.s(12)
+                            accentColor: ThemeBackend.surface1
+                            bgOpacity: ThemeBackend.elementOpacity
+                            textColor: (typeof CalendarService !== "undefined" && CalendarService.isLoading) ? ThemeBackend.mauve : ThemeBackend.subtext0
+                            onClicked: {
+                                if (typeof CalendarService !== "undefined") {
+                                    CalendarService.sync(true, true);
+                                }
+                            }
+                        }
+
+                        RotationAnimator {
+                            target: syncBtn
+                            from: 0
+                            to: 360
+                            duration: 900
+                            loops: Animation.Infinite
+                            running: typeof CalendarService !== "undefined" && CalendarService.isLoading
+                            onStopped: syncBtn.rotation = 0
                         }
                     }
 
                     // Offline / Cached indicator badge
                     Rectangle {
                         visible: typeof CalendarService !== "undefined" && CalendarService.isCached
-                        Layout.preferredHeight: Scaler.s(24)
-                        Layout.preferredWidth: Scaler.s(24)
-                        radius: Scaler.s(12)
+                        Layout.preferredHeight: Scaler.s(22)
+                        Layout.preferredWidth: Scaler.s(22)
+                        radius: Scaler.s(11)
                         color: Qt.rgba(ThemeBackend.peach.r, ThemeBackend.peach.g, ThemeBackend.peach.b, 0.2)
 
                         Text {
                             anchors.centerIn: parent
                             text: "󰋊"
                             font.family: ThemeBackend.fontFamily
-                            font.pixelSize: Scaler.s(12)
+                            font.pixelSize: Scaler.s(11)
                             color: ThemeBackend.peach
                         }
                     }
 
-                    // Configure button
+                    // Configure feeds button
                     IconButton {
-                        size: Scaler.s(28)
+                        size: Scaler.s(26)
                         cornerRadius: ThemeBackend.borderRadius
                         buttonIcon: "󰒓"
-                        iconFontSize: Scaler.s(13)
+                        iconFontSize: Scaler.s(12)
                         accentColor: ThemeBackend.surface1
+                        bgOpacity: ThemeBackend.elementOpacity
                         textColor: ThemeBackend.subtext0
                         onClicked: {
                             root.isConfiguring = true;
@@ -292,7 +380,7 @@ Item {
                 // Weekday labels
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Scaler.s(20)
+                    Layout.preferredHeight: Scaler.s(18)
                     spacing: 0
 
                     Repeater {
@@ -310,7 +398,7 @@ Item {
                             Layout.fillWidth: true
                             text: modelData
                             font.family: ThemeBackend.fontFamily
-                            font.pixelSize: Scaler.s(10.5)
+                            font.pixelSize: Scaler.s(10)
                             font.bold: true
                             color: ThemeBackend.overlay0
                             horizontalAlignment: Text.AlignHCenter
@@ -338,18 +426,18 @@ Item {
                                 id: dayCell
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                radius: Scaler.s(6)
+                                radius: Scaler.s(7)
 
                                 readonly property bool isSelectedDay: (model.year === root.selectedYear && model.month === root.selectedMonth && model.dayNum === root.selectedDay)
 
                                 color: {
                                     if (model.isToday) return ThemeBackend.mauve;
-                                    if (isSelectedDay) return ThemeBackend.surface2;
-                                    if (dayMa.containsMouse) return ThemeBackend.surface1;
+                                    if (isSelectedDay) return Qt.alpha(ThemeBackend.mauve, 0.25);
+                                    if (dayMa.containsMouse) return Qt.alpha(ThemeBackend.surface1, 0.75);
                                     return "transparent";
                                 }
 
-                                border.width: model.isToday ? 0 : (isSelectedDay ? 1 : 0)
+                                border.width: model.isToday ? 0 : (isSelectedDay ? 1.5 : 0)
                                 border.color: ThemeBackend.mauve
 
                                 Behavior on color { ColorAnimation { duration: 120 } }
@@ -366,9 +454,9 @@ Item {
                                         font.bold: model.isToday || isSelectedDay
                                         color: {
                                             if (model.isToday) return ThemeBackend.crust;
+                                            if (isSelectedDay) return ThemeBackend.mauve;
                                             if (!model.isCurrentMonth) return ThemeBackend.overlay0;
-                                            if (isSelectedDay) return ThemeBackend.text;
-                                            return ThemeBackend.subtext1;
+                                            return ThemeBackend.text;
                                         }
                                     }
 
@@ -407,9 +495,14 @@ Item {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: {
-                                        root.selectedDay = model.dayNum;
-                                        root.selectedMonth = model.month;
-                                        root.selectedYear = model.year;
+                                        if (typeof CalendarService !== "undefined") {
+                                            CalendarService.selectDate(model.year, model.month, model.dayNum, true);
+                                        }
+                                    }
+                                    onDoubleClicked: {
+                                        if (typeof CalendarService !== "undefined") {
+                                            CalendarService.openGoogleCalendarNewEvent(model.year, model.month, model.dayNum, "");
+                                        }
                                     }
                                 }
                             }
@@ -423,8 +516,10 @@ Item {
                 visible: root.isWide
                 Layout.preferredWidth: Scaler.s(210)
                 Layout.fillHeight: true
-                color: ThemeBackend.surface1
+                color: Qt.alpha(ThemeBackend.surface1, 0.55)
                 radius: ThemeBackend.borderRadius
+                border.width: 1
+                border.color: Qt.alpha(ThemeBackend.surface2, 0.35)
                 clip: true
 
                 ColumnLayout {
@@ -432,20 +527,39 @@ Item {
                     anchors.margins: Scaler.s(10)
                     spacing: Scaler.s(8)
 
-                    Text {
-                        text: {
-                            try {
-                                let d = new Date(root.selectedYear, root.selectedMonth, root.selectedDay);
-                                return d.toLocaleDateString(Qt.locale(typeof I18n !== "undefined" ? I18n.currentLang : "en"), "d MMMM");
-                            } catch(e) {
-                                return root.selectedDay + " " + root.displayMonthTitle;
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Scaler.s(4)
+
+                        Text {
+                            text: {
+                                try {
+                                    let d = new Date(root.selectedYear, root.selectedMonth, root.selectedDay);
+                                    return d.toLocaleDateString(Qt.locale(typeof I18n !== "undefined" ? I18n.currentLang : "it"), "d MMMM");
+                                } catch (e) {
+                                    return root.selectedDay + " " + root.displayMonthTitle;
+                                }
+                            }
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: Scaler.s(12)
+                            font.bold: true
+                            color: ThemeBackend.text
+                            Layout.fillWidth: true
+                        }
+
+                        IconButton {
+                            size: Scaler.s(22)
+                            cornerRadius: Scaler.s(6)
+                            buttonIcon: "󰐕"
+                            iconFontSize: Scaler.s(11)
+                            accentColor: ThemeBackend.surface0
+                            textColor: ThemeBackend.mauve
+                            onClicked: {
+                                if (typeof CalendarService !== "undefined") {
+                                    CalendarService.openGoogleCalendarNewEvent(root.selectedYear, root.selectedMonth, root.selectedDay, "");
+                                }
                             }
                         }
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Scaler.s(12)
-                        font.bold: true
-                        color: ThemeBackend.text
-                        Layout.fillWidth: true
                     }
 
                     ListView {
@@ -458,8 +572,9 @@ Item {
                         delegate: Rectangle {
                             width: parent ? parent.width : Scaler.s(190)
                             implicitHeight: evCol.implicitHeight + Scaler.s(10)
-                            color: ThemeBackend.surface0
+                            color: Qt.alpha(ThemeBackend.surface0, 0.75)
                             radius: Scaler.s(6)
+                            opacity: modelData.completed ? 0.55 : 1.0
 
                             Rectangle {
                                 anchors.left: parent.left
@@ -485,6 +600,7 @@ Item {
                                     font.family: ThemeBackend.fontFamily
                                     font.pixelSize: Scaler.s(11)
                                     font.bold: true
+                                    font.strikeout: Boolean(modelData.completed)
                                     color: ThemeBackend.text
                                     Layout.fillWidth: true
                                     elide: Text.ElideRight
@@ -498,16 +614,15 @@ Item {
                                     color: ThemeBackend.subtext0
                                     Layout.fillWidth: true
                                 }
+                            }
 
-                                Text {
-                                    visible: modelData.location !== ""
-                                    text: "📍 " + modelData.location
-                                    font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: Scaler.s(9)
-                                    color: ThemeBackend.overlay1
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideRight
-                                    maximumLineCount: 1
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    if (typeof CalendarService !== "undefined") {
+                                        CalendarService.openGoogleCalendarEvent(modelData);
+                                    }
                                 }
                             }
                         }
@@ -534,30 +649,6 @@ Item {
                                     font.pixelSize: Scaler.s(10.5)
                                     color: ThemeBackend.subtext0
                                     Layout.alignment: Qt.AlignHCenter
-                                }
-
-                                Text {
-                                    visible: typeof CalendarService !== "undefined" && CalendarService.lastError !== ""
-                                    text: "⚠️ " + (typeof CalendarService !== "undefined" ? CalendarService.lastError : "")
-                                    font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: Scaler.s(9.5)
-                                    color: ThemeBackend.red
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.maximumWidth: parent.width - Scaler.s(20)
-                                    wrapMode: Text.WordWrap
-                                    horizontalAlignment: Text.AlignHCenter
-                                }
-
-                                Text {
-                                    visible: typeof CalendarService !== "undefined" && CalendarService.lastError === "" && CalendarService.lastWarning !== ""
-                                    text: "ℹ️ " + (typeof CalendarService !== "undefined" ? CalendarService.lastWarning : "")
-                                    font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: Scaler.s(9.5)
-                                    color: ThemeBackend.peach
-                                    Layout.alignment: Qt.AlignHCenter
-                                    Layout.maximumWidth: parent.width - Scaler.s(20)
-                                    wrapMode: Text.WordWrap
-                                    horizontalAlignment: Text.AlignHCenter
                                 }
                             }
                         }
@@ -609,7 +700,6 @@ Item {
                 wrapMode: Text.WordWrap
             }
 
-            // Inputs for adding a new calendar
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Scaler.s(6)
@@ -617,7 +707,7 @@ Item {
                 Rectangle {
                     Layout.preferredWidth: Scaler.s(90)
                     Layout.preferredHeight: Scaler.s(30)
-                    color: ThemeBackend.surface1
+                    color: Qt.alpha(ThemeBackend.surface1, 0.8)
                     radius: Scaler.s(6)
                     clip: true
 
@@ -637,7 +727,7 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: Scaler.s(30)
-                    color: ThemeBackend.surface1
+                    color: Qt.alpha(ThemeBackend.surface1, 0.8)
                     radius: Scaler.s(6)
                     clip: true
 
@@ -683,7 +773,6 @@ Item {
                 }
             }
 
-            // List of configured calendars
             ListView {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -694,7 +783,7 @@ Item {
                 delegate: Rectangle {
                     width: parent ? parent.width : Scaler.s(240)
                     height: Scaler.s(32)
-                    color: ThemeBackend.surface1
+                    color: Qt.alpha(ThemeBackend.surface1, 0.75)
                     radius: Scaler.s(6)
 
                     RowLayout {
@@ -737,7 +826,6 @@ Item {
                 }
             }
 
-            // Bottom action row
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Scaler.s(6)
@@ -751,7 +839,7 @@ Item {
                     textColor: ThemeBackend.crust
                     onClicked: {
                         if (typeof CalendarService !== "undefined") {
-                            CalendarService.sync(true);
+                            CalendarService.sync(true, true);
                         }
                         root.isConfiguring = false;
                         root.setKeyboardFocus(false);

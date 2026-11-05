@@ -13,15 +13,18 @@ import time
 import hashlib
 import urllib.request
 import urllib.error
+import urllib.parse
 import ssl
 from datetime import datetime, date, timedelta, timezone
 
 CONFIG_DIR = os.path.expanduser(os.environ.get("XDG_CONFIG_HOME", "~/.config") + "/serpantinum")
 CACHE_DIR = os.path.expanduser(os.environ.get("XDG_CACHE_HOME", "~/.cache") + "/serpantinum/calendar")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "calendars.json")
+LOCAL_TASKS_FILE = os.path.join(CONFIG_DIR, "local_tasks.json")
 CACHE_FILE = os.path.join(CACHE_DIR, "events.json")
 
 STATE_FILE = os.path.join(CACHE_DIR, "state.json")
+TASK_STATE_FILE = os.path.join(CACHE_DIR, "task_states.json")
 COOKIE_FILE = os.path.join(CACHE_DIR, "cookies.txt")
 
 DEFAULT_CONFIG = {
@@ -43,6 +46,66 @@ class NetworkError(Exception):
 def ensure_dirs():
     os.makedirs(CONFIG_DIR, exist_ok=True)
     os.makedirs(CACHE_DIR, exist_ok=True)
+
+def load_task_states():
+    ensure_dirs()
+    if os.path.isfile(TASK_STATE_FILE):
+        try:
+            with open(TASK_STATE_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+        except Exception:
+            pass
+    return {}
+
+def save_task_states(states):
+    ensure_dirs()
+    try:
+        with open(TASK_STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(states, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        sys.stderr.write(f"Warning: could not save task states: {e}\n")
+
+def load_local_tasks():
+    ensure_dirs()
+    if os.path.isfile(LOCAL_TASKS_FILE):
+        try:
+            with open(LOCAL_TASKS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+        except Exception:
+            pass
+    return []
+
+def save_local_tasks(tasks):
+    ensure_dirs()
+    try:
+        with open(LOCAL_TASKS_FILE, "w", encoding="utf-8") as f:
+            json.dump(tasks, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        sys.stderr.write(f"Warning: could not save local tasks: {e}\n")
+
+def build_gcal_urls(title, s_dt, e_dt, is_all_day, location="", description="", explicit_url=""):
+    gcal_day_url = f"https://calendar.google.com/calendar/r/day/{s_dt.year}/{s_dt.month}/{s_dt.day}"
+    if is_all_day:
+        dates_param = f"{s_dt.strftime('%Y%m%d')}/{e_dt.strftime('%Y%m%d')}"
+    else:
+        dates_param = f"{s_dt.strftime('%Y%m%dT%H%M%S')}/{e_dt.strftime('%Y%m%dT%H%M%S')}"
+    params = {
+        "action": "TEMPLATE",
+        "text": title or "Event",
+        "dates": dates_param
+    }
+    if location:
+        params["location"] = location
+    if description:
+        params["details"] = description[:500]
+    query = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
+    gcal_edit_url = f"https://calendar.google.com/calendar/r/eventedit?{query}"
+    primary_url = explicit_url.strip() if (explicit_url and explicit_url.strip().startswith("http")) else gcal_edit_url
+    return primary_url, gcal_day_url, gcal_edit_url
 
 def load_state():
     ensure_dirs()
@@ -215,6 +278,7 @@ def parse_vevent(lines, cal_info):
     summary = unescape_ics_text(props.get("SUMMARY", "Untitled Event"))
     location = unescape_ics_text(props.get("LOCATION", ""))
     description = unescape_ics_text(props.get("DESCRIPTION", ""))
+    explicit_url = unescape_ics_text(props.get("URL", ""))
     uid = props.get("UID", hashlib.md5((summary + str(time.time())).encode('utf-8')).hexdigest())
 
     dtstart_raw = props.get("DTSTART")
@@ -256,6 +320,9 @@ def parse_vevent(lines, cal_info):
             time_str = f"{s_time} - {e_time}" if s_time != e_time else s_time
 
         ev_id = f"{cal_info['id']}_{uid}_{occ_id}"
+        primary_url, gcal_day_url, gcal_edit_url = build_gcal_urls(
+            summary, s_dt, e_dt, is_all_day, location, description, explicit_url
+        )
         return {
             "id": ev_id,
             "uid": uid,
@@ -270,6 +337,12 @@ def parse_vevent(lines, cal_info):
             "is_all_day": is_all_day,
             "location": location,
             "description": description,
+            "url": primary_url,
+            "gcal_day_url": gcal_day_url,
+            "gcal_edit_url": gcal_edit_url,
+            "is_local_task": False,
+            "completed": False,
+            "archived": False,
             "calendar_id": cal_info["id"],
             "calendar_name": cal_info["name"],
             "calendar_color": cal_info.get("color", "#89b4fa")
@@ -565,20 +638,31 @@ def sync_all(force=False):
             except Exception as e:
                 errors.append({"calendar": cal_name, "error": f"Errore parsing iCal: {e}"})
 
-    # Sort events chronologically
-    all_events.sort(key=lambda ev: (ev["start"], ev["title"]))
+    # Include user local tasks from local_tasks.json
+    local_tasks = load_local_tasks()
+    for lt in local_tasks:
+        if isinstance(lt, dict) and lt.get("id") and lt.get("title"):
+            all_events.append(lt)
 
-    # Remove duplicates if any (same calendar_id, start and title)
+    # Sort events chronologically
+    all_events.sort(key=lambda ev: (ev.get("start", ""), ev.get("title", "")))
+
+    # Remove duplicates if any (same calendar_id, start and title) and apply local task states
+    task_states = load_task_states()
     unique_events = []
     seen = set()
     for ev in all_events:
-        key = (ev["calendar_id"], ev["start"], ev["title"])
+        key = (ev.get("calendar_id", ""), ev.get("start", ""), ev.get("title", ""))
         if key not in seen:
             seen.add(key)
+            ev_id = ev.get("id", "")
+            st = task_states.get(ev_id, {})
+            ev["completed"] = bool(st.get("completed", ev.get("completed", False)))
+            ev["archived"] = bool(st.get("archived", ev.get("archived", False)))
             unique_events.append(ev)
 
     has_cached = any(c.get("cached", False) for c in synced_calendars)
-    if errors and len(synced_calendars) == 0:
+    if errors and len(synced_calendars) == 0 and len(local_tasks) == 0:
         overall_status = "error"
     elif errors:
         overall_status = "partial"
@@ -603,6 +687,138 @@ def sync_all(force=False):
         json.dump(output, f, indent=2, ensure_ascii=False)
 
     return output
+
+def apply_states_to_cached():
+    """Updates CACHE_FILE in-place with current task_states and local_tasks without network I/O."""
+    cached = get_cached()
+    task_states = load_task_states()
+    local_tasks = load_local_tasks()
+    local_ids = {lt.get("id"): lt for lt in local_tasks if isinstance(lt, dict) and lt.get("id")}
+
+    events = [ev for ev in cached.get("events", []) if not ev.get("is_local_task")]
+    for lt in local_tasks:
+        if isinstance(lt, dict) and lt.get("id") and lt.get("title"):
+            events.append(dict(lt))
+
+    events.sort(key=lambda ev: (ev.get("start", ""), ev.get("title", "")))
+    for ev in events:
+        ev_id = ev.get("id", "")
+        st = task_states.get(ev_id, {})
+        ev["completed"] = bool(st.get("completed", ev.get("completed", False)))
+        ev["archived"] = bool(st.get("archived", ev.get("archived", False)))
+        if not ev.get("gcal_edit_url") and ev.get("date"):
+            try:
+                s_dt = datetime.fromisoformat(ev["start"])
+                e_dt = datetime.fromisoformat(ev["end"])
+                p_url, d_url, e_url = build_gcal_urls(
+                    ev.get("title", ""), s_dt, e_dt, bool(ev.get("is_all_day", False)),
+                    ev.get("location", ""), ev.get("description", ""), ev.get("url", "")
+                )
+                ev["url"] = p_url
+                ev["gcal_day_url"] = d_url
+                ev["gcal_edit_url"] = e_url
+            except Exception:
+                pass
+
+    cached["events"] = events
+    cached["events_count"] = len(events)
+    if cached.get("status") == "empty":
+        cached["status"] = "ok"
+    ensure_dirs()
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cached, f, indent=2, ensure_ascii=False)
+    return cached
+
+def set_event_state(event_id, action):
+    states = load_task_states()
+    cur = states.get(event_id, {"completed": False, "archived": False})
+    if action == "completed":
+        cur["completed"] = True
+    elif action == "uncompleted":
+        cur["completed"] = False
+    elif action == "toggle-completed":
+        cur["completed"] = not bool(cur.get("completed", False))
+    elif action == "archived":
+        cur["archived"] = True
+    elif action == "unarchived":
+        cur["archived"] = False
+    elif action == "toggle-archived":
+        cur["archived"] = not bool(cur.get("archived", False))
+    elif action == "active":
+        cur["completed"] = False
+        cur["archived"] = False
+    cur["updated_at"] = datetime.now().isoformat()
+    states[event_id] = cur
+    save_task_states(states)
+    return apply_states_to_cached()
+
+def add_local_task(title, date_str, time_str="", color="#cba6f7"):
+    title = (title or "").strip()
+    if not title:
+        return apply_states_to_cached()
+    try:
+        d_obj = datetime.strptime(date_str.strip(), "%Y-%m-%d").date()
+    except Exception:
+        d_obj = date.today()
+    date_norm = d_obj.strftime("%Y-%m-%d")
+    t_clean = (time_str or "").strip()
+    is_all_day = False
+    if t_clean and re.match(r"^\d{1,2}:\d{2}$", t_clean):
+        parts = t_clean.split(":")
+        h = max(0, min(23, int(parts[0])))
+        m = max(0, min(59, int(parts[1])))
+        s_dt = datetime(d_obj.year, d_obj.month, d_obj.day, h, m, 0)
+        e_dt = s_dt + timedelta(hours=1)
+        display_time = f"{h:02d}:{m:02d}"
+    else:
+        is_all_day = True
+        s_dt = datetime(d_obj.year, d_obj.month, d_obj.day, 0, 0, 0)
+        e_dt = s_dt + timedelta(days=1)
+        display_time = "All Day"
+
+    uid = hashlib.md5(f"{title}_{date_norm}_{time.time()}".encode("utf-8")).hexdigest()[:10]
+    ev_id = f"local_{uid}"
+    primary_url, gcal_day_url, gcal_edit_url = build_gcal_urls(title, s_dt, e_dt, is_all_day)
+    task_obj = {
+        "id": ev_id,
+        "uid": uid,
+        "title": title,
+        "start": s_dt.strftime("%Y-%m-%dT%H:%M:%S"),
+        "end": e_dt.strftime("%Y-%m-%dT%H:%M:%S"),
+        "date": date_norm,
+        "year": d_obj.year,
+        "month": d_obj.month,
+        "day": d_obj.day,
+        "time_str": display_time,
+        "is_all_day": is_all_day,
+        "location": "",
+        "description": "",
+        "url": primary_url,
+        "gcal_day_url": gcal_day_url,
+        "gcal_edit_url": gcal_edit_url,
+        "is_local_task": True,
+        "completed": False,
+        "archived": False,
+        "calendar_id": "local",
+        "calendar_name": "Task Locali",
+        "calendar_color": color
+    }
+    tasks = load_local_tasks()
+    tasks.append(task_obj)
+    save_local_tasks(tasks)
+    return apply_states_to_cached()
+
+def remove_local_task(event_id):
+    tasks = load_local_tasks()
+    new_tasks = [t for t in tasks if t.get("id") != event_id]
+    if len(new_tasks) != len(tasks):
+        save_local_tasks(new_tasks)
+        states = load_task_states()
+        if event_id in states:
+            del states[event_id]
+            save_task_states(states)
+        return apply_states_to_cached()
+    return set_event_state(event_id, "archived")
 
 def add_calendar(name, url, color="#89b4fa"):
     cfg = load_config()
@@ -653,11 +869,35 @@ def main():
         res = sync_all(force=force)
         print(json.dumps(res, ensure_ascii=False))
     elif args[0] in ("--get", "-g"):
-        res = get_cached()
+        res = apply_states_to_cached()
         print(json.dumps(res, ensure_ascii=False))
     elif args[0] in ("--list", "-l"):
         cfg = load_config()
         print(json.dumps(cfg, indent=2, ensure_ascii=False))
+    elif args[0] == "--set-state":
+        if len(args) >= 3:
+            res = set_event_state(args[1], args[2])
+            print(json.dumps(res, ensure_ascii=False))
+        else:
+            sys.stderr.write("Usage: calendar_sync.py --set-state <event_id> <action>\n")
+            sys.exit(1)
+    elif args[0] == "--add-task":
+        if len(args) >= 3:
+            t_title = args[1]
+            t_date = args[2]
+            t_time = args[3] if len(args) >= 4 else ""
+            res = add_local_task(t_title, t_date, t_time)
+            print(json.dumps(res, ensure_ascii=False))
+        else:
+            sys.stderr.write("Usage: calendar_sync.py --add-task <title> <YYYY-MM-DD> [HH:MM]\n")
+            sys.exit(1)
+    elif args[0] == "--remove-task":
+        if len(args) >= 2:
+            res = remove_local_task(args[1])
+            print(json.dumps(res, ensure_ascii=False))
+        else:
+            sys.stderr.write("Usage: calendar_sync.py --remove-task <event_id>\n")
+            sys.exit(1)
     elif args[0] == "--add":
         if len(args) >= 3:
             name = args[1]

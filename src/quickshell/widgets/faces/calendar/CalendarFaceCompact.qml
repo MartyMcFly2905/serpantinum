@@ -22,6 +22,7 @@ Item {
 
     readonly property var nextEvent: {
         if (typeof CalendarService === "undefined") return null;
+        let dummy = CalendarService.eventsCount;
         let evs = CalendarService.getUpcomingEvents(1);
         return (evs && evs.length > 0) ? evs[0] : null;
     }
@@ -30,15 +31,15 @@ Item {
     readonly property string dayNumStr: String(todayDate.getDate())
     readonly property string weekdayStr: {
         try {
-            return todayDate.toLocaleDateString(Qt.locale(typeof I18n !== "undefined" ? I18n.currentLang : "en"), "dddd");
-        } catch(e) {
+            return todayDate.toLocaleDateString(Qt.locale(typeof I18n !== "undefined" ? I18n.currentLang : "it"), "dddd");
+        } catch (e) {
             return "";
         }
     }
     readonly property string monthStr: {
         try {
-            return todayDate.toLocaleDateString(Qt.locale(typeof I18n !== "undefined" ? I18n.currentLang : "en"), "MMM").toUpperCase();
-        } catch(e) {
+            return todayDate.toLocaleDateString(Qt.locale(typeof I18n !== "undefined" ? I18n.currentLang : "it"), "MMM").toUpperCase();
+        } catch (e) {
             return "";
         }
     }
@@ -46,9 +47,25 @@ Item {
     Rectangle {
         id: bgContainer
         anchors.fill: parent
-        color: ThemeBackend.surface0
+        color: Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
         radius: ThemeBackend.clampedBorderRadius !== undefined ? ThemeBackend.clampedBorderRadius : ThemeBackend.borderRadius
+        border.width: 1
+        border.color: Qt.alpha(ThemeBackend.surface2, 0.38)
         clip: true
+
+        WallpaperBlur {
+            z: -2
+            anchors.fill: parent
+            radius: parent.radius
+        }
+
+        GlassFill {
+            z: -1
+            anchors.fill: parent
+            radius: parent.radius
+            tintColor: ThemeBackend.surface0
+            tintAmount: 0.22
+        }
 
         // Soft accent glow circle in the corner
         Rectangle {
@@ -70,12 +87,14 @@ Item {
             spacing: Scaler.s(10)
             visible: !root.isStacked
 
-            // Left Date Badge
+            // Left Date Badge (click to reset selection to Today)
             Rectangle {
                 Layout.preferredWidth: Scaler.s(70)
                 Layout.fillHeight: true
-                color: ThemeBackend.surface1
+                color: Qt.alpha(ThemeBackend.surface1, 0.65)
                 radius: Scaler.s(8)
+                border.width: 1
+                border.color: Qt.alpha(ThemeBackend.surface2, 0.3)
 
                 ColumnLayout {
                     anchors.centerIn: parent
@@ -108,6 +127,16 @@ Item {
                         elide: Text.ElideRight
                     }
                 }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (typeof CalendarService !== "undefined") {
+                            CalendarService.resetSelectionToToday(true);
+                        }
+                    }
+                }
             }
 
             // Right Next Event Box
@@ -133,6 +162,20 @@ Item {
                     IconButton {
                         size: Scaler.s(22)
                         cornerRadius: Scaler.s(4)
+                        buttonIcon: "󰊭"
+                        iconFontSize: Scaler.s(11)
+                        accentColor: "transparent"
+                        textColor: ThemeBackend.sapphire !== undefined ? ThemeBackend.sapphire : ThemeBackend.blue
+                        onClicked: {
+                            if (typeof CalendarService !== "undefined") {
+                                CalendarService.openGoogleCalendarWeb();
+                            }
+                        }
+                    }
+
+                    IconButton {
+                        size: Scaler.s(22)
+                        cornerRadius: Scaler.s(4)
                         buttonIcon: "󰑐"
                         iconFontSize: Scaler.s(11)
                         accentColor: "transparent"
@@ -145,15 +188,31 @@ Item {
                     }
                 }
 
-                Text {
-                    text: root.nextEvent ? root.nextEvent.title : (typeof I18n !== "undefined" ? I18n.t("calendar.no_events", "No events scheduled") : "No events scheduled")
-                    font.family: ThemeBackend.fontFamily
-                    font.pixelSize: Scaler.s(11.5)
-                    font.bold: true
-                    color: ThemeBackend.text
+                Item {
                     Layout.fillWidth: true
-                    elide: Text.ElideRight
-                    maximumLineCount: 1
+                    Layout.preferredHeight: nextEventTitle.implicitHeight
+
+                    Text {
+                        id: nextEventTitle
+                        anchors.fill: parent
+                        text: root.nextEvent ? root.nextEvent.title : (typeof I18n !== "undefined" ? I18n.t("calendar.no_events", "No events scheduled") : "No events scheduled")
+                        font.family: ThemeBackend.fontFamily
+                        font.pixelSize: Scaler.s(11.5)
+                        font.bold: true
+                        color: ThemeBackend.text
+                        elide: Text.ElideRight
+                        maximumLineCount: 1
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (typeof CalendarService !== "undefined") {
+                                CalendarService.openGoogleCalendarEvent(root.nextEvent);
+                            }
+                        }
+                    }
                 }
 
                 RowLayout {
@@ -203,6 +262,20 @@ Item {
                 IconButton {
                     size: Scaler.s(22)
                     cornerRadius: Scaler.s(4)
+                    buttonIcon: "󰊭"
+                    iconFontSize: Scaler.s(11)
+                    accentColor: "transparent"
+                    textColor: ThemeBackend.sapphire !== undefined ? ThemeBackend.sapphire : ThemeBackend.blue
+                    onClicked: {
+                        if (typeof CalendarService !== "undefined") {
+                            CalendarService.openGoogleCalendarWeb();
+                        }
+                    }
+                }
+
+                IconButton {
+                    size: Scaler.s(22)
+                    cornerRadius: Scaler.s(4)
                     buttonIcon: "󰑐"
                     iconFontSize: Scaler.s(11)
                     accentColor: "transparent"
@@ -225,7 +298,7 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 height: Scaler.s(1)
-                color: ThemeBackend.surface1
+                color: Qt.alpha(ThemeBackend.surface2, 0.4)
             }
 
             Text {

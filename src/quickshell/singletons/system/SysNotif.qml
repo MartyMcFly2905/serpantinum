@@ -142,19 +142,8 @@ Item {
                 root.notifiedCritical = false;
             }
 
-            if ((pct >= 100 || state === UPowerDeviceState.FullyCharged) && !root.notifiedFull && root.lastPercentage < 100) {
-                let title = I18n.t("sysnotif.battery.full_title");
-                let body = I18n.t("sysnotif.battery.full_body");
-                if (title === "sysnotif.battery.full_title" || body === "sysnotif.battery.full_body") return;
-                root.notifiedFull = true;
-                root.sendNotification(
-                    "full",
-                    title,
-                    body,
-                    "battery-full-charged",
-                    "normal"
-                );
-            }
+            // Notifica 100% / FullyCharged disabilitata per evitare notifiche continue e fastidiose a cavo inserito
+            root.notifiedFull = true;
         } else {
             if (pct <= 5) {
                 if (!root.notifiedCritical) {

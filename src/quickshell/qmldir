@@ -84,4 +84,7 @@ singleton WidgetSync 1.0 singletons/widgetcontrols/WidgetSync.qml
 singleton DesktopMenuController singletons/widgetcontrols/DesktopMenuController.qml
 singleton DockAppMenuController 1.0 singletons/widgetcontrols/DockAppMenuController.qml
 singleton CalendarService 1.0 singletons/environment/CalendarService.qml
-singleton PomodoroService 1.0 singletons/environment/PomodoroService.qml
+PomodoroNotch 1.0 popouts/PomodoroNotch.qml
+PomodoroPopup 1.0 pomodoro/PomodoroPopup.qml
+singleton PomodoroService 1.0 singletons/system/PomodoroService.qml
+singleton PomodoroController 1.0 singletons/widgetcontrols/PomodoroController.qml

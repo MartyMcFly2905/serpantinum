@@ -29,4 +29,3 @@ WeatherFaceCompact 1.0 weather/WeatherFaceCompact.qml
 WeatherFaceFull 1.0 weather/WeatherFaceFull.qml
 WeatherFaceRound 1.0 weather/WeatherFaceRound.qml
 TodoFace 1.0 todo/TodoFace.qml
-PomodoroFace 1.0 pomodoro/PomodoroFace.qml

@@ -5,8 +5,8 @@
 # Aggiorna Serpantinum dal repository ufficiale (ilyamiro/serpantinum),
 # risolve automaticamente eventuali conflitti sui widget personalizzati
 # (Todo List, Calendario Mese/Agenda/Compatto, Pomodoro, fix batteria 100%),
-# verifica l'integrità di JSON/QML, sincronizza binari + version state e
-# riavvia il demone verificandone lo stato di salute.
+# verifica/installa i binari companion (serpantinum-core), valida JSON/QML,
+# sincronizza binari + version state e riavvia il demone verificandone la salute.
 # ==============================================================================
 
 set -uo pipefail
@@ -23,7 +23,6 @@ C_CYAN='\033[1;36m'
 C_GREEN='\033[1;32m'
 C_YELLOW='\033[1;33m'
 C_RED='\033[1;31m'
-C_PURPLE='\033[1;35m'
 C_BOLD='\033[1m'
 C_DIM='\033[2m'
 C_RESET='\033[0m'
@@ -124,6 +123,50 @@ restore_stash_if_needed() {
         fi
         STASHED_LOCAL=false
     fi
+}
+
+# Funzione per verificare/installare serpantinum-core in ~/.local/bin se mancante o obsoleto
+ensure_companion_binaries() {
+    mkdir -p "$HOME/.local/bin"
+    if [ "$(uname -m)" != "x86_64" ]; then
+        return 0
+    fi
+    local cur_ver=""
+    if command -v serpantinum-core >/dev/null 2>&1; then
+        cur_ver=$(serpantinum-core --version 2>/dev/null | awk '{print $2}' || echo "")
+    fi
+    local json tag tarball_url sums_url work
+    json=$(curl -fsSL --connect-timeout 8 --retry 2 "https://api.github.com/repos/ilyamiro/serpantinum-core/releases/latest" 2>/dev/null || echo "")
+    if [ -z "$json" ]; then
+        return 0
+    fi
+    tag=$(jq -r '.tag_name // empty' <<< "$json" 2>/dev/null || echo "")
+    if [ -z "$tag" ]; then
+        return 0
+    fi
+    if [ -n "$cur_ver" ] && [ "${tag#v}" = "$cur_ver" ]; then
+        return 0
+    fi
+    echo -e "  ${C_CYAN}•${C_RESET} Installazione/aggiornamento binario companion ${C_BOLD}serpantinum-core (${tag})${C_RESET}..."
+    tarball_url=$(jq -r '[.assets[] | select(.name | test("-x86_64-linux\\.tar\\.gz$"))][0].browser_download_url // empty' <<< "$json")
+    sums_url=$(jq -r '[.assets[] | select(.name == "SHA256SUMS")][0].browser_download_url // empty' <<< "$json")
+    if [ -z "$tarball_url" ] || [ -z "$sums_url" ]; then
+        return 0
+    fi
+    work=$(mktemp -d "/tmp/serpantinum-core.XXXXXX")
+    local archive="$work/${tarball_url##*/}"
+    if curl -fsSL --connect-timeout 15 --retry 2 "$tarball_url" -o "$archive" && \
+       curl -fsSL --connect-timeout 15 --retry 2 "$sums_url" -o "$work/SHA256SUMS"; then
+        if (cd "$work" && grep -F " ${archive##*/}" SHA256SUMS | sha256sum -c --quiet - 2>/dev/null); then
+            mkdir -p "$work/stage"
+            if tar -xzf "$archive" -C "$work/stage" && [ -f "$work/stage/usr/bin/serpantinum-core" ]; then
+                install -Dm755 "$work/stage/usr/bin/serpantinum-core" "$HOME/.local/bin/serpantinum-core"
+                hash -r 2>/dev/null || true
+                echo -e "  ${C_GREEN}✓${C_RESET} serpantinum-core ${tag} installato in ~/.local/bin/serpantinum-core"
+            fi
+        fi
+    fi
+    rm -rf "$work"
 }
 
 # Funzione Python per garantire l'integrità di traduzioni e registrazioni QML custom
@@ -332,21 +375,27 @@ for lang_file, patch_data in [("it.json", it_patch), ("en.json", en_patch)]:
                 json.dump(data, f, ensure_ascii=False, indent=2)
                 f.write("\n")
 
-# 2. Verifica src/quickshell/qmldir
+# 2. Verifica src/quickshell/qmldir (rimuove eventuali path errati e garantisce quelli reali)
 qmldir_main = os.path.join(repo, "src", "quickshell", "qmldir")
 if os.path.exists(qmldir_main):
     with open(qmldir_main, "r", encoding="utf-8") as f:
-        lines = [line.rstrip("\n") for line in f]
-    required_main = [
-        "singleton CalendarService 1.0 singletons/environment/CalendarService.qml",
+        orig_lines = [line.rstrip("\n") for line in f]
+    # Filtra via eventuali righe con path inesistenti
+    invalid_main = {
         "singleton PomodoroService 1.0 singletons/environment/PomodoroService.qml",
+    }
+    lines = [l for l in orig_lines if l not in invalid_main]
+    required_main = [
+        "PomodoroNotch 1.0 popouts/PomodoroNotch.qml",
+        "PomodoroPopup 1.0 pomodoro/PomodoroPopup.qml",
+        "singleton CalendarService 1.0 singletons/environment/CalendarService.qml",
+        "singleton PomodoroService 1.0 singletons/system/PomodoroService.qml",
+        "singleton PomodoroController 1.0 singletons/widgetcontrols/PomodoroController.qml",
     ]
-    modified = False
     for req in required_main:
         if req not in lines:
             lines.append(req)
-            modified = True
-    if modified:
+    if lines != orig_lines:
         with open(qmldir_main, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
 
@@ -354,20 +403,21 @@ if os.path.exists(qmldir_main):
 qmldir_faces = os.path.join(repo, "src", "quickshell", "widgets", "faces", "qmldir")
 if os.path.exists(qmldir_faces):
     with open(qmldir_faces, "r", encoding="utf-8") as f:
-        lines = [line.rstrip("\n") for line in f]
+        orig_lines = [line.rstrip("\n") for line in f]
+    invalid_faces = {
+        "PomodoroFace 1.0 pomodoro/PomodoroFace.qml",
+    }
+    lines = [l for l in orig_lines if l not in invalid_faces]
     required_faces = [
         "CalendarFaceCompact 1.0 calendar/CalendarFaceCompact.qml",
         "CalendarFaceMonth 1.0 calendar/CalendarFaceMonth.qml",
         "CalendarFaceAgenda 1.0 calendar/CalendarFaceAgenda.qml",
-        "PomodoroFace 1.0 pomodoro/PomodoroFace.qml",
         "TodoFace 1.0 todo/TodoFace.qml",
     ]
-    modified = False
     for req in required_faces:
         if req not in lines:
             lines.append(req)
-            modified = True
-    if modified:
+    if lines != orig_lines:
         with open(qmldir_faces, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
 
@@ -553,21 +603,23 @@ fi
 # Ripristina eventuale stash locale prima di verificare l'integrità e fare il deploy
 restore_stash_if_needed
 
-# 7. Verifica integrità delle personalizzazioni (JSON, qmldir, SysNotif, script Python)
-echo -e "${C_CYAN}[3/5] Verifica integrità widget personalizzati e traduzioni...${C_RESET}"
+# 7. Verifica integrità delle personalizzazioni (JSON, qmldir, SysNotif, script Python) + binari companion
+echo -e "${C_CYAN}[3/5] Verifica integrità widget personalizzati, traduzioni e binari...${C_RESET}"
 if ! ensure_custom_integrations; then
     echo -e "${C_RED}[ERRORE] Verifica integrità fallita! Controlla i file JSON/QML.${C_RESET}"
     exit 1
 fi
 python3 -m py_compile "$REPO_DIR/src/scripts/todo_sync.py" "$REPO_DIR/src/scripts/calendar_sync.py"
-echo -e "  ${C_GREEN}✓${C_RESET} Sintassi JSON, registrazioni QML e script Python validati."
+ensure_companion_binaries
+echo -e "  ${C_GREEN}✓${C_RESET} Sintassi JSON, registrazioni QML, binari companion e script Python validati."
 
-# Commit automatico se ensure_custom_integrations ha riparato qualcosa dopo un merge
-if [ "$NEW_COMMITS" -gt 0 ] && [ -n "$(git status --porcelain src/assets/languages src/quickshell)" ]; then
+# Commit automatico se ensure_custom_integrations ha riparato qualcosa
+if [ -n "$(git status --porcelain src/assets/languages src/quickshell)" ]; then
     git add src/assets/languages/it.json src/assets/languages/en.json \
             src/quickshell/qmldir src/quickshell/widgets/faces/qmldir \
+            src/quickshell/widgets/WidgetRegistry.qml \
             src/quickshell/singletons/system/SysNotif.qml 2>/dev/null || true
-    git commit -m "chore(updater): riallineamento automatico integrazioni custom post-merge" --quiet 2>/dev/null || true
+    git commit -m "chore(updater): riallineamento automatico integrazioni custom" --quiet 2>/dev/null || true
 fi
 
 # 8. Push sul fork personale (origin) se ci sono commit non pushati
@@ -587,7 +639,7 @@ fi
 echo -e "${C_CYAN}[5/5] Distribuzione file in ${TARGET_DIR}...${C_RESET}"
 mkdir -p "$TARGET_DIR/src" "$TARGET_DIR/bin" "$STATE_DIR"
 
-# Copia sorgenti QML, asset e script
+# Copia sorgenti QML, asset e script (risolve eventuali symlink come version.txt)
 cp -r "$REPO_DIR/src/." "$TARGET_DIR/src/"
 
 # Copia binari CLI e demone (serpantinum, serpantinumd)
@@ -596,20 +648,30 @@ if [ -d "$REPO_DIR/bin" ]; then
     chmod +x "$TARGET_DIR/bin/"* 2>/dev/null || true
 fi
 
-# Allinea version.txt sia nella root di TARGET_DIR che in TARGET_DIR/src
-FINAL_VER=$(cat "$REPO_DIR/src/version.txt" 2>/dev/null | tr -d '[:space:]' || echo "2.4.3")
-echo "$FINAL_VER" > "$TARGET_DIR/src/version.txt"
+# Allinea version.txt sia nella root di TARGET_DIR che in TARGET_DIR/src (come file reale, non symlink rotto)
+FINAL_VER=$(cat "$REPO_DIR/version.txt" 2>/dev/null | tr -d '[:space:]' || echo "2.4.3")
+rm -f "$TARGET_DIR/src/version.txt" "$TARGET_DIR/version.txt"
 echo "$FINAL_VER" > "$TARGET_DIR/version.txt"
-if [ -f "$REPO_DIR/version.txt" ]; then
-    echo "$FINAL_VER" > "$REPO_DIR/version.txt"
-fi
+echo "$FINAL_VER" > "$TARGET_DIR/src/version.txt"
 
-# Allinea ~/.local/state/serpantinum/version con il commit di upstream/master
-# così Updater.qml non invia false notifiche di "Aggiornamento disponibile"
+# Preserva i metadati esistenti in ~/.local/state/serpantinum/version aggiornando SERPANTINUM_VERSION e SERPANTINUM_COMMIT
 FINAL_UPSTREAM_COMMIT=$(git rev-parse --short upstream/master 2>/dev/null || git rev-parse --short HEAD)
+TEL_ID=$(awk -F= '/^TELEMETRY_ID=/{gsub(/"/, "", $2); print $2}' "$STATE_DIR/version" 2>/dev/null || echo "")
+TEL_EN=$(awk -F= '/^ENABLE_TELEMETRY=/{gsub(/"/, "", $2); print $2}' "$STATE_DIR/version" 2>/dev/null || echo "false")
+SEL_COMP=$(awk -F= '/^SELECTED_COMPOSITORS=/{gsub(/"/, "", $2); print $2}' "$STATE_DIR/version" 2>/dev/null || echo "hyprland")
+OPT_SDDM_VAL=$(awk -F= '/^OPT_SDDM=/{gsub(/"/, "", $2); print $2}' "$STATE_DIR/version" 2>/dev/null || echo "true")
+SDDM_WL_VAL=$(awk -F= '/^SDDM_WAYLAND=/{gsub(/"/, "", $2); print $2}' "$STATE_DIR/version" 2>/dev/null || echo "false")
+FULL_WP_VAL=$(awk -F= '/^INSTALL_FULL_WALLPAPERS=/{gsub(/"/, "", $2); print $2}' "$STATE_DIR/version" 2>/dev/null || echo "true")
+
 cat > "$STATE_DIR/version" <<EOF
 SERPANTINUM_VERSION="$FINAL_VER"
 SERPANTINUM_COMMIT="$FINAL_UPSTREAM_COMMIT"
+TELEMETRY_ID="$TEL_ID"
+ENABLE_TELEMETRY="$TEL_EN"
+SELECTED_COMPOSITORS="$SEL_COMP"
+OPT_SDDM="$OPT_SDDM_VAL"
+SDDM_WAYLAND="$SDDM_WL_VAL"
+INSTALL_FULL_WALLPAPERS="$FULL_WP_VAL"
 EOF
 
 # Assicura permessi di esecuzione sugli script
@@ -623,23 +685,15 @@ ln -sf "$REPO_DIR/src/scripts/serpantinum_update.sh" "$HOME/.local/bin/serpantin
 
 echo -e "  ${C_GREEN}✓${C_RESET} Sorgenti, binari e stato versione aggiornati a ${C_BOLD}v${FINAL_VER}${C_RESET} (${FINAL_UPSTREAM_COMMIT})."
 
-# 10. Riavvio controllato del demone e verifica stato di salute
+# 10. Riavvio controllato del demone e verifica stato di salute reale (stabile per >2s)
 if [ "$NO_RESTART" = false ]; then
     echo -e "${C_CYAN}[INFO] Riavvio del demone Serpantinum...${C_RESET}"
     serpantinumd stop >/dev/null 2>&1 || true
     sleep 0.8
     setsid -f serpantinumd start >/dev/null 2>&1
 
-    HEALTH_OK=false
-    for _ in 1 2 3 4 5 6; do
-        sleep 0.5
-        if serpantinumd status >/dev/null 2>&1; then
-            HEALTH_OK=true
-            break
-        fi
-    done
-
-    if [ "$HEALTH_OK" = true ]; then
+    sleep 2.2
+    if serpantinumd status >/dev/null 2>&1; then
         echo -e "${C_GREEN}✓ Serpantinum v${FINAL_VER} riavviato e perfettamente operativo!${C_RESET}"
         if command -v notify-send >/dev/null 2>&1; then
             notify-send -a "Serpantinum" -i "software-update-available" \
@@ -647,7 +701,8 @@ if [ "$NO_RESTART" = false ]; then
                 "Shell, Todo List e Calendari aggiornati e operativi." 2>/dev/null || true
         fi
     else
-        echo -e "${C_YELLOW}[!] Il demone impiega più tempo del previsto ad avviarsi. Controlla con 'serpantinumd status'.${C_RESET}"
+        echo -e "${C_RED}[!] Attenzione: il demone non è rimasto attivo. Controlla i log di quickshell.${C_RESET}"
+        exit 1
     fi
 fi
 

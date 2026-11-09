@@ -47,7 +47,9 @@
       "screenshot": "스크린샷",
       "theme_appearance": "모양",
       "theme_apps": "앱 테마",
-      "theme_wallpapers": "배경화면"
+      "theme_wallpapers": "배경화면",
+      "general_main": "일반",
+      "general_presets": "프리셋"
     },
     "launcher": {
       "position": {
@@ -147,7 +149,7 @@
       "warning_command": {
         "title": "경고 명령",
         "desc": "동작 실행 전 오프셋과 실행할 명령",
-        "placeholder": "예: notify-send 'warning'"
+        "placeholder": "예: serpantinum-core notify 'warning'"
       },
       "before_command": {
         "title": "사전 명령",
@@ -157,7 +159,7 @@
       "resume_command": {
         "title": "복귀 명령",
         "desc": "사용자 활동이 재개될 때 실행됩니다",
-        "placeholder": "예: notify-send 'resumed'"
+        "placeholder": "예: serpantinum-core notify 'resumed'"
       },
       "dim": {
         "title": "화면 어둡게",
@@ -250,10 +252,25 @@
       "screenshot_on_release": {
         "title": "마우스를 뗄 때 영역 캡처",
         "desc": "셔터를 누르지 않고 드래그가 끝나면 즉시 스크린샷을 찍습니다"
+      },
+      "presets": {
+        "save": {
+          "title": "현재 설정 저장",
+          "desc": "모든 설정, 위젯 및 배경화면을 프리셋으로 저장",
+          "button": "프리셋 저장"
+        },
+        "empty": "아직 프리셋이 없습니다. 현재 설정을 저장하여 만드세요",
+        "confirm": {
+          "title": "프리셋을 적용할까요?",
+          "desc": "현재 설정을 먼저 저장하지 않고 이 프리셋을 적용하시겠습니까? 기존 설정을 덮어쓰며 복구할 수 없습니다.",
+          "dont_show": "다시 표시하지 않기",
+          "apply": "적용",
+          "cancel": "취소"
+        }
       }
     },
     "display": {
-      "bluelight": {
+      "gamma": {
         "title": "블루라이트 필터",
         "desc": "따뜻한 화면 조명을 켜거나 끕니다"
       },
@@ -329,7 +346,7 @@
     },
     "bar": {
       "modules": {
-        "vis": "비주얼라이저 (cava)",
+        "vis": "비주얼라이저",
         "actions": "동작",
         "workspaces": {
           "style": {
@@ -675,6 +692,10 @@
           "swipe": {
             "name": "스와이프",
             "desc": "가장자리나 모서리에서 화면을 가로지릅니다"
+          },
+          "paint": {
+            "name": "페인트",
+            "desc": "화면에 퍼져 나가는 군집에서 새 배경화면을 칸칸이 칠합니다"
           },
           "orientation": {
             "title": "방향 축",
@@ -1515,7 +1536,8 @@
       "no_wallpapers_found": "배경화면을 찾을 수 없습니다",
       "videos": "동영상",
       "history": "최근 적용됨",
-      "favorites": "즐겨찾기"
+      "favorites": "즐겨찾기",
+      "recently_added": "최근 추가됨"
     },
     "filters": {
       "all": "전체",
@@ -1753,10 +1775,8 @@
       "location": "지리 좌표를 조회하고 갱신합니다",
       "screenshot": "화면 캡처, 동영상 녹화, QR 코드 인식을 수행합니다",
       "brightness": "디스플레이 백라이트 밝기를 조절합니다",
-      "current_focus": "활성 창의 포커스 변화를 감시하고 기록합니다",
-      "monitors_detect": "활성 디스플레이 출력과 주사율을 조회합니다",
       "location_manual": "지리 좌표와 시간대를 직접 설정합니다",
-      "blue_light_filter": "색온도와 자동 주야간 일정을 조절합니다",
+      "gamma": "색온도와 자동 주야간 일정을 조절합니다",
       "translate": "즉시 텍스트 및 선택 영역 번역기",
       "suspend": "화면을 잠그고 시스템을 절전 모드로 전환",
       "hibernate": "시스템을 최대 절전 모드로 전환",

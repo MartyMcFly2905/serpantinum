@@ -14,6 +14,10 @@ ImageFaceRound 1.0 image/ImageFaceRound.qml
 ImageFaceRounded 1.0 image/ImageFaceRounded.qml
 NotesFace 1.0 notes/NotesFace.qml
 TextFace 1.0 text/TextFace.qml
+TimerFace 1.0 timer/TimerFace.qml
+TimerFaceTimer 1.0 timer/TimerFaceTimer.qml
+TimerFaceStopwatch 1.0 timer/TimerFaceStopwatch.qml
+TimerFacePomodoro 1.0 timer/TimerFacePomodoro.qml
 MusicFace 1.0 music/MusicFace.qml
 MusicFaceRound 1.0 music/MusicFaceRound.qml
 MusicFaceLyrics 1.0 music/MusicFaceLyrics.qml
@@ -25,3 +29,4 @@ WeatherFaceCompact 1.0 weather/WeatherFaceCompact.qml
 WeatherFaceFull 1.0 weather/WeatherFaceFull.qml
 WeatherFaceRound 1.0 weather/WeatherFaceRound.qml
 TodoFace 1.0 todo/TodoFace.qml
+PomodoroFace 1.0 pomodoro/PomodoroFace.qml

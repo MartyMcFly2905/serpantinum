@@ -48,7 +48,9 @@
       "screenshot": "Captura de pantalla",
       "theme_appearance": "Apariencia",
       "theme_apps": "Tema de aplicaciones",
-      "theme_wallpapers": "Fondos de pantalla"
+      "theme_wallpapers": "Fondos de pantalla",
+      "general_main": "General",
+      "general_presets": "Preajustes"
     },
     "launcher": {
       "position": {
@@ -148,7 +150,7 @@
       "warning_command": {
         "title": "Comando de advertencia",
         "desc": "Desfase y comando a ejecutar antes de la acción",
-        "placeholder": "ej. notify-send 'advertencia'"
+        "placeholder": "ej. serpantinum-core notify 'advertencia'"
       },
       "before_command": {
         "title": "Comando previo",
@@ -158,7 +160,7 @@
       "resume_command": {
         "title": "Comando de reanudación",
         "desc": "Se ejecuta cuando se reanuda la actividad del usuario",
-        "placeholder": "ej. notify-send 'reanudado'"
+        "placeholder": "ej. serpantinum-core notify 'reanudado'"
       },
       "dim": {
         "title": "Atenuar pantalla",
@@ -251,10 +253,25 @@
       "screenshot_on_release": {
         "title": "Capturar región al soltar el ratón",
         "desc": "Tomar la captura de pantalla en cuanto termine de arrastrar, sin hacer clic en el disparador"
+      },
+      "presets": {
+        "save": {
+          "title": "Guardar configuración actual",
+          "desc": "Guarda todos los ajustes, widgets y fondos de pantalla como un preajuste",
+          "button": "Guardar preajuste"
+        },
+        "empty": "Aún no hay preajustes. Guarda tu configuración actual para crear uno",
+        "confirm": {
+          "title": "¿Aplicar preajuste?",
+          "desc": "¿Seguro que quieres aplicar este preajuste sin guardar antes tu configuración? Sobrescribirá tu configuración actual y no podrás recuperarla.",
+          "dont_show": "No volver a mostrar",
+          "apply": "Aplicar",
+          "cancel": "Cancelar"
+        }
       }
     },
     "display": {
-      "bluelight": {
+      "gamma": {
         "title": "Filtro de luz azul",
         "desc": "Activar iluminación cálida de pantalla"
       },
@@ -330,7 +347,7 @@
     },
     "bar": {
       "modules": {
-        "vis": "Visualizador (cava)",
+        "vis": "Visualizador",
         "actions": "Acciones",
         "workspaces": {
           "style": {
@@ -676,6 +693,10 @@
           "swipe": {
             "name": "Deslizar",
             "desc": "Barrer la pantalla desde un borde o una esquina"
+          },
+          "paint": {
+            "name": "Pintura",
+            "desc": "Pinta el nuevo fondo celda a celda desde colonias que crecen por la pantalla"
           },
           "orientation": {
             "title": "Orientación",
@@ -1559,7 +1580,8 @@
       "no_wallpapers_found": "No se encontraron fondos de pantalla",
       "videos": "Videos",
       "history": "Aplicados recientemente",
-      "favorites": "Favoritos"
+      "favorites": "Favoritos",
+      "recently_added": "Añadidos recientemente"
     },
     "filters": {
       "all": "Todos",
@@ -1797,10 +1819,8 @@
       "location": "Obtener y actualizar coordenadas geográficas",
       "screenshot": "Capturar imágenes de pantalla, grabar video o leer códigos QR",
       "brightness": "Ajustar el brillo de la pantalla",
-      "current_focus": "Monitorear y registrar cambios de enfoque de la ventana activa",
-      "monitors_detect": "Consultar salidas de pantalla activas y frecuencias de actualización",
       "location_manual": "Establecer coordenadas geográficas y zona horaria manualmente",
-      "blue_light_filter": "Ajustar la temperatura de color y el horario automático día/noche",
+      "gamma": "Ajustar la temperatura de color y el horario automático día/noche",
       "translate": "Traducción instantánea de texto y selecciones",
       "suspend": "Bloquear la pantalla y suspender el sistema",
       "hibernate": "Hibernar el sistema",

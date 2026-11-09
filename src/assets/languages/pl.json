@@ -453,7 +453,8 @@
       "no_wallpapers_found": "Nie znaleziono tapet",
       "videos": "Wideo",
       "history": "Ostatnio zastosowane",
-      "favorites": "Ulubione"
+      "favorites": "Ulubione",
+      "recently_added": "Ostatnio dodane"
     },
     "filters": {
       "all": "Wszystkie",
@@ -688,10 +689,8 @@
       "location": "Pobierz i zaktualizuj współrzędne geograficzne",
       "screenshot": "Przechwytuj obrazy ekranu, nagrywaj wideo lub skanuj kody QR",
       "brightness": "Dostosuj jasność podświetlenia ekranu",
-      "current_focus": "Monitoruj i rejestruj zmiany aktywnego okna",
-      "monitors_detect": "Wykryj aktywne ekrany i częstotliwości odświeżania",
       "location_manual": "Ręcznie ustaw współrzędne geograficzne i strefę czasową",
-      "blue_light_filter": "Dostosuj temperaturę barwową i automatyczny harmonogram dzień/noc",
+      "gamma": "Dostosuj temperaturę barwową i automatyczny harmonogram dzień/noc",
       "translate": "Błyskawiczny tłumacz tekstu i zaznaczenia",
       "suspend": "Zablokuj ekran i uśpij system",
       "hibernate": "Hibernuj system",
@@ -901,7 +900,9 @@
       "screenshot": "Zrzut ekranu",
       "theme_appearance": "Wygląd",
       "theme_apps": "Motywy aplikacji",
-      "theme_wallpapers": "Tapety"
+      "theme_wallpapers": "Tapety",
+      "general_main": "Ogólne",
+      "general_presets": "Presety"
     },
     "launcher": {
       "position": {
@@ -1001,7 +1002,7 @@
       "warning_command": {
         "title": "Polecenie ostrzegawcze",
         "desc": "Przesunięcie czasowe i polecenie do wykonania przed akcją",
-        "placeholder": "np. notify-send 'ostrzeżenie'"
+        "placeholder": "np. serpantinum-core notify 'ostrzeżenie'"
       },
       "before_command": {
         "title": "Polecenie poprzedzające",
@@ -1011,7 +1012,7 @@
       "resume_command": {
         "title": "Polecenie wznowienia",
         "desc": "Wykonywane po wznowieniu aktywności przez użytkownika",
-        "placeholder": "np. notify-send 'wznowiono'"
+        "placeholder": "np. serpantinum-core notify 'wznowiono'"
       },
       "dim": {
         "title": "Przyciemnij ekran",
@@ -1104,10 +1105,25 @@
       "screenshot_on_release": {
         "title": "Przechwyć obszar po zwolnieniu myszy",
         "desc": "Zrób zrzut ekranu zaraz po zakończeniu przeciągania, bez klikania migawki"
+      },
+      "presets": {
+        "save": {
+          "title": "Zapisz bieżącą konfigurację",
+          "desc": "Zapisz wszystkie ustawienia, widżety i tapety jako preset",
+          "button": "Zapisz preset"
+        },
+        "empty": "Brak presetów. Zapisz bieżącą konfigurację, aby utworzyć preset",
+        "confirm": {
+          "title": "Zastosować preset?",
+          "desc": "Czy na pewno chcesz zastosować ten preset bez wcześniejszego zapisania własnych ustawień? Zastąpi on bieżące ustawienia i nie będzie można ich odzyskać.",
+          "dont_show": "Nie pokazuj ponownie",
+          "apply": "Zastosuj",
+          "cancel": "Anuluj"
+        }
       }
     },
     "display": {
-      "bluelight": {
+      "gamma": {
         "title": "Filtr światła niebieskiego",
         "desc": "Przełącz ciepłe oświetlenie ekranu"
       },
@@ -1183,7 +1199,7 @@
     },
     "bar": {
       "modules": {
-        "vis": "Wizualizator (cava)",
+        "vis": "Wizualizator",
         "actions": "Akcje",
         "workspaces": {
           "style": {
@@ -1529,6 +1545,10 @@
           "swipe": {
             "name": "Przesunięcie",
             "desc": "Przesuń przez ekran od krawędzi lub rogu"
+          },
+          "paint": {
+            "name": "Farba",
+            "desc": "Maluj nową tapetę komórka po komórce z kolonii rosnących na ekranie"
           },
           "orientation": {
             "title": "Orientacja",

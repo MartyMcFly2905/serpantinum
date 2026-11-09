@@ -17,6 +17,11 @@
 
 ---
 
+> [!IMPORTANT]
+> **Hey, join our subreddit!** Share your setups, ask questions and follow updates at **[r/serpantinum](https://www.reddit.com/r/serpantinum)**.
+>
+> [![Join r/serpantinum](https://img.shields.io/badge/Join-r%2Fserpantinum-FF4500?style=for-the-badge&logo=reddit&logoColor=white)](https://www.reddit.com/r/serpantinum)
+
 ## Installation
 
 > [!TIP]
@@ -42,7 +47,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/ilyamiro/serpantinum/mas
 ```
 
 > [!NOTE]
-> To update, when or if you recieve a notification about the new version being available, just run the script again and choose "update"
+> To update, run the script again and choose "update".
 
 ---
 

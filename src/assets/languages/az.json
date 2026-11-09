@@ -47,7 +47,9 @@
       "screenshot": "Ekran görüntüsü",
       "theme_appearance": "Görünüş",
       "theme_apps": "Tətbiq mövzuları",
-      "theme_wallpapers": "Divar kağızları"
+      "theme_wallpapers": "Divar kağızları",
+      "general_main": "Ümumi",
+      "general_presets": "Hazır ayarlar"
     },
     "launcher": {
       "position": {
@@ -145,7 +147,7 @@
       "warning_command": {
         "title": "Xəbərdarlıq əmri",
         "desc": "Əməliyyatdan nə qədər əvvəl xəbərdarlıq veriləcəyini və icra olunacaq əmri təyin et",
-        "placeholder": "Məsələn, notify-send 'xəbərdarlıq'"
+        "placeholder": "Məsələn, serpantinum-core notify 'xəbərdarlıq'"
       },
       "before_command": {
         "title": "Əvvəl icra olunan əmr",
@@ -155,7 +157,7 @@
       "resume_command": {
         "title": "Fəaliyyət bərpa olunanda icra olunan əmr",
         "desc": "İstifadəçi fəaliyyəti bərpa olunanda icra olunur",
-        "placeholder": "Məsələn, notify-send 'bərpa olundu'"
+        "placeholder": "Məsələn, serpantinum-core notify 'bərpa olundu'"
       },
       "dim": {
         "title": "Ekranı tutqunlaşdır",
@@ -248,10 +250,25 @@
       "screenshot_on_release": {
         "title": "Siçan düyməsi buraxılanda sahənin şəklini çək",
         "desc": "Şəkil çəkmə düyməsinə klikləmədən, sahənin seçilməsi bitən kimi ekran şəklini çək"
+      },
+      "presets": {
+        "save": {
+          "title": "Cari quruluşu saxla",
+          "desc": "Bütün ayarları, vidcetləri və divar kağızlarını hazır ayar kimi saxla",
+          "button": "Hazır ayarı saxla"
+        },
+        "empty": "Hələ hazır ayar yoxdur. Yaratmaq üçün cari quruluşunuzu saxlayın",
+        "confirm": {
+          "title": "Hazır ayar tətbiq edilsin?",
+          "desc": "Öz ayarlarınızı əvvəlcə saxlamadan bu hazır ayarı tətbiq etmək istədiyinizə əminsiniz? Mövcud ayarlarınız əvəz olunacaq və onları bərpa edə bilməyəcəksiniz.",
+          "dont_show": "Bunu bir daha göstərmə",
+          "apply": "Tətbiq et",
+          "cancel": "Ləğv et"
+        }
       }
     },
     "display": {
-      "bluelight": {
+      "gamma": {
         "title": "Mavi işıq süzgəci",
         "desc": "Ekranın isti işıqlandırmasını aç və ya söndür"
       },
@@ -327,7 +344,7 @@
     },
     "bar": {
       "modules": {
-        "vis": "Səs görüntüləyicisi (cava)",
+        "vis": "Səs görüntüləyicisi",
         "actions": "Əməliyyatlar",
         "workspaces": {
           "style": {
@@ -673,6 +690,10 @@
           "swipe": {
             "name": "Sürüşmə",
             "desc": "Ekranı kənardan və ya küncdən süpür"
+          },
+          "paint": {
+            "name": "Boya",
+            "desc": "Yeni divar kağızını ekran boyu böyüyən koloniyalardan hüceyrə-hüceyrə çək"
           },
           "orientation": {
             "title": "İstiqamət oxu",
@@ -1509,7 +1530,8 @@
       "no_wallpapers_found": "Fon şəkli tapılmadı",
       "videos": "Videolar",
       "history": "Son tətbiq olunanlar",
-      "favorites": "Sevimlilər"
+      "favorites": "Sevimlilər",
+      "recently_added": "Son əlavə olunanlar"
     },
     "filters": {
       "all": "Hamısı",
@@ -1747,10 +1769,8 @@
       "location": "Coğrafi koordinatları əldə et və yenilə",
       "screenshot": "Ekran şəkilləri çək, video çək və ya QR kodları oxu",
       "brightness": "Ekranın arxa işığının parlaqlığını tənzimlə",
-      "current_focus": "Fəal pəncərənin fokus dəyişikliklərini izlə və jurnala yaz",
-      "monitors_detect": "Fəal ekran çıxışlarını və yenilənmə tezliklərini sorğula",
       "location_manual": "Coğrafi koordinatları və saat qurşağını əl ilə təyin et",
-      "blue_light_filter": "Rəng temperaturunu və avtomatik gündüz/gecə cədvəlini tənzimlə",
+      "gamma": "Rəng temperaturunu və avtomatik gündüz/gecə cədvəlini tənzimlə",
       "translate": "Mətn və seçilmiş hissə üçün ani tərcüməçi",
       "suspend": "Ekranı kilidlə və sistemi dayandır",
       "hibernate": "Sistemi hibernasiyaya göndər",

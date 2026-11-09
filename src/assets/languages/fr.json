@@ -47,7 +47,9 @@
       "screenshot": "Capture d'écran",
       "theme_appearance": "Apparence",
       "theme_apps": "Thème des applications",
-      "theme_wallpapers": "Fonds d'écran"
+      "theme_wallpapers": "Fonds d'écran",
+      "general_main": "Général",
+      "general_presets": "Préréglages"
     },
     "launcher": {
       "position": {
@@ -147,7 +149,7 @@
       "warning_command": {
         "title": "Commande d'avertissement",
         "desc": "Délai et commande à exécuter avant l'action",
-        "placeholder": "ex. notify-send 'avertissement'"
+        "placeholder": "ex. serpantinum-core notify 'avertissement'"
       },
       "before_command": {
         "title": "Commande préalable",
@@ -157,7 +159,7 @@
       "resume_command": {
         "title": "Commande de reprise",
         "desc": "Exécutée lorsque l'activité utilisateur reprend",
-        "placeholder": "ex. notify-send 'reprise'"
+        "placeholder": "ex. serpantinum-core notify 'reprise'"
       },
       "dim": {
         "title": "Atténuer l'écran",
@@ -250,10 +252,25 @@
       "screenshot_on_release": {
         "title": "Capturer la zone au relâchement de la souris",
         "desc": "Prendre la capture dès la fin de la sélection, sans cliquer sur le déclencheur"
+      },
+      "presets": {
+        "save": {
+          "title": "Enregistrer la configuration actuelle",
+          "desc": "Enregistrer tous les paramètres, widgets et fonds d'écran en tant que préréglage",
+          "button": "Enregistrer le préréglage"
+        },
+        "empty": "Aucun préréglage pour l'instant. Enregistrez votre configuration actuelle pour en créer un",
+        "confirm": {
+          "title": "Appliquer le préréglage ?",
+          "desc": "Voulez-vous vraiment appliquer ce préréglage sans enregistrer d'abord vos propres paramètres ? Il remplacera vos paramètres actuels et vous ne pourrez pas les récupérer.",
+          "dont_show": "Ne plus afficher",
+          "apply": "Appliquer",
+          "cancel": "Annuler"
+        }
       }
     },
     "display": {
-      "bluelight": {
+      "gamma": {
         "title": "Filtre de lumière bleue",
         "desc": "Activer l'éclairage chaud de l'écran"
       },
@@ -329,7 +346,7 @@
     },
     "bar": {
       "modules": {
-        "vis": "Visualiseur (cava)",
+        "vis": "Visualiseur",
         "actions": "Actions",
         "workspaces": {
           "style": {
@@ -675,6 +692,10 @@
           "swipe": {
             "name": "Balayage",
             "desc": "Balayer l'écran depuis un bord ou un coin"
+          },
+          "paint": {
+            "name": "Peinture",
+            "desc": "Peint le nouveau fond d'écran cellule par cellule à partir de colonies qui envahissent l'écran"
           },
           "orientation": {
             "title": "Orientation",
@@ -1518,7 +1539,8 @@
       "no_wallpapers_found": "Aucun fond d'écran trouvé",
       "videos": "Vidéos",
       "history": "Récemment appliqués",
-      "favorites": "Favoris"
+      "favorites": "Favoris",
+      "recently_added": "Récemment ajoutés"
     },
     "filters": {
       "all": "Tous",
@@ -1753,10 +1775,8 @@
       "location": "Récupérer et mettre à jour les coordonnées géographiques",
       "screenshot": "Capturer l'écran, enregistrer une vidéo ou analyser des codes QR",
       "brightness": "Ajuster la luminosité du rétroéclairage",
-      "current_focus": "Surveiller et enregistrer les changements de focus de la fenêtre active",
-      "monitors_detect": "Interroger les sorties d'affichage actives et les taux de rafraîchissement",
       "location_manual": "Définir manuellement les coordonnées géographiques et le fuseau horaire",
-      "blue_light_filter": "Ajuster la température de couleur et la planification jour/nuit automatique",
+      "gamma": "Ajuster la température de couleur et la planification jour/nuit automatique",
       "translate": "Traducteur instantané de texte et de sélection",
       "suspend": "Verrouiller l'écran et mettre le système en veille",
       "hibernate": "Mettre le système en hibernation",

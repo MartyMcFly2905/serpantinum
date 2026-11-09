@@ -450,7 +450,8 @@
       "no_wallpapers_found": "壁紙が見つかりませんでした",
       "videos": "動画",
       "history": "最近適用した壁紙",
-      "favorites": "お気に入り"
+      "favorites": "お気に入り",
+      "recently_added": "最近追加した壁紙"
     },
     "filters": {
       "all": "すべて",
@@ -685,10 +686,8 @@
       "location": "地理座標の取得と更新",
       "screenshot": "画面キャプチャ、動画録画、またはQRコード読み取り",
       "brightness": "ディスプレイバックライトの輝度調整",
-      "current_focus": "アクティブウィンドウのフォーカス変化を監視・記録",
-      "monitors_detect": "アクティブなディスプレイ出力とリフレッシュレートを照会",
       "location_manual": "地理座標とタイムゾーンを手動で設定",
-      "blue_light_filter": "色温度と昼夜の自動スケジュールを調整",
+      "gamma": "色温度と昼夜の自動スケジュールを調整",
       "translate": "テキストおよび選択範囲の即時翻訳",
       "suspend": "画面をロックしてシステムをサスペンドする",
       "hibernate": "システムをハイバネートする",
@@ -901,7 +900,9 @@
       "screenshot": "スクリーンショット",
       "theme_appearance": "外観",
       "theme_apps": "アプリのテーマ",
-      "theme_wallpapers": "壁紙"
+      "theme_wallpapers": "壁紙",
+      "general_main": "一般",
+      "general_presets": "プリセット"
     },
     "launcher": {
       "position": {
@@ -1001,7 +1002,7 @@
       "warning_command": {
         "title": "警告コマンド",
         "desc": "アクションの前に実行するオフセットとコマンド",
-        "placeholder": "例: notify-send 'warning'"
+        "placeholder": "例: serpantinum-core notify 'warning'"
       },
       "before_command": {
         "title": "直前コマンド",
@@ -1011,7 +1012,7 @@
       "resume_command": {
         "title": "復帰時コマンド",
         "desc": "ユーザーのアクティビティが再開されたときに実行されます",
-        "placeholder": "例: notify-send 'resumed'"
+        "placeholder": "例: serpantinum-core notify 'resumed'"
       },
       "dim": {
         "title": "画面の減光",
@@ -1104,10 +1105,25 @@
       "screenshot_on_release": {
         "title": "マウスを離したときに領域をキャプチャ",
         "desc": "シャッターをクリックせず、ドラッグ終了時に即座にスクリーンショットを撮影します"
+      },
+      "presets": {
+        "save": {
+          "title": "現在の設定を保存",
+          "desc": "すべての設定、ウィジェット、壁紙をプリセットとして保存",
+          "button": "プリセットを保存"
+        },
+        "empty": "プリセットはまだありません。現在の設定を保存して作成しましょう",
+        "confirm": {
+          "title": "プリセットを適用しますか？",
+          "desc": "現在の設定を保存せずにこのプリセットを適用してもよろしいですか？既存の設定は上書きされ、復元できなくなります。",
+          "dont_show": "今後表示しない",
+          "apply": "適用",
+          "cancel": "キャンセル"
+        }
       }
     },
     "display": {
-      "bluelight": {
+      "gamma": {
         "title": "ブルーライトフィルター",
         "desc": "画面の暖色照明を切り替えます"
       },
@@ -1183,7 +1199,7 @@
     },
     "bar": {
       "modules": {
-        "vis": "ビジュアライザー (cava)",
+        "vis": "ビジュアライザー",
         "actions": "アクション",
         "workspaces": {
           "style": {
@@ -1529,6 +1545,10 @@
           "swipe": {
             "name": "スワイプ",
             "desc": "端または角から画面を横切ります"
+          },
+          "paint": {
+            "name": "ペイント",
+            "desc": "画面に広がるコロニーから新しい壁紙をセルごとに描き込みます"
           },
           "orientation": {
             "title": "向き",

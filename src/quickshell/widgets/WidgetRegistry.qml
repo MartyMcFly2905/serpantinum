@@ -889,6 +889,30 @@ QtObject {
                 "default": { file: "faces/github/GithubFace.qml", icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.default", "Default") : "Default" }
             }
         },
+        "notes": {
+            name: typeof I18n !== "undefined" ? I18n.t("widgets.types.notes", "Notes") : "Notes",
+            icon: String.fromCodePoint(0xF039E),
+            category: "time",
+            defaultWidth: 300,
+            defaultHeight: 280,
+            defaultVariant: "default",
+            variants: {
+                "default": { file: "faces/notes/NotesFace.qml", icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.default", "Default") : "Default" }
+            }
+        },
+        "timer": {
+            name: I18n.t("quickactions.tabs.timer", "Timer"),
+            icon: String.fromCodePoint(0xF051B),
+            category: "time",
+            defaultWidth: 360,
+            defaultHeight: 280,
+            defaultVariant: "timer",
+            variants: {
+                "timer":     { file: "faces/timer/TimerFaceTimer.qml",     icon: "1", label: I18n.t("quickactions.timer.tabs.timer", "Timer") },
+                "stopwatch": { file: "faces/timer/TimerFaceStopwatch.qml", icon: "2", label: I18n.t("quickactions.timer.tabs.stopwatch", "Stopwatch") },
+                "pomodoro":  { file: "faces/timer/TimerFacePomodoro.qml",  icon: "3", label: I18n.t("quickactions.timer.tabs.pomodoro", "Pomodoro") }
+            }
+        },
         "calendar": {
             name: typeof I18n !== "undefined" ? I18n.t("widgets.types.calendar", "Calendar") : "Calendar",
             icon: String.fromCodePoint(0xF00ED),
@@ -925,17 +949,6 @@ QtObject {
                 "agenda":  { file: "faces/calendar/CalendarFaceAgenda.qml",  icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.agenda", "Agenda") : "Agenda" },
                 "month":   { file: "faces/calendar/CalendarFaceMonth.qml",   icon: "2", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.month", "Month") : "Month" },
                 "compact": { file: "faces/calendar/CalendarFaceCompact.qml", icon: "3", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.compact", "Compact") : "Compact" }
-            }
-        },
-        "notes": {
-            name: typeof I18n !== "undefined" ? I18n.t("widgets.types.notes", "Notes") : "Notes",
-            icon: String.fromCodePoint(0xF039E),
-            category: "time",
-            defaultWidth: 300,
-            defaultHeight: 280,
-            defaultVariant: "default",
-            variants: {
-                "default": { file: "faces/notes/NotesFace.qml", icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.default", "Default") : "Default" }
             }
         },
         "todo": {

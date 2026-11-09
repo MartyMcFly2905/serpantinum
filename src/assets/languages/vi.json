@@ -47,7 +47,9 @@
       "screenshot": "Ảnh chụp màn hình",
       "theme_appearance": "Giao diện",
       "theme_apps": "Giao diện ứng dụng",
-      "theme_wallpapers": "Hình nền"
+      "theme_wallpapers": "Hình nền",
+      "general_main": "Chung",
+      "general_presets": "Cấu hình sẵn"
     },
     "launcher": {
       "position": {
@@ -147,7 +149,7 @@
       "warning_command": {
         "title": "Lệnh cảnh báo",
         "desc": "Độ trễ và lệnh thực thi trước tác vụ",
-        "placeholder": "VD: notify-send 'cảnh báo'"
+        "placeholder": "VD: serpantinum-core notify 'cảnh báo'"
       },
       "before_command": {
         "title": "Lệnh trước tác vụ",
@@ -157,7 +159,7 @@
       "resume_command": {
         "title": "Lệnh khi khôi phục",
         "desc": "Thực thi khi người dùng tiếp tục hoạt động",
-        "placeholder": "VD: notify-send 'đã khôi phục'"
+        "placeholder": "VD: serpantinum-core notify 'đã khôi phục'"
       },
       "dim": {
         "title": "Làm mờ màn hình",
@@ -250,10 +252,25 @@
       "screenshot_on_release": {
         "title": "Chụp vùng khi thả chuột",
         "desc": "Chụp ảnh màn hình ngay khi kéo xong mà không cần nhấn nút chụp"
+      },
+      "presets": {
+        "save": {
+          "title": "Lưu thiết lập hiện tại",
+          "desc": "Lưu tất cả cài đặt, tiện ích và hình nền thành một cấu hình sẵn",
+          "button": "Lưu cấu hình sẵn"
+        },
+        "empty": "Chưa có cấu hình sẵn nào. Hãy lưu thiết lập hiện tại để tạo một cấu hình",
+        "confirm": {
+          "title": "Áp dụng cấu hình sẵn?",
+          "desc": "Bạn có chắc muốn áp dụng cấu hình sẵn này mà không lưu cài đặt của mình trước không? Nó sẽ ghi đè cài đặt hiện tại và bạn sẽ không thể khôi phục chúng.",
+          "dont_show": "Không hiển thị lại",
+          "apply": "Áp dụng",
+          "cancel": "Hủy"
+        }
       }
     },
     "display": {
-      "bluelight": {
+      "gamma": {
         "title": "Bộ lọc ánh sáng xanh",
         "desc": "Bật/tắt ánh sáng màn hình ấm"
       },
@@ -329,7 +346,7 @@
     },
     "bar": {
       "modules": {
-        "vis": "Trình hiển thị âm thanh (cava)",
+        "vis": "Trình hiển thị âm thanh",
         "actions": "Thao tác",
         "workspaces": {
           "style": {
@@ -675,6 +692,10 @@
           "swipe": {
             "name": "Quét",
             "desc": "Quét qua màn hình từ một cạnh hoặc góc"
+          },
+          "paint": {
+            "name": "Sơn",
+            "desc": "Tô hình nền mới từng ô từ những quần thể lan rộng khắp màn hình"
           },
           "orientation": {
             "title": "Hướng mở",
@@ -1515,7 +1536,8 @@
       "no_wallpapers_found": "Không tìm thấy hình nền nào",
       "videos": "Video",
       "history": "Đã áp dụng gần đây",
-      "favorites": "Yêu thích"
+      "favorites": "Yêu thích",
+      "recently_added": "Đã thêm gần đây"
     },
     "filters": {
       "all": "Tất cả",
@@ -1753,10 +1775,8 @@
       "location": "Lấy và cập nhật tọa độ địa lý",
       "screenshot": "Chụp ảnh màn hình, quay video hoặc phân tích mã QR",
       "brightness": "Điều chỉnh độ sáng đèn nền màn hình",
-      "current_focus": "Theo dõi và ghi nhật ký thay đổi tiêu điểm cửa sổ đang hoạt động",
-      "monitors_detect": "Truy vấn các đầu ra màn hình đang hoạt động và tần số quét",
       "location_manual": "Đặt thủ công tọa độ địa lý và múi giờ",
-      "blue_light_filter": "Điều chỉnh nhiệt độ màu và lịch trình ngày/đêm tự động",
+      "gamma": "Điều chỉnh nhiệt độ màu và lịch trình ngày/đêm tự động",
       "translate": "Trình dịch văn bản và vùng chọn tức thì",
       "suspend": "Khóa màn hình và tạm dừng hệ thống",
       "hibernate": "Ngủ đông hệ thống",

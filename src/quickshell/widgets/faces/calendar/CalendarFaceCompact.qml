@@ -27,7 +27,11 @@ Item {
         return (evs && evs.length > 0) ? evs[0] : null;
     }
 
-    readonly property var todayDate: new Date()
+    readonly property var todayDate: {
+        let _tick = (typeof DateTime !== "undefined" && DateTime.now) ? DateTime.now : null;
+        let _sync = (typeof CalendarService !== "undefined") ? CalendarService.eventsCount : 0;
+        return new Date();
+    }
     readonly property string dayNumStr: String(todayDate.getDate())
     readonly property string weekdayStr: {
         try {

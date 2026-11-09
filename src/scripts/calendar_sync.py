@@ -820,6 +820,17 @@ def remove_local_task(event_id):
         return apply_states_to_cached()
     return set_event_state(event_id, "archived")
 
+def clear_completed_tasks():
+    states = load_task_states()
+    tasks = load_local_tasks()
+    new_tasks = [t for t in tasks if not (t.get("completed") or states.get(t.get("id"), {}).get("completed"))]
+    save_local_tasks(new_tasks)
+    for eid, st in list(states.items()):
+        if isinstance(st, dict) and st.get("completed"):
+            st["archived"] = True
+    save_task_states(states)
+    return apply_states_to_cached()
+
 def add_calendar(name, url, color="#89b4fa"):
     cfg = load_config()
     cal_id = hashlib.md5((name + url).encode('utf-8')).hexdigest()[:8]
@@ -898,6 +909,9 @@ def main():
         else:
             sys.stderr.write("Usage: calendar_sync.py --remove-task <event_id>\n")
             sys.exit(1)
+    elif args[0] == "--clear-completed-tasks":
+        res = clear_completed_tasks()
+        print(json.dumps(res, ensure_ascii=False))
     elif args[0] == "--add":
         if len(args) >= 3:
             name = args[1]

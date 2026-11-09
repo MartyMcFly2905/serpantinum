@@ -31,6 +31,7 @@ Item {
     readonly property int selectedYear: (typeof CalendarService !== "undefined") ? CalendarService.selectedYear : new Date().getFullYear()
 
     property bool isConfiguring: false
+    property string selectedCalColor: "#89b4fa"
     property bool wantsKeyboardFocus: isConfiguring
 
     readonly property bool isWide: root.width >= Scaler.s(520)
@@ -168,6 +169,15 @@ Item {
         target: typeof CalendarService !== "undefined" ? CalendarService : null
         function onCalendarUpdated() {
             root.refreshDaysGrid();
+        }
+        function onSelectedDateChanged() {
+            if (typeof CalendarService !== "undefined") {
+                let now = new Date();
+                let targetOffset = (CalendarService.selectedYear - now.getFullYear()) * 12 + (CalendarService.selectedMonth - now.getMonth());
+                if (root.monthOffset !== targetOffset) {
+                    root.monthOffset = targetOffset;
+                }
+            }
         }
     }
 
@@ -411,6 +421,17 @@ Item {
                 Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
+
+                    WheelHandler {
+                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                        onWheel: (event) => {
+                            if (event.angleDelta.y > 0) {
+                                root.monthOffset--;
+                            } else if (event.angleDelta.y < 0) {
+                                root.monthOffset++;
+                            }
+                        }
+                    }
 
                     GridLayout {
                         anchors.fill: parent
@@ -705,7 +726,7 @@ Item {
                 spacing: Scaler.s(6)
 
                 Rectangle {
-                    Layout.preferredWidth: Scaler.s(90)
+                    Layout.preferredWidth: Scaler.s(85)
                     Layout.preferredHeight: Scaler.s(30)
                     color: Qt.alpha(ThemeBackend.surface1, 0.8)
                     radius: Scaler.s(6)
@@ -721,6 +742,20 @@ Item {
                         color: ThemeBackend.text
                         text: "Google"
                         selectByMouse: true
+                        onActiveFocusChanged: {
+                            if (activeFocus) root.setKeyboardFocus(true);
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton
+                        cursorShape: Qt.IBeamCursor
+                        onPressed: (mouse) => {
+                            root.setKeyboardFocus(true);
+                            calNameInput.forceActiveFocus();
+                            mouse.accepted = false;
+                        }
                     }
                 }
 
@@ -740,6 +775,9 @@ Item {
                         font.pixelSize: Scaler.s(10)
                         color: ThemeBackend.text
                         selectByMouse: true
+                        onActiveFocusChanged: {
+                            if (activeFocus) root.setKeyboardFocus(true);
+                        }
 
                         Text {
                             anchors.fill: parent
@@ -749,6 +787,17 @@ Item {
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: Scaler.s(10)
                             color: ThemeBackend.overlay0
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton
+                        cursorShape: Qt.IBeamCursor
+                        onPressed: (mouse) => {
+                            root.setKeyboardFocus(true);
+                            calUrlInput.forceActiveFocus();
+                            mouse.accepted = false;
                         }
                     }
                 }
@@ -765,12 +814,57 @@ Item {
                         let n = calNameInput.text.trim();
                         if (u !== "") {
                             if (typeof CalendarService !== "undefined") {
-                                CalendarService.addCalendar(n !== "" ? n : "Google Calendar", u, "#89b4fa");
+                                CalendarService.addCalendar(n !== "" ? n : "Google Calendar", u, root.selectedCalColor);
                             }
                             calUrlInput.text = "";
                         }
                     }
                 }
+            }
+
+            // Color picker row for new calendar feeds
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Scaler.s(6)
+
+                Text {
+                    text: typeof I18n !== "undefined" ? I18n.t("widgets.calendar.feed_color", "Colore:") : "Colore:"
+                    font.family: ThemeBackend.fontFamily
+                    font.pixelSize: Scaler.s(9.5)
+                    color: ThemeBackend.subtext0
+                }
+
+                Repeater {
+                    model: ["#89b4fa", "#cba6f7", "#a6e3a1", "#fab387", "#f38ba8", "#f9e2af", "#94e2d5"]
+
+                    Rectangle {
+                        width: Scaler.s(18)
+                        height: Scaler.s(18)
+                        radius: Scaler.s(9)
+                        color: modelData
+                        border.width: root.selectedCalColor === modelData ? 2 : 0
+                        border.color: ThemeBackend.text
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.selectedCalColor = modelData
+                        }
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+            }
+
+            // Error notice if sync had an issue
+            Text {
+                visible: typeof CalendarService !== "undefined" && CalendarService.lastError !== ""
+                text: "󰀦 " + (typeof CalendarService !== "undefined" ? CalendarService.lastError : "")
+                font.family: ThemeBackend.fontFamily
+                font.pixelSize: Scaler.s(9.5)
+                color: ThemeBackend.red
+                Layout.fillWidth: true
+                elide: Text.ElideRight
             }
 
             ListView {

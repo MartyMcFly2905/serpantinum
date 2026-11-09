@@ -29,6 +29,7 @@ Item {
 
     property bool isConfiguring: false
     property bool isAddingTask: false
+    property string selectedCalColor: "#89b4fa"
     property bool wantsKeyboardFocus: isConfiguring || isAddingTask
 
     function setKeyboardFocus(enable) {
@@ -79,6 +80,15 @@ Item {
             );
         }
         return CalendarService.getUpcomingEvents(25, showArch);
+    }
+
+    readonly property int completedCountInView: {
+        let list = root.displayedEventsList;
+        let c = 0;
+        for (let i = 0; i < list.length; i++) {
+            if (list[i].completed) c++;
+        }
+        return c;
     }
 
     readonly property string selectedHeaderTitle: {
@@ -179,7 +189,7 @@ Item {
             RowLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: Scaler.s(30)
-                spacing: Scaler.s(5)
+                spacing: Scaler.s(4)
 
                 Text {
                     text: "󰃭"
@@ -242,6 +252,40 @@ Item {
                     }
                 }
 
+                // Prev Day step button (visible when filtering by day)
+                IconButton {
+                    visible: root.isDateFiltered
+                    size: Scaler.s(24)
+                    cornerRadius: ThemeBackend.borderRadius
+                    buttonIcon: "󰅁"
+                    iconFontSize: Scaler.s(12)
+                    accentColor: ThemeBackend.surface1
+                    bgOpacity: ThemeBackend.elementOpacity
+                    textColor: ThemeBackend.subtext0
+                    onClicked: {
+                        if (typeof CalendarService !== "undefined") {
+                            CalendarService.stepSelectedDate(-1);
+                        }
+                    }
+                }
+
+                // Next Day step button (visible when filtering by day)
+                IconButton {
+                    visible: root.isDateFiltered
+                    size: Scaler.s(24)
+                    cornerRadius: ThemeBackend.borderRadius
+                    buttonIcon: "󰅂"
+                    iconFontSize: Scaler.s(12)
+                    accentColor: ThemeBackend.surface1
+                    bgOpacity: ThemeBackend.elementOpacity
+                    textColor: ThemeBackend.subtext0
+                    onClicked: {
+                        if (typeof CalendarService !== "undefined") {
+                            CalendarService.stepSelectedDate(1);
+                        }
+                    }
+                }
+
                 // Jump back to "Oggi" button when viewing another day
                 IconButton {
                     visible: typeof CalendarService !== "undefined" && (!CalendarService.isSelectedToday || !CalendarService.filterBySelectedDate)
@@ -255,6 +299,23 @@ Item {
                     onClicked: {
                         if (typeof CalendarService !== "undefined") {
                             CalendarService.resetSelectionToToday(true);
+                        }
+                    }
+                }
+
+                // Clear completed tasks button
+                IconButton {
+                    visible: root.completedCountInView > 0
+                    size: Scaler.s(26)
+                    cornerRadius: ThemeBackend.borderRadius
+                    buttonIcon: "󰃢"
+                    iconFontSize: Scaler.s(12)
+                    accentColor: ThemeBackend.surface1
+                    bgOpacity: ThemeBackend.elementOpacity
+                    textColor: ThemeBackend.peach
+                    onClicked: {
+                        if (typeof CalendarService !== "undefined") {
+                            CalendarService.clearCompletedTasks();
                         }
                     }
                 }
@@ -383,25 +444,44 @@ Item {
                     anchors.rightMargin: Scaler.s(4)
                     spacing: Scaler.s(5)
 
-                    TextInput {
-                        id: newTaskTitleInput
+                    Item {
                         Layout.fillWidth: true
-                        verticalAlignment: TextInput.AlignVCenter
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Scaler.s(11)
-                        color: ThemeBackend.text
-                        selectByMouse: true
-                        clip: true
-                        onAccepted: root.submitQuickTask()
+                        Layout.fillHeight: true
 
-                        Text {
+                        TextInput {
+                            id: newTaskTitleInput
                             anchors.fill: parent
-                            verticalAlignment: Text.AlignVCenter
-                            visible: !newTaskTitleInput.text
-                            text: typeof I18n !== "undefined" ? I18n.t("widgets.calendar.new_task_placeholder", "Nuova attività o impegno...") : "Nuova attività o impegno..."
+                            verticalAlignment: TextInput.AlignVCenter
                             font.family: ThemeBackend.fontFamily
-                            font.pixelSize: Scaler.s(10.5)
-                            color: ThemeBackend.overlay0
+                            font.pixelSize: Scaler.s(11)
+                            color: ThemeBackend.text
+                            selectByMouse: true
+                            clip: true
+                            onAccepted: root.submitQuickTask()
+                            onActiveFocusChanged: {
+                                if (activeFocus) root.setKeyboardFocus(true);
+                            }
+
+                            Text {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                visible: !newTaskTitleInput.text
+                                text: typeof I18n !== "undefined" ? I18n.t("widgets.calendar.new_task_placeholder", "Nuova attività o impegno...") : "Nuova attività o impegno..."
+                                font.family: ThemeBackend.fontFamily
+                                font.pixelSize: Scaler.s(10.5)
+                                color: ThemeBackend.overlay0
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            acceptedButtons: Qt.LeftButton
+                            cursorShape: Qt.IBeamCursor
+                            onPressed: (mouse) => {
+                                root.setKeyboardFocus(true);
+                                newTaskTitleInput.forceActiveFocus();
+                                mouse.accepted = false;
+                            }
                         }
                     }
 
@@ -421,6 +501,9 @@ Item {
                             color: ThemeBackend.subtext0
                             selectByMouse: true
                             onAccepted: root.submitQuickTask()
+                            onActiveFocusChanged: {
+                                if (activeFocus) root.setKeyboardFocus(true);
+                            }
 
                             Text {
                                 anchors.centerIn: parent
@@ -429,6 +512,17 @@ Item {
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: Scaler.s(9.5)
                                 color: ThemeBackend.overlay0
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            acceptedButtons: Qt.LeftButton
+                            cursorShape: Qt.IBeamCursor
+                            onPressed: (mouse) => {
+                                root.setKeyboardFocus(true);
+                                newTaskTimeInput.forceActiveFocus();
+                                mouse.accepted = false;
                             }
                         }
                     }
@@ -777,7 +871,7 @@ Item {
                 spacing: Scaler.s(6)
 
                 Rectangle {
-                    Layout.preferredWidth: Scaler.s(90)
+                    Layout.preferredWidth: Scaler.s(85)
                     Layout.preferredHeight: Scaler.s(30)
                     color: Qt.alpha(ThemeBackend.surface1, 0.8)
                     radius: Scaler.s(6)
@@ -793,6 +887,20 @@ Item {
                         color: ThemeBackend.text
                         text: "Google"
                         selectByMouse: true
+                        onActiveFocusChanged: {
+                            if (activeFocus) root.setKeyboardFocus(true);
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton
+                        cursorShape: Qt.IBeamCursor
+                        onPressed: (mouse) => {
+                            root.setKeyboardFocus(true);
+                            calNameInput.forceActiveFocus();
+                            mouse.accepted = false;
+                        }
                     }
                 }
 
@@ -812,6 +920,9 @@ Item {
                         font.pixelSize: Scaler.s(10)
                         color: ThemeBackend.text
                         selectByMouse: true
+                        onActiveFocusChanged: {
+                            if (activeFocus) root.setKeyboardFocus(true);
+                        }
 
                         Text {
                             anchors.fill: parent
@@ -821,6 +932,17 @@ Item {
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: Scaler.s(10)
                             color: ThemeBackend.overlay0
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.LeftButton
+                        cursorShape: Qt.IBeamCursor
+                        onPressed: (mouse) => {
+                            root.setKeyboardFocus(true);
+                            calUrlInput.forceActiveFocus();
+                            mouse.accepted = false;
                         }
                     }
                 }
@@ -837,12 +959,57 @@ Item {
                         let n = calNameInput.text.trim();
                         if (u !== "") {
                             if (typeof CalendarService !== "undefined") {
-                                CalendarService.addCalendar(n !== "" ? n : "Google Calendar", u, "#89b4fa");
+                                CalendarService.addCalendar(n !== "" ? n : "Google Calendar", u, root.selectedCalColor);
                             }
                             calUrlInput.text = "";
                         }
                     }
                 }
+            }
+
+            // Color picker row for new calendar feeds
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Scaler.s(6)
+
+                Text {
+                    text: typeof I18n !== "undefined" ? I18n.t("widgets.calendar.feed_color", "Colore:") : "Colore:"
+                    font.family: ThemeBackend.fontFamily
+                    font.pixelSize: Scaler.s(9.5)
+                    color: ThemeBackend.subtext0
+                }
+
+                Repeater {
+                    model: ["#89b4fa", "#cba6f7", "#a6e3a1", "#fab387", "#f38ba8", "#f9e2af", "#94e2d5"]
+
+                    Rectangle {
+                        width: Scaler.s(18)
+                        height: Scaler.s(18)
+                        radius: Scaler.s(9)
+                        color: modelData
+                        border.width: root.selectedCalColor === modelData ? 2 : 0
+                        border.color: ThemeBackend.text
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.selectedCalColor = modelData
+                        }
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
+            }
+
+            // Error notice if sync had an issue
+            Text {
+                visible: typeof CalendarService !== "undefined" && CalendarService.lastError !== ""
+                text: "󰀦 " + (typeof CalendarService !== "undefined" ? CalendarService.lastError : "")
+                font.family: ThemeBackend.fontFamily
+                font.pixelSize: Scaler.s(9.5)
+                color: ThemeBackend.red
+                Layout.fillWidth: true
+                elide: Text.ElideRight
             }
 
             ListView {
@@ -872,7 +1039,7 @@ Item {
                         }
 
                         Text {
-                            text: modelData.name || "Calendar"
+                            text: (modelData.name || "Calendar") + (modelData.cached ? " 󰋊" : "")
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: Scaler.s(10.5)
                             font.bold: true

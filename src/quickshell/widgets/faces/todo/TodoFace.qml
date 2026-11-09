@@ -1,8 +1,10 @@
 import QtQuick
+import QtQuick.Window
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 import "../../../reusables"
 import "../../../"
 
@@ -39,6 +41,7 @@ Item {
     property bool showAddRow: true
     property bool isImportSheetOpen: false
     property string importMode: "merge" // "merge" | "replace"
+    property bool confirmClearAll: false
 
     // Quick Add selectors
     property int selectedPriority: 4 // 1: P1, 2: P2, 3: P3, 4: P4
@@ -58,7 +61,40 @@ Item {
     // Keyboard focus integration for LayerShell panel window
     property bool isInputActive: false
     property bool isPathInputActive: false
-    readonly property bool wantsKeyboardFocus: isInputActive || isPathInputActive
+    property bool wantsKeyboardFocus: isInputActive || isPathInputActive
+
+    function setKeyboardFocus(enable) {
+        root.wantsKeyboardFocus = enable;
+        try {
+            let win = root.Window ? root.Window.window : null;
+            let targets = [];
+            if (win) targets.push(win);
+            let cur = root;
+            while (cur) {
+                targets.push(cur);
+                if (!cur.parent) break;
+                cur = cur.parent;
+            }
+            for (let i = 0; i < targets.length; i++) {
+                let t = targets[i];
+                if (!t) continue;
+                if (t.wantsKeyboardFocus !== undefined) t.wantsKeyboardFocus = enable;
+                if (t.focusable !== undefined) t.focusable = enable;
+                if (t.WlrLayershell !== undefined) {
+                    let focusVal = enable ? 1 : 0;
+                    if (typeof WlrKeyboardFocus !== "undefined") {
+                        focusVal = enable ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None;
+                    } else if (typeof WlrLayershell !== "undefined" && WlrLayershell.KeyboardFocus) {
+                        focusVal = enable ? WlrLayershell.KeyboardFocus.OnDemand : WlrLayershell.KeyboardFocus.None;
+                    }
+                    t.WlrLayershell.keyboardFocus = focusVal;
+                }
+                if (enable && typeof t.requestActivate === "function") {
+                    t.requestActivate();
+                }
+            }
+        } catch (e) {}
+    }
 
     readonly property int totalCount: todosList.length
     readonly property int completedCount: {
@@ -69,6 +105,7 @@ Item {
         return c;
     }
     readonly property int activeCount: totalCount - completedCount
+    readonly property real completionRatio: totalCount > 0 ? (completedCount / totalCount) : 0.0
 
     readonly property int todayCount: {
         let c = 0;
@@ -111,6 +148,19 @@ Item {
             }
             res.push(it);
         }
+        // Smart sort: uncompleted first -> overdue/today/upcoming -> priority P1..P4 -> created_at
+        res.sort(function(a, b) {
+            if (Boolean(a.completed) !== Boolean(b.completed)) {
+                return a.completed ? 1 : -1;
+            }
+            let da = (a.days_diff !== undefined) ? Number(a.days_diff) : 999;
+            let db = (b.days_diff !== undefined) ? Number(b.days_diff) : 999;
+            if (da !== db) return da - db;
+            let pa = (a.priority !== undefined) ? Number(a.priority) : 4;
+            let pb = (b.priority !== undefined) ? Number(b.priority) : 4;
+            if (pa !== pb) return pa - pb;
+            return (Number(b.created_at) || 0) - (Number(a.created_at) || 0);
+        });
         return res;
     }
 
@@ -124,6 +174,12 @@ Item {
         id: statusTimer
         interval: 3800
         onTriggered: root.statusText = ""
+    }
+
+    Timer {
+        id: confirmClearTimer
+        interval: 3200
+        onTriggered: root.confirmClearAll = false
     }
 
     // Midnight / periodic refresh timer to update relative day categories
@@ -246,6 +302,26 @@ Item {
         clearCompletedProcess.running = true;
     }
 
+    function clearAll() {
+        root.todosList = [];
+        root.confirmClearAll = false;
+        confirmClearTimer.stop();
+
+        clearAllProcess.running = false;
+        clearAllProcess.running = true;
+    }
+
+    function requestClearAll() {
+        if (root.totalCount === 0) return;
+        if (!root.confirmClearAll) {
+            root.confirmClearAll = true;
+            confirmClearTimer.restart();
+            root.showStatus(typeof I18n !== "undefined" ? I18n.t("widgets.todo.confirm_clear_prompt", "Premi di nuovo per svuotare tutta la lista") : "Premi di nuovo per svuotare tutta la lista", true);
+        } else {
+            root.clearAll();
+        }
+    }
+
     function pickAndImportCsv(mode) {
         pickCsvProcess.cmdMode = mode || root.importMode;
         pickCsvProcess.running = false;
@@ -329,6 +405,22 @@ Item {
                     let res = JSON.parse(this.text);
                     if (res.status === "ok") {
                         root.showStatus(typeof I18n !== "undefined" ? I18n.t("widgets.todo.cleared", "Completate rimosse") : "Completate rimosse", false);
+                        todosFileWatcher.reload();
+                    }
+                } catch (e) {}
+            }
+        }
+    }
+
+    Process {
+        id: clearAllProcess
+        command: ["python3", root.scriptPath, "--clear-all"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    let res = JSON.parse(this.text);
+                    if (res.status === "ok") {
+                        root.showStatus(typeof I18n !== "undefined" ? I18n.t("widgets.todo.cleared_all", "Lista svuotata completamente") : "Lista svuotata completamente", false);
                         todosFileWatcher.reload();
                     }
                 } catch (e) {}
@@ -437,14 +529,14 @@ Item {
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: Scaler.s(12)
-            spacing: Scaler.s(7)
+            spacing: Scaler.s(6)
             visible: !root.isImportSheetOpen
 
             // Header Bar
             RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Scaler.s(32)
-                spacing: Scaler.s(6)
+                Layout.preferredHeight: Scaler.s(30)
+                spacing: Scaler.s(5)
 
                 // Checklist Icon
                 Rectangle {
@@ -466,8 +558,8 @@ Item {
                 Text {
                     text: typeof I18n !== "undefined" ? I18n.t("widgets.todo.title", "To-Do") : "To-Do"
                     font.family: ThemeBackend.fontFamily
-                    font.pixelSize: Scaler.s(14)
-                    font.bold: true
+                    font.pixelSize: Scaler.s(13.5)
+                    font.weight: Font.Black
                     color: ThemeBackend.text
                     Layout.fillWidth: true
                     elide: Text.ElideRight
@@ -477,18 +569,18 @@ Item {
                 Rectangle {
                     visible: root.todayCount > 0
                     Layout.preferredHeight: Scaler.s(22)
-                    Layout.preferredWidth: todayLabel.implicitWidth + Scaler.s(12)
+                    Layout.preferredWidth: todayLabel.implicitWidth + Scaler.s(10)
                     radius: Scaler.s(11)
-                    color: Qt.alpha(ThemeBackend.mauve, 0.25)
+                    color: Qt.alpha(ThemeBackend.mauve, 0.22)
                     border.width: 1
-                    border.color: ThemeBackend.mauve
+                    border.color: Qt.alpha(ThemeBackend.mauve, 0.65)
 
                     Text {
                         id: todayLabel
                         anchors.centerIn: parent
                         text: root.todayCount + " oggi"
                         font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Scaler.s(9.5)
+                        font.pixelSize: Scaler.s(9)
                         font.bold: true
                         color: ThemeBackend.mauve
                     }
@@ -498,7 +590,7 @@ Item {
                 Rectangle {
                     visible: root.totalCount > 0
                     Layout.preferredHeight: Scaler.s(22)
-                    Layout.preferredWidth: countLabel.implicitWidth + Scaler.s(12)
+                    Layout.preferredWidth: countLabel.implicitWidth + Scaler.s(10)
                     radius: Scaler.s(11)
                     color: Qt.alpha(ThemeBackend.surface1, 0.8)
                     border.width: 1
@@ -509,7 +601,7 @@ Item {
                         anchors.centerIn: parent
                         text: root.completedCount + "/" + root.totalCount
                         font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Scaler.s(9.5)
+                        font.pixelSize: Scaler.s(9)
                         font.bold: true
                         color: root.activeCount === 0 ? ThemeBackend.green : ThemeBackend.subtext0
                     }
@@ -517,10 +609,10 @@ Item {
 
                 // Quick Import Todoist CSV button (Zenity file picker dialog)
                 IconButton {
-                    size: Scaler.s(28)
+                    size: Scaler.s(26)
                     cornerRadius: Scaler.s(7)
                     buttonIcon: "󰈔"
-                    iconFontSize: Scaler.s(14)
+                    iconFontSize: Scaler.s(13)
                     accentColor: ThemeBackend.surface1
                     bgOpacity: ThemeBackend.elementOpacity
                     textColor: ThemeBackend.blue
@@ -529,39 +621,107 @@ Item {
 
                 // Quick Export Todoist CSV button
                 IconButton {
-                    size: Scaler.s(28)
+                    size: Scaler.s(26)
                     cornerRadius: Scaler.s(7)
                     buttonIcon: "󰁆"
-                    iconFontSize: Scaler.s(13)
+                    iconFontSize: Scaler.s(12.5)
                     accentColor: ThemeBackend.surface1
                     bgOpacity: ThemeBackend.elementOpacity
                     textColor: ThemeBackend.subtext0
                     onClicked: root.pickAndExportCsv()
                 }
 
-                // Clear completed tasks button
+                // Clear completed tasks button (broom icon)
                 IconButton {
                     visible: root.completedCount > 0
-                    size: Scaler.s(28)
+                    size: Scaler.s(26)
                     cornerRadius: Scaler.s(7)
-                    buttonIcon: "󰆴"
+                    buttonIcon: "󰃢"
                     iconFontSize: Scaler.s(13)
                     accentColor: ThemeBackend.surface1
                     bgOpacity: ThemeBackend.elementOpacity
-                    textColor: ThemeBackend.red
+                    textColor: ThemeBackend.peach
                     onClicked: root.clearCompleted()
+                }
+
+                // Empty / Clear ALL tasks button (with 2-step confirmation)
+                Rectangle {
+                    visible: root.totalCount > 0
+                    Layout.preferredHeight: Scaler.s(26)
+                    Layout.preferredWidth: root.confirmClearAll ? (clearConfirmRow.implicitWidth + Scaler.s(12)) : Scaler.s(26)
+                    radius: Scaler.s(7)
+                    color: root.confirmClearAll
+                        ? ThemeBackend.red
+                        : (clearAllMa.containsMouse ? Qt.alpha(ThemeBackend.red, 0.22) : Qt.alpha(ThemeBackend.surface1, ThemeBackend.elementOpacity))
+                    border.width: root.confirmClearAll ? 0 : 1
+                    border.color: clearAllMa.containsMouse ? Qt.alpha(ThemeBackend.red, 0.5) : "transparent"
+
+                    Behavior on Layout.preferredWidth { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                    Behavior on color { ColorAnimation { duration: 130 } }
+
+                    RowLayout {
+                        id: clearConfirmRow
+                        anchors.centerIn: parent
+                        spacing: Scaler.s(4)
+
+                        Text {
+                            text: root.confirmClearAll ? "󰀦" : "󰆴"
+                            font.family: root.nerdFont
+                            font.pixelSize: Scaler.s(12.5)
+                            color: root.confirmClearAll ? ThemeBackend.crust : ThemeBackend.red
+                        }
+
+                        Text {
+                            visible: root.confirmClearAll
+                            text: typeof I18n !== "undefined" ? I18n.t("widgets.todo.clear_all_confirm", "Svuota?") : "Svuota?"
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: Scaler.s(9.5)
+                            font.bold: true
+                            color: ThemeBackend.crust
+                        }
+                    }
+
+                    MouseArea {
+                        id: clearAllMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.requestClearAll()
+                    }
                 }
 
                 // Toggle Import / Settings Sheet
                 IconButton {
-                    size: Scaler.s(28)
+                    size: Scaler.s(26)
                     cornerRadius: Scaler.s(7)
                     buttonIcon: "󰒓"
-                    iconFontSize: Scaler.s(13)
+                    iconFontSize: Scaler.s(12.5)
                     accentColor: ThemeBackend.surface1
                     bgOpacity: ThemeBackend.elementOpacity
                     textColor: root.isImportSheetOpen ? ThemeBackend.mauve : ThemeBackend.subtext0
-                    onClicked: root.isImportSheetOpen = true
+                    onClicked: {
+                        root.confirmClearAll = false;
+                        root.isImportSheetOpen = true;
+                    }
+                }
+            }
+
+            // Sleek Completion Progress Bar
+            Rectangle {
+                visible: root.totalCount > 0
+                Layout.fillWidth: true
+                Layout.preferredHeight: Scaler.s(4)
+                radius: Scaler.s(2)
+                color: Qt.alpha(ThemeBackend.surface2, 0.35)
+                clip: true
+
+                Rectangle {
+                    width: parent.width * root.completionRatio
+                    height: parent.height
+                    radius: parent.radius
+                    color: root.activeCount === 0 ? ThemeBackend.green : ThemeBackend.mauve
+                    Behavior on width { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+                    Behavior on color { ColorAnimation { duration: 200 } }
                 }
             }
 
@@ -633,6 +793,12 @@ Item {
 
                             onActiveFocusChanged: {
                                 root.isInputActive = activeFocus;
+                                root.setKeyboardFocus(activeFocus || root.isPathInputActive);
+                            }
+
+                            Keys.onEscapePressed: {
+                                taskInput.focus = false;
+                                root.setKeyboardFocus(false);
                             }
 
                             onAccepted: {
@@ -640,6 +806,16 @@ Item {
                                 if (val !== "") {
                                     root.addTodo(val);
                                     taskInput.text = "";
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.IBeamCursor
+                                onPressed: function(mouse) {
+                                    root.setKeyboardFocus(true);
+                                    taskInput.forceActiveFocus();
+                                    mouse.accepted = false;
                                 }
                             }
 
@@ -1360,11 +1536,27 @@ Item {
 
                         onActiveFocusChanged: {
                             root.isPathInputActive = activeFocus;
+                            root.setKeyboardFocus(activeFocus || root.isInputActive);
+                        }
+
+                        Keys.onEscapePressed: {
+                            pathInput.focus = false;
+                            root.setKeyboardFocus(false);
                         }
 
                         onAccepted: {
                             if (pathInput.text.trim() !== "") {
                                 root.importCsvPath(pathInput.text.trim(), root.importMode);
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.IBeamCursor
+                            onPressed: function(mouse) {
+                                root.setKeyboardFocus(true);
+                                pathInput.forceActiveFocus();
+                                mouse.accepted = false;
                             }
                         }
 
@@ -1399,16 +1591,37 @@ Item {
                 Layout.fillHeight: true
             }
 
-            // Export to Todoist CSV button
-            ClickButton {
+            // Bottom Action Row: Export CSV & Empty All List
+            RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Scaler.s(32)
-                cornerRadius: Scaler.s(6)
-                buttonIcon: "󰁆"
-                buttonText: typeof I18n !== "undefined" ? I18n.t("widgets.todo.export_btn", "Esporta attività in CSV Todoist") : "Esporta attività in CSV Todoist"
-                accentColor: Qt.alpha(ThemeBackend.surface1, 0.75)
-                textColor: ThemeBackend.subtext0
-                onClicked: root.pickAndExportCsv()
+                spacing: Scaler.s(6)
+
+                // Export to Todoist CSV button
+                ClickButton {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Scaler.s(32)
+                    cornerRadius: Scaler.s(6)
+                    buttonIcon: "󰁆"
+                    buttonText: typeof I18n !== "undefined" ? I18n.t("widgets.todo.export_btn", "Esporta CSV Todoist") : "Esporta CSV Todoist"
+                    accentColor: Qt.alpha(ThemeBackend.surface1, 0.75)
+                    textColor: ThemeBackend.subtext0
+                    onClicked: root.pickAndExportCsv()
+                }
+
+                // Clear All Tasks button inside management sheet
+                ClickButton {
+                    visible: root.totalCount > 0
+                    Layout.preferredHeight: Scaler.s(32)
+                    cornerRadius: Scaler.s(6)
+                    buttonIcon: "󰆴"
+                    buttonText: typeof I18n !== "undefined" ? I18n.t("widgets.todo.clear_all_btn", "Svuota lista") : "Svuota lista"
+                    accentColor: Qt.alpha(ThemeBackend.red, 0.22)
+                    textColor: ThemeBackend.red
+                    onClicked: {
+                        root.clearAll();
+                        root.isImportSheetOpen = false;
+                    }
+                }
             }
         }
     }

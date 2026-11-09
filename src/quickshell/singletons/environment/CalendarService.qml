@@ -82,6 +82,12 @@ Item {
         root.calendarUpdated();
     }
 
+    function stepSelectedDate(deltaDays) {
+        let cur = new Date(root.selectedYear, root.selectedMonth, root.selectedDay);
+        cur.setDate(cur.getDate() + Number(deltaDays));
+        root.selectDate(cur.getFullYear(), cur.getMonth(), cur.getDate(), true);
+    }
+
     function resetSelectionToToday(activateDayFilter) {
         let now = new Date();
         root.selectDate(now.getFullYear(), now.getMonth(), now.getDate(), activateDayFilter);
@@ -181,6 +187,12 @@ Item {
     function removeLocalTask(eventId) {
         if (!eventId) return;
         stateMutationProcess.command = ["python3", root.syncScriptPath, "--remove-task", String(eventId)];
+        stateMutationProcess.running = false;
+        stateMutationProcess.running = true;
+    }
+
+    function clearCompletedTasks() {
+        stateMutationProcess.command = ["python3", root.syncScriptPath, "--clear-completed-tasks"];
         stateMutationProcess.running = false;
         stateMutationProcess.running = true;
     }

@@ -352,6 +352,13 @@ def clear_completed():
     save_todos(data)
     return {"status": "ok", "action": "cleared", "cleared": cleared_count, "total": len(data["todos"])}
 
+def clear_all():
+    data = load_todos()
+    orig_len = len(data["todos"])
+    data["todos"] = []
+    save_todos(data)
+    return {"status": "ok", "action": "cleared_all", "cleared": orig_len, "total": 0}
+
 def detect_delimiter(sample_text):
     for delim in [";", ",", "\t", "|"]:
         lines = [line for line in sample_text.splitlines() if line.strip()][:5]
@@ -674,6 +681,10 @@ def main():
 
     elif cmd == "--clear-completed":
         res = clear_completed()
+        print(json.dumps(res, ensure_ascii=False))
+
+    elif cmd in ("--clear-all", "--empty"):
+        res = clear_all()
         print(json.dumps(res, ensure_ascii=False))
 
     elif cmd == "--import-csv":

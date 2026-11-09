@@ -390,6 +390,69 @@ if os.path.exists(sysnotif_path):
         content = pattern.sub(replacement, content)
         with open(sysnotif_path, "w", encoding="utf-8") as f:
             f.write(content)
+
+# 5. Verifica registrazioni widget custom in src/quickshell/widgets/WidgetRegistry.qml
+registry_path = os.path.join(repo, "src", "quickshell", "widgets", "WidgetRegistry.qml")
+if os.path.exists(registry_path):
+    with open(registry_path, "r", encoding="utf-8") as f:
+        reg_content = f.read()
+
+    custom_widgets_block = """        "calendar": {
+            name: typeof I18n !== "undefined" ? I18n.t("widgets.types.calendar", "Calendar") : "Calendar",
+            icon: String.fromCodePoint(0xF00ED),
+            category: "time",
+            iconOffsetX: 0,
+            defaultWidth: 340,
+            defaultHeight: 280,
+            defaultVariant: "month",
+            variants: {
+                "month":   { file: "faces/calendar/CalendarFaceMonth.qml",   icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.month", "Month") : "Month" },
+                "agenda":  { file: "faces/calendar/CalendarFaceAgenda.qml",  icon: "2", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.agenda", "Agenda") : "Agenda" },
+                "compact": { file: "faces/calendar/CalendarFaceCompact.qml", icon: "3", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.compact", "Compact") : "Compact" }
+            },
+            additionalSettings: [
+                {
+                    id: "syncCalendar",
+                    icon: String.fromCodePoint(0xF0450),
+                    iconFontSize: 16,
+                    action: "syncCalendar",
+                    row: "top",
+                    accentColor: "surface0",
+                    textColor: "mauve"
+                }
+            ]
+        },
+        "agenda": {
+            name: typeof I18n !== "undefined" ? I18n.t("widgets.types.agenda", "Agenda & Tasks") : "Agenda & Tasks",
+            icon: String.fromCodePoint(0xF0134),
+            category: "time",
+            defaultWidth: 340,
+            defaultHeight: 240,
+            defaultVariant: "agenda",
+            variants: {
+                "agenda":  { file: "faces/calendar/CalendarFaceAgenda.qml",  icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.agenda", "Agenda") : "Agenda" },
+                "month":   { file: "faces/calendar/CalendarFaceMonth.qml",   icon: "2", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.month", "Month") : "Month" },
+                "compact": { file: "faces/calendar/CalendarFaceCompact.qml", icon: "3", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.compact", "Compact") : "Compact" }
+            }
+        },
+        "todo": {
+            name: typeof I18n !== "undefined" ? I18n.t("widgets.types.todo", "Todo List") : "Todo List",
+            icon: String.fromCodePoint(0xF0133),
+            category: "time",
+            defaultWidth: 340,
+            defaultHeight: 320,
+            defaultVariant: "default",
+            variants: {
+                "default": { file: "faces/todo/TodoFace.qml", icon: "1", label: typeof I18n !== "undefined" ? I18n.t("widgets.variants.default", "Default") : "Default" }
+            }
+        },
+"""
+    if '"todo":' not in reg_content or '"calendar":' not in reg_content:
+        anchor = '        "text": {'
+        if anchor in reg_content:
+            reg_content = reg_content.replace(anchor, custom_widgets_block + anchor, 1)
+            with open(registry_path, "w", encoding="utf-8") as f:
+                f.write(reg_content)
 PYEOF
 }
 
@@ -412,8 +475,8 @@ if [ "$FETCH_OK" = true ]; then
     NEW_COMMITS=$(git rev-list HEAD..upstream/master --count 2>/dev/null || echo 0)
 fi
 
-LOCAL_VER=$(cat "$REPO_DIR/src/version.txt" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
-UPSTREAM_VER=$(git show upstream/master:src/version.txt 2>/dev/null | tr -d '[:space:]' || echo "$LOCAL_VER")
+LOCAL_VER=$(cat "$REPO_DIR/version.txt" 2>/dev/null | tr -d '[:space:]' || cat "$REPO_DIR/src/version.txt" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+UPSTREAM_VER=$(git show upstream/master:version.txt 2>/dev/null | tr -d '[:space:]' || echo "$LOCAL_VER")
 UPSTREAM_COMMIT=$(git rev-parse --short upstream/master 2>/dev/null || git rev-parse --short HEAD)
 
 # Controlla se lo stato installato in ~/.local/state/serpantinum/version è disallineato
@@ -458,7 +521,7 @@ if [ "$NEW_COMMITS" -gt 0 ]; then
 
         for cf in $CONFLICT_FILES; do
             case "$cf" in
-                src/assets/languages/it.json|src/assets/languages/en.json|src/quickshell/qmldir|src/quickshell/widgets/faces/qmldir|src/quickshell/singletons/system/SysNotif.qml|src/version.txt|version.txt)
+                src/assets/languages/it.json|src/assets/languages/en.json|src/quickshell/qmldir|src/quickshell/widgets/faces/qmldir|src/quickshell/widgets/WidgetRegistry.qml|src/quickshell/quickactions/actions/Timer.qml|src/quickshell/singletons/system/SysNotif.qml|src/version.txt|version.txt)
                     git checkout --theirs "$cf" 2>/dev/null && git add "$cf"
                     ;;
                 *)
@@ -472,6 +535,7 @@ if [ "$NEW_COMMITS" -gt 0 ]; then
             ensure_custom_integrations
             git add src/assets/languages/it.json src/assets/languages/en.json \
                     src/quickshell/qmldir src/quickshell/widgets/faces/qmldir \
+                    src/quickshell/widgets/WidgetRegistry.qml \
                     src/quickshell/singletons/system/SysNotif.qml 2>/dev/null || true
             git commit --no-edit --quiet || true
             echo -e "${C_GREEN}  ✓ Conflitti risolti automaticamente preservando tutte le personalizzazioni!${C_RESET}"

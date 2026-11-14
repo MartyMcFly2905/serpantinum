@@ -55,6 +55,8 @@ Item {
     ]
 
     property var expandedNotesMap: ({})
+    property var collapsedSectionsMap: ({})
+    property bool showAllDescriptions: false
     property string statusText: ""
     property bool statusIsError: false
 
@@ -96,11 +98,19 @@ Item {
         } catch (e) {}
     }
 
-    readonly property int totalCount: todosList.length
+    readonly property int totalCount: {
+        let c = 0;
+        for (let i = 0; i < todosList.length; i++) {
+            let it = todosList[i];
+            if (it && !it.uncompletable && it.item_type !== "separator") c++;
+        }
+        return c;
+    }
     readonly property int completedCount: {
         let c = 0;
         for (let i = 0; i < todosList.length; i++) {
-            if (todosList[i] && todosList[i].completed) c++;
+            let it = todosList[i];
+            if (it && !it.uncompletable && it.item_type !== "separator" && it.completed) c++;
         }
         return c;
     }
@@ -111,7 +121,7 @@ Item {
         let c = 0;
         for (let i = 0; i < todosList.length; i++) {
             let it = todosList[i];
-            if (it && !it.completed && (it.day_category === "today" || it.day_category === "overdue")) {
+            if (it && !it.uncompletable && it.item_type !== "separator" && !it.completed && (it.day_category === "today" || it.day_category === "overdue")) {
                 c++;
             }
         }
@@ -122,7 +132,7 @@ Item {
         let c = 0;
         for (let i = 0; i < todosList.length; i++) {
             let it = todosList[i];
-            if (it && !it.completed && (it.day_category === "tomorrow" || it.day_category === "upcoming" || it.day_category === "future")) {
+            if (it && !it.uncompletable && it.item_type !== "separator" && !it.completed && (it.day_category === "tomorrow" || it.day_category === "upcoming" || it.day_category === "future")) {
                 c++;
             }
         }
@@ -148,20 +158,96 @@ Item {
             }
             res.push(it);
         }
-        // Smart sort: uncompleted first -> overdue/today/upcoming -> priority P1..P4 -> created_at
-        res.sort(function(a, b) {
-            if (Boolean(a.completed) !== Boolean(b.completed)) {
-                return a.completed ? 1 : -1;
+
+        if (filterMode === 0) {
+            // In "Tutte" view: preserve Todoist section order, then sort tasks within each section by date/priority
+            res.sort(function(a, b) {
+                let sa = (a.section_index !== undefined && a.section_index > 0) ? Number(a.section_index) : 9999;
+                let sb = (b.section_index !== undefined && b.section_index > 0) ? Number(b.section_index) : 9999;
+                if (sa !== sb) return sa - sb;
+                let ca = String(a.category || "");
+                let cb = String(b.category || "");
+                if (ca !== cb) return ca.localeCompare(cb);
+                if (a.csv_order !== undefined && b.csv_order !== undefined) {
+                    return Number(a.csv_order) - Number(b.csv_order);
+                }
+                let da = (a.days_diff !== undefined) ? Number(a.days_diff) : 999;
+                let db = (b.days_diff !== undefined) ? Number(b.days_diff) : 999;
+                if (da !== db) return da - db;
+                let pa = (a.priority !== undefined) ? Number(a.priority) : 4;
+                let pb = (b.priority !== undefined) ? Number(b.priority) : 4;
+                if (pa !== pb) return pa - pb;
+                return (Number(a.created_at) || 0) - (Number(b.created_at) || 0);
+            });
+        } else {
+            // Smart sort: uncompleted first -> overdue/today/upcoming -> priority P1..P4 -> csv_order
+            res.sort(function(a, b) {
+                if (Boolean(a.completed) !== Boolean(b.completed)) {
+                    return a.completed ? 1 : -1;
+                }
+                let da = (a.days_diff !== undefined) ? Number(a.days_diff) : 999;
+                let db = (b.days_diff !== undefined) ? Number(b.days_diff) : 999;
+                if (da !== db) return da - db;
+                let pa = (a.priority !== undefined) ? Number(a.priority) : 4;
+                let pb = (b.priority !== undefined) ? Number(b.priority) : 4;
+                if (pa !== pb) return pa - pb;
+                if (a.csv_order !== undefined && b.csv_order !== undefined) {
+                    return Number(a.csv_order) - Number(b.csv_order);
+                }
+                return (Number(b.created_at) || 0) - (Number(a.created_at) || 0);
+            });
+        }
+
+        // Inject Todoist section separator headers whenever section/category changes
+        let finalItems = [];
+        let lastSection = "__NONE__";
+
+        // Precompute counts per section in the current filtered set
+        let secTotalMap = {};
+        let secDoneMap = {};
+        let secDescMap = {};
+        for (let i = 0; i < res.length; i++) {
+            let t = res[i];
+            let secName = (t.category || "").trim();
+            if (secName !== "") {
+                if (secTotalMap[secName] === undefined) {
+                    secTotalMap[secName] = 0;
+                    secDoneMap[secName] = 0;
+                }
+                if (!t.uncompletable && t.item_type !== "separator") {
+                    secTotalMap[secName]++;
+                    if (t.completed) secDoneMap[secName]++;
+                }
+                if (t.section_description && !secDescMap[secName]) {
+                    secDescMap[secName] = t.section_description;
+                }
             }
-            let da = (a.days_diff !== undefined) ? Number(a.days_diff) : 999;
-            let db = (b.days_diff !== undefined) ? Number(b.days_diff) : 999;
-            if (da !== db) return da - db;
-            let pa = (a.priority !== undefined) ? Number(a.priority) : 4;
-            let pb = (b.priority !== undefined) ? Number(b.priority) : 4;
-            if (pa !== pb) return pa - pb;
-            return (Number(b.created_at) || 0) - (Number(a.created_at) || 0);
-        });
-        return res;
+        }
+
+        for (let i = 0; i < res.length; i++) {
+            let it = res[i];
+            let secName = (it.category || "").trim();
+            if (secName !== "" && secName !== lastSection) {
+                lastSection = secName;
+                finalItems.push({
+                    id: "__section__" + secName,
+                    is_section_header: true,
+                    section_title: secName,
+                    section_description: secDescMap[secName] || it.section_description || "",
+                    section_total: secTotalMap[secName] || 0,
+                    section_done: secDoneMap[secName] || 0
+                });
+            } else if (secName === "" && lastSection !== "" && lastSection !== "__NONE__") {
+                lastSection = "";
+            }
+
+            if (secName !== "" && Boolean(root.collapsedSectionsMap[secName])) {
+                continue;
+            }
+            finalItems.push(it);
+        }
+
+        return finalItems;
     }
 
     function showStatus(msg, isErr) {
@@ -213,6 +299,13 @@ Item {
         root.expandedNotesMap = map;
     }
 
+    function toggleSectionCollapsed(secTitle) {
+        if (!secTitle) return;
+        let map = Object.assign({}, root.collapsedSectionsMap);
+        map[secTitle] = !Boolean(map[secTitle]);
+        root.collapsedSectionsMap = map;
+    }
+
     function addTodo(title) {
         let clean = (title || "").trim();
         if (clean === "") return;
@@ -228,15 +321,23 @@ Item {
         else if (root.selectedPriority === 2) { pColor = "#fab387"; pLabel = "P2"; }
         else if (root.selectedPriority === 3) { pColor = "#89b4fa"; pLabel = "P3"; }
 
+        let isSep = clean.indexOf("* ") === 0 || clean === "---" || clean === "___";
+        let dispTitle = clean.indexOf("* ") === 0 ? clean.slice(2).trim() : clean;
+
         let optimisticItem = {
             id: "todo_" + nowMs + "_" + root.todosList.length,
-            title: clean,
+            item_type: isSep ? "separator" : "task",
+            uncompletable: isSep,
+            title: dispTitle,
+            raw_title: clean,
             description: "",
             completed: false,
             priority: root.selectedPriority,
             priority_label: pLabel,
             priority_color: pColor,
             category: "",
+            section_description: "",
+            section_index: 0,
             labels: [],
             due_date: "",
             due_time: "",
@@ -263,6 +364,9 @@ Item {
         for (let i = 0; i < root.todosList.length; i++) {
             let item = Object.assign({}, root.todosList[i]);
             if (item.id === todoId) {
+                if (item.uncompletable || item.item_type === "separator") {
+                    return;
+                }
                 item.completed = !Boolean(item.completed);
             }
             updated.push(item);
@@ -312,7 +416,7 @@ Item {
     }
 
     function requestClearAll() {
-        if (root.totalCount === 0) return;
+        if (root.todosList.length === 0) return;
         if (!root.confirmClearAll) {
             root.confirmClearAll = true;
             confirmClearTimer.restart();
@@ -607,6 +711,18 @@ Item {
                     }
                 }
 
+                // Toggle Expand All Descriptions button
+                IconButton {
+                    size: Scaler.s(26)
+                    cornerRadius: Scaler.s(7)
+                    buttonIcon: root.showAllDescriptions ? "󰘖" : "󰦨"
+                    iconFontSize: Scaler.s(13)
+                    accentColor: root.showAllDescriptions ? Qt.alpha(ThemeBackend.mauve, 0.28) : ThemeBackend.surface1
+                    bgOpacity: ThemeBackend.elementOpacity
+                    textColor: root.showAllDescriptions ? ThemeBackend.mauve : ThemeBackend.subtext0
+                    onClicked: root.showAllDescriptions = !root.showAllDescriptions
+                }
+
                 // Quick Import Todoist CSV button (Zenity file picker dialog)
                 IconButton {
                     size: Scaler.s(26)
@@ -646,7 +762,7 @@ Item {
 
                 // Empty / Clear ALL tasks button (with 2-step confirmation)
                 Rectangle {
-                    visible: root.totalCount > 0
+                    visible: root.todosList.length > 0
                     Layout.preferredHeight: Scaler.s(26)
                     Layout.preferredWidth: root.confirmClearAll ? (clearConfirmRow.implicitWidth + Scaler.s(12)) : Scaler.s(26)
                     radius: Scaler.s(7)
@@ -823,7 +939,7 @@ Item {
                                 anchors.fill: parent
                                 verticalAlignment: Text.AlignVCenter
                                 visible: !taskInput.text && !taskInput.activeFocus
-                                text: typeof I18n !== "undefined" ? I18n.t("widgets.todo.new_placeholder", "Nuova attività... (es. Comprare pane @spesa)") : "Nuova attività... (es. Comprare pane @spesa)"
+                                text: typeof I18n !== "undefined" ? I18n.t("widgets.todo.new_placeholder", "Nuova attività... (o '* Titolo' per separatore)") : "Nuova attività... (o '* Titolo' per separatore)"
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: Scaler.s(10.5)
                                 color: ThemeBackend.overlay1
@@ -1039,278 +1155,434 @@ Item {
                     boundsBehavior: Flickable.StopAtBounds
                     model: root.filteredList
 
-                    delegate: Rectangle {
-                        id: taskCard
+                    delegate: Item {
+                        id: delegateRoot
                         width: tasksView.width
-                        implicitHeight: taskMainCol.implicitHeight + Scaler.s(12)
-                        radius: Scaler.s(8)
-                        color: Qt.alpha(ThemeBackend.surface1, taskCardMa.containsMouse ? 0.75 : 0.5)
-                        border.width: 1
-                        border.color: {
-                            if (modelData.day_category === "overdue" && !modelData.completed) return Qt.alpha("#f38ba8", 0.5);
-                            if (modelData.day_category === "today" && !modelData.completed) return Qt.alpha(ThemeBackend.mauve, 0.4);
-                            return Qt.alpha(ThemeBackend.surface2, taskCardMa.containsMouse ? 0.45 : 0.25);
-                        }
-                        opacity: modelData.completed ? 0.55 : 1.0
+                        readonly property bool isSecHeader: Boolean(modelData.is_section_header)
+                        readonly property bool isSepItem: Boolean(!modelData.is_section_header && (modelData.uncompletable || modelData.item_type === "separator"))
+                        readonly property bool hasDesc: Boolean(modelData.description && String(modelData.description).trim() !== "")
+                        readonly property bool isNoteExpanded: Boolean(root.showAllDescriptions || root.expandedNotesMap[modelData.id])
 
-                        Behavior on color { ColorAnimation { duration: 120 } }
-                        Behavior on opacity { NumberAnimation { duration: 150 } }
+                        implicitHeight: isSecHeader
+                            ? (sectionHeaderBox.implicitHeight + Scaler.s(4))
+                            : (isSepItem ? (separatorItemBox.implicitHeight + Scaler.s(2)) : (taskMainCol.implicitHeight + Scaler.s(12)))
 
-                        // Priority color indicator bar on left (P1: Red, P2: Orange, P3: Blue, P4: Subtle)
+                        // 1) TODOIST SECTION HEADER DELEGATE (TYPE=section)
                         Rectangle {
-                            anchors.left: parent.left
-                            anchors.top: parent.top
-                            anchors.bottom: parent.bottom
-                            width: Scaler.s(3.5)
-                            radius: Scaler.s(1.5)
-                            color: modelData.priority_color || "#a6adc8"
-                        }
+                            id: sectionHeaderBox
+                            visible: delegateRoot.isSecHeader
+                            width: parent.width
+                            implicitHeight: secCol.implicitHeight + Scaler.s(12)
+                            radius: Scaler.s(7)
+                            color: secHeaderMa.containsMouse ? Qt.alpha(ThemeBackend.surface1, 0.65) : Qt.alpha(ThemeBackend.surface0, 0.45)
+                            border.width: 1
+                            border.color: Qt.alpha(ThemeBackend.mauve, 0.35)
 
-                        ColumnLayout {
-                            id: taskMainCol
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            anchors.leftMargin: Scaler.s(10)
-                            anchors.rightMargin: Scaler.s(6)
-                            anchors.topMargin: Scaler.s(6)
-                            anchors.bottomMargin: Scaler.s(6)
-                            spacing: Scaler.s(4)
+                            ColumnLayout {
+                                id: secCol
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.margins: Scaler.s(6)
+                                spacing: Scaler.s(3)
 
-                            // Main Row: Checkbox + Priority Pill + Title + Note Toggle + Delete
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: Scaler.s(6)
-
-                                // Custom Checkbox Button
-                                Rectangle {
-                                    id: checkBtn
-                                    Layout.preferredWidth: Scaler.s(18)
-                                    Layout.preferredHeight: Scaler.s(18)
-                                    radius: Scaler.s(5)
-                                    color: modelData.completed ? ThemeBackend.mauve : Qt.alpha(ThemeBackend.surface2, 0.4)
-                                    border.width: 1.5
-                                    border.color: modelData.completed ? ThemeBackend.mauve : (modelData.priority_color || ThemeBackend.subtext1)
-
-                                    Behavior on color { ColorAnimation { duration: 120 } }
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        visible: Boolean(modelData.completed)
-                                        text: "✓"
-                                        font.family: ThemeBackend.fontFamily
-                                        font.pixelSize: Scaler.s(10)
-                                        font.bold: true
-                                        color: ThemeBackend.crust
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: root.toggleTodo(modelData.id)
-                                    }
-                                }
-
-                                // Priority badge (only if P1, P2 or P3)
-                                Rectangle {
-                                    visible: modelData.priority && modelData.priority < 4
-                                    Layout.preferredHeight: Scaler.s(16)
-                                    Layout.preferredWidth: prioBadgeText.implicitWidth + Scaler.s(8)
-                                    radius: Scaler.s(4)
-                                    color: Qt.alpha(modelData.priority_color || "#f38ba8", 0.22)
-                                    border.width: 1
-                                    border.color: modelData.priority_color || "#f38ba8"
-
-                                    Text {
-                                        id: prioBadgeText
-                                        anchors.centerIn: parent
-                                        text: modelData.priority_label || ("P" + modelData.priority)
-                                        font.family: ThemeBackend.fontFamily
-                                        font.pixelSize: Scaler.s(8.5)
-                                        font.bold: true
-                                        color: modelData.priority_color || "#f38ba8"
-                                    }
-                                }
-
-                                // Title Text
-                                Text {
-                                    text: modelData.title || ""
-                                    font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: Scaler.s(11.5)
-                                    font.bold: !modelData.completed
-                                    font.strikeout: Boolean(modelData.completed)
-                                    color: modelData.completed ? ThemeBackend.subtext0 : ThemeBackend.text
+                                RowLayout {
                                     Layout.fillWidth: true
-                                    wrapMode: Text.WordWrap
-                                    elide: Text.ElideRight
-                                    maximumLineCount: 2
-                                }
+                                    spacing: Scaler.s(6)
 
-                                // Toggle Note Button (if task has description / note)
-                                IconButton {
-                                    visible: modelData.description && modelData.description !== ""
-                                    size: Scaler.s(22)
-                                    cornerRadius: Scaler.s(5)
-                                    buttonIcon: root.expandedNotesMap[modelData.id] ? "󰅃" : "󰅂"
-                                    iconFontSize: Scaler.s(11)
-                                    accentColor: "transparent"
-                                    textColor: ThemeBackend.mauve
-                                    onClicked: root.toggleNoteExpanded(modelData.id)
-                                }
-
-                                // Delete Task Button (appears on hover)
-                                IconButton {
-                                    visible: taskCardMa.containsMouse
-                                    size: Scaler.s(22)
-                                    cornerRadius: Scaler.s(5)
-                                    buttonIcon: "󰅖"
-                                    iconFontSize: Scaler.s(11)
-                                    accentColor: "transparent"
-                                    textColor: ThemeBackend.red
-                                    onClicked: root.deleteTodo(modelData.id)
-                                }
-                            }
-
-                            // Sub-Row: Due Date Badge + Category/Section Badge + Labels
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: Scaler.s(5)
-                                visible: Boolean(modelData.relative_label || modelData.category || (modelData.labels && modelData.labels.length > 0))
-
-                                // Due Date Badge (Smart relative day display)
-                                Rectangle {
-                                    visible: Boolean(modelData.relative_label && modelData.relative_label !== "")
-                                    Layout.preferredHeight: Scaler.s(18)
-                                    Layout.preferredWidth: dateBadgeContent.implicitWidth + Scaler.s(10)
-                                    radius: Scaler.s(4)
-                                    color: {
-                                        if (modelData.day_category === "overdue") return Qt.alpha("#f38ba8", 0.22);
-                                        if (modelData.day_category === "today") return Qt.alpha(ThemeBackend.mauve, 0.22);
-                                        if (modelData.day_category === "tomorrow") return Qt.alpha("#89b4fa", 0.22);
-                                        return Qt.alpha(ThemeBackend.surface2, 0.5);
-                                    }
-                                    border.width: 1
-                                    border.color: {
-                                        if (modelData.day_category === "overdue") return "#f38ba8";
-                                        if (modelData.day_category === "today") return ThemeBackend.mauve;
-                                        if (modelData.day_category === "tomorrow") return "#89b4fa";
-                                        return Qt.alpha(ThemeBackend.surface2, 0.4);
+                                    Text {
+                                        text: Boolean(root.collapsedSectionsMap[modelData.section_title]) ? "󰅂" : "󰅃"
+                                        font.family: root.nerdFont
+                                        font.pixelSize: Scaler.s(11)
+                                        color: ThemeBackend.mauve
                                     }
 
-                                    RowLayout {
-                                        id: dateBadgeContent
-                                        anchors.centerIn: parent
-                                        spacing: Scaler.s(3)
-
-                                        Text {
-                                            text: modelData.day_category === "overdue" ? "󰀦" : "󰔛"
-                                            font.family: root.nerdFont
-                                            font.pixelSize: Scaler.s(9)
-                                            color: {
-                                                if (modelData.day_category === "overdue") return "#f38ba8";
-                                                if (modelData.day_category === "today") return ThemeBackend.mauve;
-                                                if (modelData.day_category === "tomorrow") return "#89b4fa";
-                                                return ThemeBackend.subtext1;
-                                            }
-                                        }
-
-                                        Text {
-                                            text: modelData.relative_label || ""
-                                            font.family: ThemeBackend.fontFamily
-                                            font.pixelSize: Scaler.s(9)
-                                            font.bold: modelData.day_category === "overdue" || modelData.day_category === "today"
-                                            color: {
-                                                if (modelData.day_category === "overdue") return "#f38ba8";
-                                                if (modelData.day_category === "today") return ThemeBackend.mauve;
-                                                if (modelData.day_category === "tomorrow") return "#89b4fa";
-                                                return ThemeBackend.subtext1;
-                                            }
-                                        }
+                                    Text {
+                                        text: modelData.section_title || ""
+                                        font.family: ThemeBackend.fontFamily
+                                        font.pixelSize: Scaler.s(11)
+                                        font.weight: Font.Black
+                                        color: ThemeBackend.mauve
+                                        Layout.fillWidth: true
+                                        wrapMode: Text.WordWrap
                                     }
-                                }
-
-                                // Section / Category Badge (from Todoist section or #tag)
-                                Rectangle {
-                                    visible: Boolean(modelData.category && modelData.category !== "")
-                                    Layout.preferredHeight: Scaler.s(18)
-                                    Layout.preferredWidth: catContent.implicitWidth + Scaler.s(10)
-                                    radius: Scaler.s(4)
-                                    color: Qt.alpha(ThemeBackend.surface2, 0.5)
-
-                                    RowLayout {
-                                        id: catContent
-                                        anchors.centerIn: parent
-                                        spacing: Scaler.s(2)
-
-                                        Text {
-                                            text: "#"
-                                            font.family: ThemeBackend.fontFamily
-                                            font.pixelSize: Scaler.s(9)
-                                            font.bold: true
-                                            color: ThemeBackend.overlay1
-                                        }
-
-                                        Text {
-                                            text: modelData.category || ""
-                                            font.family: ThemeBackend.fontFamily
-                                            font.pixelSize: Scaler.s(9)
-                                            color: ThemeBackend.subtext1
-                                        }
-                                    }
-                                }
-
-                                // Labels (from Todoist @labels)
-                                Repeater {
-                                    model: modelData.labels || []
 
                                     Rectangle {
-                                        Layout.preferredHeight: Scaler.s(18)
-                                        Layout.preferredWidth: lblText.implicitWidth + Scaler.s(8)
-                                        radius: Scaler.s(4)
-                                        color: Qt.alpha(ThemeBackend.surface2, 0.4)
+                                        visible: (modelData.section_total || 0) > 0
+                                        Layout.preferredHeight: Scaler.s(16)
+                                        Layout.preferredWidth: secCountTxt.implicitWidth + Scaler.s(8)
+                                        radius: Scaler.s(8)
+                                        color: Qt.alpha(ThemeBackend.mauve, 0.18)
 
                                         Text {
-                                            id: lblText
+                                            id: secCountTxt
                                             anchors.centerIn: parent
-                                            text: "@" + modelData
+                                            text: (modelData.section_done || 0) + "/" + (modelData.section_total || 0)
                                             font.family: ThemeBackend.fontFamily
                                             font.pixelSize: Scaler.s(8.5)
-                                            color: ThemeBackend.subtext0
+                                            font.bold: true
+                                            color: ThemeBackend.mauve
                                         }
                                     }
                                 }
 
-                                Item { Layout.fillWidth: true }
+                                // Section Description (from Todoist section DESCRIPTION column)
+                                Text {
+                                    visible: !Boolean(root.collapsedSectionsMap[modelData.section_title]) && Boolean(modelData.section_description && String(modelData.section_description).trim() !== "")
+                                    text: modelData.section_description || ""
+                                    font.family: ThemeBackend.fontFamily
+                                    font.pixelSize: Scaler.s(9.5)
+                                    color: ThemeBackend.subtext0
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: Scaler.s(16)
+                                    wrapMode: Text.WordWrap
+                                }
+
+                                // Bottom Todoist-style divider line
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: 1
+                                    color: Qt.alpha(ThemeBackend.mauve, 0.28)
+                                }
                             }
 
-                            // Expanded Description Note Box
-                            Rectangle {
-                                visible: Boolean(root.expandedNotesMap[modelData.id] && modelData.description && modelData.description !== "")
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: descText.implicitHeight + Scaler.s(10)
-                                radius: Scaler.s(6)
-                                color: Qt.alpha(ThemeBackend.surface0, 0.6)
-                                border.width: 1
-                                border.color: Qt.alpha(ThemeBackend.surface2, 0.3)
+                            MouseArea {
+                                id: secHeaderMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.toggleSectionCollapsed(modelData.section_title)
+                            }
+                        }
+
+                        // 2) TODOIST UNCOMPLETABLE SEPARATOR TASK DELEGATE ('* Title' or '---')
+                        Rectangle {
+                            id: separatorItemBox
+                            visible: delegateRoot.isSepItem
+                            width: parent.width
+                            implicitHeight: sepRowCol.implicitHeight + Scaler.s(10)
+                            radius: Scaler.s(6)
+                            color: Qt.alpha(ThemeBackend.surface1, 0.35)
+                            border.width: 1
+                            border.color: Qt.alpha(ThemeBackend.surface2, 0.35)
+
+                            ColumnLayout {
+                                id: sepRowCol
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.margins: Scaler.s(5)
+                                spacing: Scaler.s(3)
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Scaler.s(6)
+
+                                    Rectangle {
+                                        width: Scaler.s(12)
+                                        height: 2
+                                        radius: 1
+                                        color: ThemeBackend.mauve
+                                    }
+
+                                    Text {
+                                        visible: modelData.title !== "---" && modelData.title !== "___" && modelData.title !== "***"
+                                        text: modelData.title || ""
+                                        font.family: ThemeBackend.fontFamily
+                                        font.pixelSize: Scaler.s(10.5)
+                                        font.bold: true
+                                        color: ThemeBackend.subtext1
+                                        Layout.fillWidth: true
+                                        wrapMode: Text.WordWrap
+                                    }
+
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        height: 1
+                                        color: Qt.alpha(ThemeBackend.surface2, 0.55)
+                                    }
+
+                                    IconButton {
+                                        size: Scaler.s(20)
+                                        cornerRadius: Scaler.s(4)
+                                        buttonIcon: "󰅖"
+                                        iconFontSize: Scaler.s(10)
+                                        accentColor: "transparent"
+                                        textColor: ThemeBackend.overlay1
+                                        onClicked: root.deleteTodo(modelData.id)
+                                    }
+                                }
 
                                 Text {
-                                    id: descText
-                                    anchors.fill: parent
-                                    anchors.margins: Scaler.s(5)
+                                    visible: delegateRoot.hasDesc
                                     text: modelData.description || ""
                                     font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: Scaler.s(10)
+                                    font.pixelSize: Scaler.s(9.5)
                                     color: ThemeBackend.subtext0
+                                    Layout.fillWidth: true
                                     wrapMode: Text.WordWrap
                                 }
                             }
                         }
 
-                        MouseArea {
-                            id: taskCardMa
+                        // 3) REGULAR TASK CARD DELEGATE
+                        Rectangle {
+                            id: taskCard
+                            visible: !delegateRoot.isSecHeader && !delegateRoot.isSepItem
                             anchors.fill: parent
-                            hoverEnabled: true
-                            acceptedButtons: Qt.NoButton
+                            radius: Scaler.s(8)
+                            color: Qt.alpha(ThemeBackend.surface1, taskCardHover.hovered ? 0.78 : 0.52)
+                            border.width: 1
+                            border.color: {
+                                if (modelData.day_category === "overdue" && !modelData.completed) return Qt.alpha("#f38ba8", 0.5);
+                                if (modelData.day_category === "today" && !modelData.completed) return Qt.alpha(ThemeBackend.mauve, 0.4);
+                                return Qt.alpha(ThemeBackend.surface2, taskCardHover.hovered ? 0.5 : 0.25);
+                            }
+                            opacity: modelData.completed ? 0.58 : 1.0
+
+                            Behavior on color { ColorAnimation { duration: 120 } }
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
+
+                            HoverHandler {
+                                id: taskCardHover
+                            }
+
+                            // Priority color indicator bar on left (P1: Red, P2: Orange, P3: Blue, P4: Subtle)
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                width: Scaler.s(3.5)
+                                radius: Scaler.s(1.5)
+                                color: modelData.priority_color || "#a6adc8"
+                            }
+
+                            // Click anywhere on card body to expand/collapse full description
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: delegateRoot.hasDesc ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                onClicked: {
+                                    if (delegateRoot.hasDesc) {
+                                        root.toggleNoteExpanded(modelData.id);
+                                    }
+                                }
+                            }
+
+                            ColumnLayout {
+                                id: taskMainCol
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.leftMargin: Scaler.s(10)
+                                anchors.rightMargin: Scaler.s(6)
+                                anchors.topMargin: Scaler.s(6)
+                                anchors.bottomMargin: Scaler.s(6)
+                                spacing: Scaler.s(4)
+
+                                // Main Row: Checkbox + Priority Pill + Title + Note Toggle + Delete
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Scaler.s(6)
+
+                                    // Custom Checkbox Button
+                                    Rectangle {
+                                        id: checkBtn
+                                        Layout.preferredWidth: Scaler.s(18)
+                                        Layout.preferredHeight: Scaler.s(18)
+                                        radius: Scaler.s(5)
+                                        color: modelData.completed ? ThemeBackend.mauve : Qt.alpha(ThemeBackend.surface2, 0.4)
+                                        border.width: 1.5
+                                        border.color: modelData.completed ? ThemeBackend.mauve : (modelData.priority_color || ThemeBackend.subtext1)
+
+                                        Behavior on color { ColorAnimation { duration: 120 } }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            visible: Boolean(modelData.completed)
+                                            text: "✓"
+                                            font.family: ThemeBackend.fontFamily
+                                            font.pixelSize: Scaler.s(10)
+                                            font.bold: true
+                                            color: ThemeBackend.crust
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.toggleTodo(modelData.id)
+                                        }
+                                    }
+
+                                    // Priority badge (only if P1, P2 or P3)
+                                    Rectangle {
+                                        visible: Boolean(modelData.priority && modelData.priority < 4)
+                                        Layout.preferredHeight: Scaler.s(16)
+                                        Layout.preferredWidth: prioBadgeText.implicitWidth + Scaler.s(8)
+                                        radius: Scaler.s(4)
+                                        color: Qt.alpha(modelData.priority_color || "#f38ba8", 0.22)
+                                        border.width: 1
+                                        border.color: modelData.priority_color || "#f38ba8"
+
+                                        Text {
+                                            id: prioBadgeText
+                                            anchors.centerIn: parent
+                                            text: modelData.priority_label || ("P" + modelData.priority)
+                                            font.family: ThemeBackend.fontFamily
+                                            font.pixelSize: Scaler.s(8.5)
+                                            font.bold: true
+                                            color: modelData.priority_color || "#f38ba8"
+                                        }
+                                    }
+
+                                    // Title Text
+                                    Text {
+                                        text: modelData.title || ""
+                                        font.family: ThemeBackend.fontFamily
+                                        font.pixelSize: Scaler.s(11.5)
+                                        font.bold: !modelData.completed
+                                        font.strikeout: Boolean(modelData.completed)
+                                        color: modelData.completed ? ThemeBackend.subtext0 : ThemeBackend.text
+                                        Layout.fillWidth: true
+                                        wrapMode: Text.WordWrap
+                                        elide: delegateRoot.isNoteExpanded ? Text.ElideNone : Text.ElideRight
+                                        maximumLineCount: delegateRoot.isNoteExpanded ? 6 : 2
+                                    }
+
+                                    // Toggle Note Button (if task has description / note)
+                                    IconButton {
+                                        visible: delegateRoot.hasDesc
+                                        size: Scaler.s(22)
+                                        cornerRadius: Scaler.s(5)
+                                        buttonIcon: delegateRoot.isNoteExpanded ? "󰅃" : "󰅂"
+                                        iconFontSize: Scaler.s(11)
+                                        accentColor: delegateRoot.isNoteExpanded ? Qt.alpha(ThemeBackend.mauve, 0.2) : "transparent"
+                                        textColor: ThemeBackend.mauve
+                                        onClicked: root.toggleNoteExpanded(modelData.id)
+                                    }
+
+                                    // Delete Task Button (appears on hover)
+                                    IconButton {
+                                        visible: taskCardHover.hovered
+                                        size: Scaler.s(22)
+                                        cornerRadius: Scaler.s(5)
+                                        buttonIcon: "󰅖"
+                                        iconFontSize: Scaler.s(11)
+                                        accentColor: "transparent"
+                                        textColor: ThemeBackend.red
+                                        onClicked: root.deleteTodo(modelData.id)
+                                    }
+                                }
+
+                                // Todoist-style Description Preview / Full Box (always readable!)
+                                Rectangle {
+                                    visible: delegateRoot.hasDesc
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: Scaler.s(24)
+                                    implicitHeight: descText.implicitHeight + (delegateRoot.isNoteExpanded ? Scaler.s(10) : Scaler.s(2))
+                                    radius: Scaler.s(6)
+                                    color: delegateRoot.isNoteExpanded ? Qt.alpha(ThemeBackend.surface0, 0.72) : "transparent"
+                                    border.width: delegateRoot.isNoteExpanded ? 1 : 0
+                                    border.color: Qt.alpha(ThemeBackend.mauve, 0.35)
+
+                                    Text {
+                                        id: descText
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.top: parent.top
+                                        anchors.margins: delegateRoot.isNoteExpanded ? Scaler.s(5) : 0
+                                        text: modelData.description || ""
+                                        font.family: ThemeBackend.fontFamily
+                                        font.pixelSize: Scaler.s(9.8)
+                                        color: delegateRoot.isNoteExpanded ? ThemeBackend.text : ThemeBackend.subtext0
+                                        wrapMode: Text.WordWrap
+                                        elide: delegateRoot.isNoteExpanded ? Text.ElideNone : Text.ElideRight
+                                        maximumLineCount: delegateRoot.isNoteExpanded ? 50 : 2
+                                    }
+                                }
+
+                                // Sub-Row: Due Date Badge + Labels
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    Layout.leftMargin: Scaler.s(24)
+                                    spacing: Scaler.s(5)
+                                    visible: Boolean(modelData.relative_label || (modelData.labels && modelData.labels.length > 0))
+
+                                    // Due Date Badge (Smart relative day display)
+                                    Rectangle {
+                                        visible: Boolean(modelData.relative_label && modelData.relative_label !== "")
+                                        Layout.preferredHeight: Scaler.s(18)
+                                        Layout.preferredWidth: dateBadgeContent.implicitWidth + Scaler.s(10)
+                                        radius: Scaler.s(4)
+                                        color: {
+                                            if (modelData.day_category === "overdue") return Qt.alpha("#f38ba8", 0.22);
+                                            if (modelData.day_category === "today") return Qt.alpha(ThemeBackend.mauve, 0.22);
+                                            if (modelData.day_category === "tomorrow") return Qt.alpha("#89b4fa", 0.22);
+                                            return Qt.alpha(ThemeBackend.surface2, 0.5);
+                                        }
+                                        border.width: 1
+                                        border.color: {
+                                            if (modelData.day_category === "overdue") return "#f38ba8";
+                                            if (modelData.day_category === "today") return ThemeBackend.mauve;
+                                            if (modelData.day_category === "tomorrow") return "#89b4fa";
+                                            return Qt.alpha(ThemeBackend.surface2, 0.4);
+                                        }
+
+                                        RowLayout {
+                                            id: dateBadgeContent
+                                            anchors.centerIn: parent
+                                            spacing: Scaler.s(3)
+
+                                            Text {
+                                                text: modelData.day_category === "overdue" ? "󰀦" : "󰔛"
+                                                font.family: root.nerdFont
+                                                font.pixelSize: Scaler.s(9)
+                                                color: {
+                                                    if (modelData.day_category === "overdue") return "#f38ba8";
+                                                    if (modelData.day_category === "today") return ThemeBackend.mauve;
+                                                    if (modelData.day_category === "tomorrow") return "#89b4fa";
+                                                    return ThemeBackend.subtext1;
+                                                }
+                                            }
+
+                                            Text {
+                                                text: modelData.relative_label || ""
+                                                font.family: ThemeBackend.fontFamily
+                                                font.pixelSize: Scaler.s(9)
+                                                font.bold: modelData.day_category === "overdue" || modelData.day_category === "today"
+                                                color: {
+                                                    if (modelData.day_category === "overdue") return "#f38ba8";
+                                                    if (modelData.day_category === "today") return ThemeBackend.mauve;
+                                                    if (modelData.day_category === "tomorrow") return "#89b4fa";
+                                                    return ThemeBackend.subtext1;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Labels (from Todoist @labels)
+                                    Repeater {
+                                        model: modelData.labels || []
+
+                                        Rectangle {
+                                            Layout.preferredHeight: Scaler.s(18)
+                                            Layout.preferredWidth: lblText.implicitWidth + Scaler.s(8)
+                                            radius: Scaler.s(4)
+                                            color: Qt.alpha(ThemeBackend.surface2, 0.4)
+
+                                            Text {
+                                                id: lblText
+                                                anchors.centerIn: parent
+                                                text: "@" + modelData
+                                                font.family: ThemeBackend.fontFamily
+                                                font.pixelSize: Scaler.s(8.5)
+                                                color: ThemeBackend.subtext0
+                                            }
+                                        }
+                                    }
+
+                                    Item { Layout.fillWidth: true }
+                                }
+                            }
                         }
                     }
 

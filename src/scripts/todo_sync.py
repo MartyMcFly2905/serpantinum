@@ -225,6 +225,21 @@ def extract_labels(content):
         category = cat_match.group(1)
     return labels, category
 
+def is_uncompletable_separator(title):
+    """
+    In Todoist, tasks starting with '* ' (asterisk + space) or '---' are uncompletable separator headers.
+    """
+    t = (title or "").strip()
+    if t.startswith("* ") or t in ("---", "___", "***"):
+        return True
+    return False
+
+def clean_uncompletable_title(title):
+    t = (title or "").strip()
+    if t.startswith("* "):
+        return t[2:].strip()
+    return t
+
 def refresh_task_dates(task, today=None):
     """
     Recomputes day_category and relative_label for an existing task.
@@ -253,6 +268,17 @@ def refresh_task_dates(task, today=None):
     task["priority"] = p_num
     task["priority_label"] = p_lbl
     task["priority_color"] = p_col
+    if "item_type" not in task:
+        if is_uncompletable_separator(task.get("title", "")):
+            task["item_type"] = "separator"
+            task["uncompletable"] = True
+        else:
+            task["item_type"] = "task"
+            task["uncompletable"] = False
+    if "section_description" not in task:
+        task["section_description"] = ""
+    if "section_index" not in task:
+        task["section_index"] = 0
     return task
 
 def load_todos():
@@ -265,17 +291,37 @@ def load_todos():
                 if isinstance(data, dict) and "todos" in data:
                     todos = [refresh_task_dates(t, today) for t in data["todos"] if isinstance(t, dict)]
                     data["todos"] = todos
+                    if "sections" not in data:
+                        data["sections"] = extract_sections_from_todos(todos)
                     return data
                 elif isinstance(data, list):
                     todos = [refresh_task_dates(t, today) for t in data if isinstance(t, dict)]
-                    return {"updated_at": int(time.time()), "todos": todos}
+                    return {"updated_at": int(time.time()), "sections": extract_sections_from_todos(todos), "todos": todos}
         except Exception:
             pass
-    return {"updated_at": int(time.time()), "todos": []}
+    return {"updated_at": int(time.time()), "sections": [], "todos": []}
+
+def extract_sections_from_todos(todos):
+    seen = {}
+    sections = []
+    for idx, t in enumerate(todos):
+        cat = (t.get("category") or "").strip()
+        if cat and cat not in seen:
+            sec_obj = {
+                "id": f"sec_{len(sections)}_{idx}",
+                "title": cat,
+                "description": (t.get("section_description") or "").strip(),
+                "order": len(sections)
+            }
+            seen[cat] = sec_obj
+            sections.append(sec_obj)
+    return sections
 
 def save_todos(data):
     ensure_config_dir()
     data["updated_at"] = int(time.time())
+    if "todos" in data:
+        data["sections"] = extract_sections_from_todos(data["todos"])
     tmp_path = TODOS_FILE + f".tmp.{os.getpid()}"
     with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
@@ -287,6 +333,7 @@ def add_todo(title, priority=4, category="", due_date="", description=""):
     if not clean_title:
         return {"status": "error", "message": "Titolo attività vuoto"}
 
+    uncomp = is_uncompletable_separator(clean_title)
     labels, auto_cat = extract_labels(clean_title)
     final_cat = (category or auto_cat or "").strip()
 
@@ -300,13 +347,18 @@ def add_todo(title, priority=4, category="", due_date="", description=""):
     now_ms = int(time.time() * 1000)
     new_item = {
         "id": f"todo_{now_ms}_{len(data['todos'])}",
-        "title": clean_title,
+        "item_type": "separator" if uncomp else "task",
+        "uncompletable": uncomp,
+        "title": clean_uncompletable_title(clean_title) if uncomp else clean_title,
+        "raw_title": clean_title,
         "description": (description or "").strip(),
         "completed": False,
         "priority": p_num,
         "priority_label": p_lbl,
         "priority_color": p_col,
         "category": final_cat,
+        "section_description": "",
+        "section_index": 0,
         "labels": labels,
         "due_date": date_meta["due_date"],
         "due_time": date_meta["due_time"],
@@ -326,6 +378,8 @@ def toggle_todo(todo_id):
     found = None
     for item in data["todos"]:
         if str(item.get("id")).strip() == target_id:
+            if item.get("uncompletable") or item.get("item_type") == "separator":
+                return {"status": "ok", "action": "ignored_separator", "item": item}
             item["completed"] = not bool(item.get("completed"))
             found = item
             break
@@ -356,6 +410,7 @@ def clear_all():
     data = load_todos()
     orig_len = len(data["todos"])
     data["todos"] = []
+    data["sections"] = []
     save_todos(data)
     return {"status": "ok", "action": "cleared_all", "cleared": orig_len, "total": 0}
 
@@ -384,6 +439,10 @@ def read_file_with_encodings(filepath):
 def parse_todoist_or_generic_csv(content):
     """
     Parses CSV content matching Todoist templates or generic CSV formats.
+    Supports:
+    - TYPE=section (with CONTENT and DESCRIPTION)
+    - TYPE=task (including uncompletable '* ' separator tasks)
+    - TYPE=note (appended to previous task or section description)
     """
     if not content or not content.strip():
         return []
@@ -405,6 +464,8 @@ def parse_todoist_or_generic_csv(content):
     today = date.today()
     parsed_items = []
     current_section = ""
+    current_section_desc = ""
+    current_section_idx = 0
     last_task = None
     base_time = int(time.time() * 1000)
 
@@ -420,10 +481,14 @@ def parse_todoist_or_generic_csv(content):
             desc_val = row[col_map.get("DESCRIPTION", -1)].strip() if "DESCRIPTION" in col_map and col_map["DESCRIPTION"] < len(row) else ""
             prio_val = row[col_map.get("PRIORITY", -1)].strip() if "PRIORITY" in col_map and col_map["PRIORITY"] < len(row) else "4"
             date_val = row[col_map.get("DATE", -1)].strip() if "DATE" in col_map and col_map["DATE"] < len(row) else ""
+            indent_val = row[col_map.get("INDENT", -1)].strip() if "INDENT" in col_map and col_map["INDENT"] < len(row) else "1"
 
-            if row_type == "section":
+            if row_type in ("section", "separator"):
                 if content_val:
-                    current_section = content_val
+                    current_section = clean_uncompletable_title(content_val)
+                    current_section_desc = desc_val
+                    current_section_idx += 1
+                    last_task = None
                 continue
 
             if row_type == "note":
@@ -432,25 +497,44 @@ def parse_todoist_or_generic_csv(content):
                         last_task["description"] += "\n" + content_val
                     else:
                         last_task["description"] = content_val
+                elif current_section and content_val:
+                    if current_section_desc:
+                        current_section_desc += "\n" + content_val
+                    else:
+                        current_section_desc = content_val
                 continue
 
             if not content_val:
                 continue
 
-            labels, auto_cat = extract_labels(content_val)
+            uncomp = is_uncompletable_separator(content_val)
+            clean_title = clean_uncompletable_title(content_val) if uncomp else content_val
+
+            labels, auto_cat = extract_labels(clean_title)
             d_obj, t_part = parse_natural_date(date_val, today)
             date_meta = compute_date_meta(d_obj, t_part, date_val, today)
             p_num, p_lbl, p_col = normalize_priority(prio_val)
 
+            try:
+                indent_num = max(1, int(indent_val))
+            except ValueError:
+                indent_num = 1
+
             item = {
                 "id": f"todo_{base_time}_{r_idx}",
-                "title": content_val,
+                "item_type": "separator" if uncomp else "task",
+                "uncompletable": uncomp,
+                "title": clean_title,
+                "raw_title": content_val,
                 "description": desc_val,
                 "completed": False,
                 "priority": p_num,
                 "priority_label": p_lbl,
                 "priority_color": p_col,
+                "indent": indent_num,
                 "category": current_section or auto_cat or "",
+                "section_description": current_section_desc,
+                "section_index": current_section_idx,
                 "labels": labels,
                 "due_date": date_meta["due_date"],
                 "due_time": date_meta["due_time"],
@@ -458,7 +542,8 @@ def parse_todoist_or_generic_csv(content):
                 "day_category": date_meta["day_category"],
                 "relative_label": date_meta["relative_label"],
                 "days_diff": date_meta["days_diff"],
-                "created_at": int(time.time())
+                "created_at": int(time.time()),
+                "csv_order": r_idx
             }
             parsed_items.append(item)
             last_task = item
@@ -469,10 +554,14 @@ def parse_todoist_or_generic_csv(content):
             if not title:
                 continue
 
+            uncomp = is_uncompletable_separator(title)
+            clean_title = clean_uncompletable_title(title) if uncomp else title
+
             done = False
             prio = "4"
             cat = ""
             due = ""
+            desc = ""
 
             for c_idx, cell in enumerate(row[1:], start=1):
                 val = cell.strip()
@@ -486,25 +575,35 @@ def parse_todoist_or_generic_csv(content):
                     d_test, _ = parse_natural_date(val, today)
                     if d_test:
                         due = val
+                    elif len(val) > 45 and not desc:
+                        desc = val
                     elif not cat:
                         cat = val
+                elif len(val) > 45 and not desc:
+                    desc = val
                 elif not cat:
                     cat = val
 
-            labels, auto_cat = extract_labels(title)
+            labels, auto_cat = extract_labels(clean_title)
             d_obj, t_part = parse_natural_date(due, today)
             date_meta = compute_date_meta(d_obj, t_part, due, today)
             p_num, p_lbl, p_col = normalize_priority(prio)
 
             item = {
                 "id": f"todo_{base_time}_{r_idx}",
-                "title": title,
-                "description": "",
+                "item_type": "separator" if uncomp else "task",
+                "uncompletable": uncomp,
+                "title": clean_title,
+                "raw_title": title,
+                "description": desc,
                 "completed": done,
                 "priority": p_num,
                 "priority_label": p_lbl,
                 "priority_color": p_col,
+                "indent": 1,
                 "category": cat or auto_cat or "",
+                "section_description": "",
+                "section_index": 0,
                 "labels": labels,
                 "due_date": date_meta["due_date"],
                 "due_time": date_meta["due_time"],
@@ -512,7 +611,8 @@ def parse_todoist_or_generic_csv(content):
                 "day_category": date_meta["day_category"],
                 "relative_label": date_meta["relative_label"],
                 "days_diff": date_meta["days_diff"],
-                "created_at": int(time.time())
+                "created_at": int(time.time()),
+                "csv_order": r_idx
             }
             parsed_items.append(item)
             last_task = item
@@ -535,18 +635,29 @@ def import_csv_file(filepath, mode="merge"):
             data["todos"] = new_items
             imported_count = len(new_items)
         else:
-            existing_signatures = {
-                (it.get("title", "").strip().lower(), it.get("category", "").strip().lower())
+            existing_map = {
+                (it.get("title", "").strip().lower(), it.get("category", "").strip().lower()): it
                 for it in data["todos"]
             }
             added = []
+            updated_existing = 0
             for item in new_items:
                 sig = (item["title"].strip().lower(), item["category"].strip().lower())
-                if sig not in existing_signatures:
+                if sig not in existing_map:
                     added.append(item)
-                    existing_signatures.add(sig)
+                    existing_map[sig] = item
+                else:
+                    # Update description and section_description if newer CSV has them
+                    ex = existing_map[sig]
+                    if item.get("description") and not ex.get("description"):
+                        ex["description"] = item["description"]
+                    if item.get("section_description"):
+                        ex["section_description"] = item["section_description"]
+                    if item.get("section_index"):
+                        ex["section_index"] = item["section_index"]
+                    updated_existing += 1
             data["todos"] = added + data["todos"]
-            imported_count = len(added)
+            imported_count = len(added) if added else updated_existing
 
         save_todos(data)
         return {
@@ -556,6 +667,7 @@ def import_csv_file(filepath, mode="merge"):
             "filepath": clean_path,
             "imported_count": imported_count,
             "total_count": len(data["todos"]),
+            "sections": data.get("sections", []),
             "todos": data["todos"]
         }
     except Exception as e:
@@ -578,31 +690,34 @@ def export_csv_todoist(destination=None):
         if dest_dir:
             os.makedirs(dest_dir, exist_ok=True)
 
-        # Group tasks by section/category
+        # Group tasks by section/category preserving order
         sections = {}
+        section_descs = {}
         for it in data["todos"]:
             cat = it.get("category", "").strip() or "Generale"
             if cat not in sections:
                 sections[cat] = []
+                section_descs[cat] = it.get("section_description", "")
             sections[cat].append(it)
 
         with open(dest_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.writer(f, delimiter=";")
+            writer = csv.writer(f, delimiter=",")
             writer.writerow(["TYPE", "CONTENT", "DESCRIPTION", "PRIORITY", "INDENT", "AUTHOR", "RESPONSIBLE", "DATE", "DATE_LANG", "TIMEZONE"])
 
             for sec_name, tasks in sections.items():
                 if sec_name != "Generale":
-                    writer.writerow(["section", sec_name, "", "", "1", "", "", "", "", ""])
+                    writer.writerow(["section", sec_name, section_descs.get(sec_name, ""), "1", "1", "", "", "", "it", "Europe/Rome"])
                 for task in tasks:
                     due_str = task.get("due_date", "")
                     if task.get("due_time"):
                         due_str += f" {task.get('due_time')}"
+                    title_out = task.get("raw_title") or (f"* {task.get('title', '')}" if task.get("uncompletable") else task.get("title", ""))
                     writer.writerow([
                         "task",
-                        task.get("title", ""),
+                        title_out,
                         task.get("description", ""),
                         str(task.get("priority", 4)),
-                        "1",
+                        str(task.get("indent", 1)),
                         "",
                         "",
                         due_str,

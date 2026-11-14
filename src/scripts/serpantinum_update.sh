@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
+{
 # ==============================================================================
 # Serpantinum Custom Auto-Updater ("aggiorna-serpantinum") — Edizione Blindata
 # ==============================================================================
 # Aggiorna Serpantinum dal repository ufficiale (ilyamiro/serpantinum),
-# risolve automaticamente eventuali conflitti sui widget personalizzati
-# (Todo List, Calendario Mese/Agenda/Compatto, Pomodoro, fix batteria 100%),
-# verifica/installa i binari companion (serpantinum-core), valida JSON/QML,
-# sincronizza binari + version state e riavvia il demone verificandone la salute.
+# risolve automaticamente qualsiasi conflitto (contenuto, rename, modify/delete)
+# sui widget personalizzati (Todo List, Calendario Mese/Agenda/Compatto,
+# Pomodoro, fix batteria 100%), verifica/installa i binari companion
+# (serpantinum-core), valida JSON/QML, sincronizza binari + version state e
+# riavvia il demone verificandone la salute.
 # ==============================================================================
 
 set -uo pipefail
@@ -119,7 +121,10 @@ restore_stash_if_needed() {
     if [ "$STASHED_LOCAL" = true ]; then
         echo -e "${C_CYAN}[INFO] Ripristino delle modifiche locali dallo stash...${C_RESET}"
         if ! git stash pop --quiet 2>/dev/null; then
-            echo -e "${C_YELLOW}[ATTENZIONE] Conflitto minore durante git stash pop; le modifiche sono al sicuro in 'git stash list'.${C_RESET}"
+            echo -e "${C_YELLOW}[ATTENZIONE] Conflitto minore durante git stash pop; applico le modifiche sui file custom...${C_RESET}"
+            git checkout --theirs . 2>/dev/null || true
+            git reset HEAD . >/dev/null 2>&1 || true
+            git stash drop --quiet 2>/dev/null || true
         fi
         STASHED_LOCAL=false
     fi
@@ -169,7 +174,7 @@ ensure_companion_binaries() {
     rm -rf "$work"
 }
 
-# Funzione Python per garantire l'integrità di traduzioni e registrazioni QML custom
+# Funzione Python idempotente che applica/verifica TUTTE le personalizzazioni su qualsiasi versione upstream
 ensure_custom_integrations() {
     python3 - "$REPO_DIR" <<'PYEOF'
 import json
@@ -191,6 +196,10 @@ it_patch = {
             "compact": "Compatto",
             "month": "Mese",
             "agenda": "Agenda"
+        },
+        "pomodoro": {
+            "name": "Pomodoro Timer",
+            "desc": "Timer di concentrazione con intervalli di lavoro e pausa personalizzabili"
         },
         "calendar": {
             "manage_calendars": "Gestisci calendari",
@@ -276,6 +285,10 @@ en_patch = {
             "compact": "Compact",
             "month": "Month",
             "agenda": "Agenda"
+        },
+        "pomodoro": {
+            "name": "Pomodoro Timer",
+            "desc": "Focus timer with customizable work and break intervals"
         },
         "calendar": {
             "manage_calendars": "Manage Calendars",
@@ -375,15 +388,16 @@ for lang_file, patch_data in [("it.json", it_patch), ("en.json", en_patch)]:
                 json.dump(data, f, ensure_ascii=False, indent=2)
                 f.write("\n")
 
-# 2. Verifica src/quickshell/qmldir (rimuove eventuali path errati e garantisce quelli reali)
+# 2. Verifica src/quickshell/qmldir (rimuove path obsoleti e garantisce quelli reali)
 qmldir_main = os.path.join(repo, "src", "quickshell", "qmldir")
 if os.path.exists(qmldir_main):
     with open(qmldir_main, "r", encoding="utf-8") as f:
         orig_lines = [line.rstrip("\n") for line in f]
-    # Filtra via eventuali righe con path inesistenti
     invalid_main = {
         "singleton PomodoroService 1.0 singletons/environment/PomodoroService.qml",
     }
+    if os.path.exists(os.path.join(repo, "src", "quickshell", "widgets", "redactor", "WidgetRedactor.qml")):
+        invalid_main.add("WidgetRedactor 1.0 widgets/WidgetRedactor.qml")
     lines = [l for l in orig_lines if l not in invalid_main]
     required_main = [
         "PomodoroNotch 1.0 popouts/PomodoroNotch.qml",
@@ -421,23 +435,21 @@ if os.path.exists(qmldir_faces):
         with open(qmldir_faces, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
 
-# 4. Verifica disattivazione notifica batteria 100% in SysNotif.qml
+# 4. Verifica disattivazione notifica batteria 100% in SysNotif.qml (compatibile v2.4.x e v2.5.x+)
 sysnotif_path = os.path.join(repo, "src", "quickshell", "singletons", "system", "SysNotif.qml")
 if os.path.exists(sysnotif_path):
     with open(sysnotif_path, "r", encoding="utf-8") as f:
         content = f.read()
-    pattern = re.compile(
-        r'if\s*\(\s*pct\s*>=\s*100\s*&&\s*!root\.notifiedFull\s*\)\s*\{\s*root\.notifiedFull\s*=\s*true;\s*root\.send\([^\}]+\);\s*\}',
-        re.MULTILINE
+    pattern_new = re.compile(
+        r'if\s*\([^\n]*pct\s*>=\s*100[^\n]*\)\s*\{[^}]*root\.send(?:Notification)?\(\s*"full"[^}]*?\);\s*\}',
+        re.DOTALL
     )
     replacement = (
-        'if (pct >= 100 && !root.notifiedFull) {\n'
-        '                root.notifiedFull = true;\n'
-        '                // Battery full notification disabled per user preference\n'
-        '            }'
+        '// Notifica 100% / FullyCharged disabilitata per evitare notifiche continue e fastidiose a cavo inserito\n'
+        '            root.notifiedFull = true;'
     )
-    if pattern.search(content):
-        content = pattern.sub(replacement, content)
+    if pattern_new.search(content):
+        content = pattern_new.sub(replacement, content)
         with open(sysnotif_path, "w", encoding="utf-8") as f:
             f.write(content)
 
@@ -503,6 +515,278 @@ if os.path.exists(registry_path):
             reg_content = reg_content.replace(anchor, custom_widgets_block + anchor, 1)
             with open(registry_path, "w", encoding="utf-8") as f:
                 f.write(reg_content)
+
+# 6. Verifica azione syncCalendar nel Widget Redactor (RedactorWorkspace.qml in v2.5+ o WidgetRedactor.qml)
+for redactor_rel in [
+    os.path.join("src", "quickshell", "widgets", "redactor", "RedactorWorkspace.qml"),
+    os.path.join("src", "quickshell", "widgets", "WidgetRedactor.qml"),
+]:
+    redactor_path = os.path.join(repo, redactor_rel)
+    if os.path.exists(redactor_path):
+        with open(redactor_path, "r", encoding="utf-8") as f:
+            r_content = f.read()
+        if 'action === "syncCalendar"' not in r_content:
+            r_pattern = re.compile(r'(proxy\.finalizeSync\(\);\s*)(\}\s*else\s+if\s*\(\s*extraArg\s*!==\s*undefined\s*\)\s*\{)')
+            def r_repl(m):
+                prefix = m.group(1)
+                suffix = m.group(2)
+                indent_match = re.search(r'(\n[ \t]*)\}', suffix)
+                ind = indent_match.group(1) if indent_match else "\n        "
+                return (
+                    f"{prefix}}} else if (action === \"syncCalendar\") {{"
+                    f"{ind}    if (typeof CalendarService !== \"undefined\") {{"
+                    f"{ind}        CalendarService.sync(true);"
+                    f"{ind}    }}"
+                    f"{ind}{suffix}"
+                )
+            new_r_content, n_subs = r_pattern.subn(r_repl, r_content, count=1)
+            if n_subs > 0:
+                with open(redactor_path, "w", encoding="utf-8") as f:
+                    f.write(new_r_content)
+
+# 7. Verifica integrazione CalendarService in src/quickshell/calendar/CalendarPopup.qml
+cal_popup_path = os.path.join(repo, "src", "quickshell", "calendar", "CalendarPopup.qml")
+if os.path.exists(cal_popup_path):
+    with open(cal_popup_path, "r", encoding="utf-8") as f:
+        cal_content = f.read()
+    cal_orig = cal_content
+
+    # 7a. Aggiornamento celle calendario con hasEvents, dayVal, year, month (v2.5+ cells array)
+    old_cells_block = """        let cells = [];
+        for (let i = firstDay - 1; i >= 0; i--) {
+            cells.push({ dayNum: (daysInPrevMonth - i).toString(), isCurrentMonth: false, isToday: false });
+        }
+        for (let i = 1; i <= daysInMonth; i++) {
+            cells.push({ dayNum: i.toString(), isCurrentMonth: true, isToday: (isRealCurrentMonth && i === todayDate) });
+        }
+        let remaining = 42 - cells.length;
+        for (let i = 1; i <= remaining; i++) {
+            cells.push({ dayNum: i.toString(), isCurrentMonth: false, isToday: false });
+        }
+
+        if (calendarModel.count !== cells.length) {
+            calendarModel.clear();
+            for (let i = 0; i < cells.length; i++) calendarModel.append(cells[i]);
+            return;
+        }
+        for (let i = 0; i < cells.length; i++) {
+            let c = cells[i];
+            let cur = calendarModel.get(i);
+            if (cur.dayNum !== c.dayNum) calendarModel.setProperty(i, "dayNum", c.dayNum);
+            if (cur.isCurrentMonth !== c.isCurrentMonth) calendarModel.setProperty(i, "isCurrentMonth", c.isCurrentMonth);
+            if (cur.isToday !== c.isToday) calendarModel.setProperty(i, "isToday", c.isToday);
+        }"""
+
+    new_cells_block = """        let cells = [];
+        for (let i = firstDay - 1; i >= 0; i--) {
+            let pDay = daysInPrevMonth - i;
+            let pDate = new Date(targetYear, targetMonth - 1, pDay);
+            let hasEvs = typeof CalendarService !== "undefined" ? CalendarService.hasEventsOnDate(pDate.getFullYear(), pDate.getMonth() + 1, pDay) : false;
+            cells.push({ dayNum: pDay.toString(), dayVal: pDay, year: pDate.getFullYear(), month: pDate.getMonth(), isCurrentMonth: false, isToday: false, hasEvents: hasEvs });
+        }
+        for (let i = 1; i <= daysInMonth; i++) {
+            let hasEvs = typeof CalendarService !== "undefined" ? CalendarService.hasEventsOnDate(targetYear, targetMonth + 1, i) : false;
+            cells.push({ dayNum: i.toString(), dayVal: i, year: targetYear, month: targetMonth, isCurrentMonth: true, isToday: (isRealCurrentMonth && i === todayDate), hasEvents: hasEvs });
+        }
+        let remaining = 42 - cells.length;
+        for (let i = 1; i <= remaining; i++) {
+            let nDate = new Date(targetYear, targetMonth + 1, i);
+            let hasEvs = typeof CalendarService !== "undefined" ? CalendarService.hasEventsOnDate(nDate.getFullYear(), nDate.getMonth() + 1, i) : false;
+            cells.push({ dayNum: i.toString(), dayVal: i, year: nDate.getFullYear(), month: nDate.getMonth(), isCurrentMonth: false, isToday: false, hasEvents: hasEvs });
+        }
+
+        if (calendarModel.count !== cells.length) {
+            calendarModel.clear();
+            for (let i = 0; i < cells.length; i++) calendarModel.append(cells[i]);
+            return;
+        }
+        for (let i = 0; i < cells.length; i++) {
+            let c = cells[i];
+            let cur = calendarModel.get(i);
+            if (cur.dayNum !== c.dayNum) calendarModel.setProperty(i, "dayNum", c.dayNum);
+            if (cur.dayVal !== c.dayVal) calendarModel.setProperty(i, "dayVal", c.dayVal);
+            if (cur.year !== c.year) calendarModel.setProperty(i, "year", c.year);
+            if (cur.month !== c.month) calendarModel.setProperty(i, "month", c.month);
+            if (cur.isCurrentMonth !== c.isCurrentMonth) calendarModel.setProperty(i, "isCurrentMonth", c.isCurrentMonth);
+            if (cur.isToday !== c.isToday) calendarModel.setProperty(i, "isToday", c.isToday);
+            if (cur.hasEvents !== c.hasEvents) calendarModel.setProperty(i, "hasEvents", c.hasEvents);
+        }"""
+
+    if old_cells_block in cal_content:
+        cal_content = cal_content.replace(old_cells_block, new_cells_block, 1)
+
+    # 7b. Connections a CalendarService per aggiornare i pallini eventi
+    if "function onCalendarUpdated()" not in cal_content:
+        conn_anchor = "    onMonthOffsetChanged: updateCalendarGrid()\n"
+        conn_block = """    onMonthOffsetChanged: updateCalendarGrid()
+
+    Connections {
+        target: typeof CalendarService !== "undefined" ? CalendarService : null
+        function onCalendarUpdated() {
+            window.updateCalendarGrid();
+        }
+    }
+"""
+        if conn_anchor in cal_content:
+            cal_content = cal_content.replace(conn_anchor, conn_block, 1)
+
+    # 7c. Pulsante Google Calendar Web nell'header del mese
+    if "openGoogleCalendarWeb" not in cal_content:
+        btn_anchor = "                            onClicked: window.setMonthOffset(window.targetMonthOffset + 1)\n                        }"
+        btn_block = """                            onClicked: window.setMonthOffset(window.targetMonthOffset + 1)
+                        }
+
+                        IconButton {
+                            Layout.preferredWidth: window.s(28)
+                            Layout.preferredHeight: window.s(28)
+                            size: window.s(28)
+                            cornerRadius: window.s(8)
+                            buttonIcon: "󰊭"
+                            iconFontSize: window.s(13)
+                            accentColor: ThemeBackend.surface0
+                            textColor: ThemeBackend.sapphire
+                            onClicked: {
+                                if (typeof CalendarService !== "undefined") {
+                                    CalendarService.openGoogleCalendarWeb();
+                                } else {
+                                    Quickshell.execDetached(["xdg-open", "https://calendar.google.com"]);
+                                }
+                            }
+                        }"""
+        if btn_anchor in cal_content:
+            cal_content = cal_content.replace(btn_anchor, btn_block, 1)
+
+    # 7d. Delegate interattivo con selezione giorno e pallino hasEvents
+    if "CalendarService.selectDate" not in cal_content:
+        rep_pattern = re.compile(
+            r'Repeater\s*\{\s*model:\s*calendarModel\s*(?:ClickButton|Item)\s*\{[^}]*\}\s*\}',
+            re.DOTALL
+        )
+        rep_replacement = """Repeater {
+                            model: calendarModel
+                            Item {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                Layout.preferredWidth: 1
+                                Layout.preferredHeight: 1
+                                readonly property bool isSelectedDay: typeof CalendarService !== "undefined"
+                                    && CalendarService.selectedYear === year
+                                    && CalendarService.selectedMonth === month
+                                    && CalendarService.selectedDay === dayVal
+
+                                ClickButton {
+                                    anchors.fill: parent
+                                    enabled: true
+                                    buttonText: dayNum
+                                    textFontSize: window.s(11.5)
+                                    cornerRadius: window.s(5)
+                                    horizontalPadding: 0
+                                    accentColor: isToday
+                                        ? window.textAccent
+                                        : (isSelectedDay ? Qt.alpha(window.textAccent, 0.28) : ((ThemeBackend.liquidGlass && !isCurrentMonth) ? ThemeBackend.surface0 : "transparent"))
+                                    glassTintScale: isToday ? 2.6 : 1.0
+                                    textColor: ThemeBackend.liquidGlass
+                                        ? (isCurrentMonth ? ThemeBackend.text : ThemeBackend.subtext0)
+                                        : (isToday ? ThemeBackend.base : (isSelectedDay ? window.textAccent : (isCurrentMonth ? ThemeBackend.text : ThemeBackend.surface0)))
+                                    onClicked: {
+                                        if (typeof CalendarService !== "undefined") {
+                                            CalendarService.selectDate(year, month, dayVal, true);
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    visible: hasEvents
+                                    anchors.bottom: parent.bottom
+                                    anchors.bottomMargin: window.s(3)
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: window.s(3.5)
+                                    height: window.s(3.5)
+                                    radius: width / 2
+                                    color: isToday ? ThemeBackend.base : window.textAccent
+                                }
+                            }
+                        }"""
+        cal_content = rep_pattern.sub(rep_replacement, cal_content, count=1)
+
+    # Allinea eventuali vecchi riferimenti window.surface0 / window.sapphire / window.base ai token ThemeBackend v2.5+
+    cal_content = cal_content.replace("accentColor: window.surface0", "accentColor: ThemeBackend.surface0")
+    cal_content = cal_content.replace("textColor: window.sapphire", "textColor: ThemeBackend.sapphire")
+    cal_content = cal_content.replace("color: isToday ? window.base : window.textAccent", "color: isToday ? ThemeBackend.base : window.textAccent")
+
+    if cal_content != cal_orig:
+        with open(cal_popup_path, "w", encoding="utf-8") as f:
+            f.write(cal_content)
+
+# 8. Verifica WindowRegistry.js per il popup Pomodoro
+win_reg_path = os.path.join(repo, "src", "quickshell", "WindowRegistry.js")
+if os.path.exists(win_reg_path):
+    with open(win_reg_path, "r", encoding="utf-8") as f:
+        wr_content = f.read()
+    wr_orig = wr_content
+    if 'id: "pomodoro"' not in wr_content:
+        sys_entry_anchor = '            fontIcon: "󰒓"\n        }'
+        pomo_entry = """            fontIcon: "󰒓"
+        },
+        {
+            id: "pomodoro",
+            name: tr("widgets.pomodoro.name", "Pomodoro Timer"),
+            description: tr("widgets.pomodoro.desc", "Focus timer with customizable work and break intervals"),
+            icon: "alarm-symbolic",
+            fontIcon: "󰔟"
+        }"""
+        if sys_entry_anchor in wr_content:
+            wr_content = wr_content.replace(sys_entry_anchor, pomo_entry, 1)
+    if '"pomodoro": {' not in wr_content:
+        hidden_anchor = '        "hidden": {'
+        pomo_layouts = """        "pomodoro": { 
+            w: 330, h: 225, comp: "pomodoro/PomodoroPopup.qml", 
+            pos: { 
+                "top": { anchor: "top-center", mt: 52 }, 
+                "bottom": { anchor: "bottom-center", mb: 52 }, 
+                "left": { anchor: "center-left", ml: 52 }, 
+                "right": { anchor: "center-right", mr: 52 } 
+            } 
+        },
+        "timer": { 
+            w: 330, h: 225, comp: "pomodoro/PomodoroPopup.qml", 
+            pos: { 
+                "top": { anchor: "top-center", mt: 52 }, 
+                "bottom": { anchor: "bottom-center", mb: 52 }, 
+                "left": { anchor: "center-left", ml: 52 }, 
+                "right": { anchor: "center-right", mr: 52 } 
+            } 
+        },
+        "hidden": {"""
+        if hidden_anchor in wr_content:
+            wr_content = wr_content.replace(hidden_anchor, pomo_layouts, 1)
+    if wr_content != wr_orig:
+        with open(win_reg_path, "w", encoding="utf-8") as f:
+            f.write(wr_content)
+
+# 9. Verifica BarModuleRegistry.qml e qs_manager.sh per Pomodoro
+bar_reg_path = os.path.join(repo, "src", "quickshell", "bar", "BarModuleRegistry.qml")
+if os.path.exists(bar_reg_path):
+    with open(bar_reg_path, "r", encoding="utf-8") as f:
+        bm_content = f.read()
+    if 's === "pomodoro"' not in bm_content:
+        old_line = 'if (s === "info" || s === "indicator" || s === "indicators" || s === "record") return "info";'
+        new_line = 'if (s === "info" || s === "indicator" || s === "indicators" || s === "record" || s === "pomodoro" || s === "timer") return "info";'
+        if old_line in bm_content:
+            bm_content = bm_content.replace(old_line, new_line, 1)
+            with open(bar_reg_path, "w", encoding="utf-8") as f:
+                f.write(bm_content)
+
+qs_mgr_path = os.path.join(repo, "src", "scripts", "qs_manager.sh")
+if os.path.exists(qs_mgr_path):
+    with open(qs_mgr_path, "r", encoding="utf-8") as f:
+        qs_content = f.read()
+    if "pomodoro|timer)" not in qs_content:
+        sys_case = '            system) app_name="$(t "widgets.system.name")" ;;'
+        if sys_case in qs_content:
+            qs_content = qs_content.replace(sys_case, sys_case + '\n            pomodoro|timer) app_name="Pomodoro" ;;', 1)
+            with open(qs_mgr_path, "w", encoding="utf-8") as f:
+                f.write(qs_content)
 PYEOF
 }
 
@@ -561,40 +845,78 @@ if [ "$NEW_COMMITS" -eq 0 ] && [ "$FORCE_DEPLOY" = false ] && [ "$STATE_DESYNC" 
     exit 0
 fi
 
-# 6. Merge degli aggiornamenti da upstream con risoluzione automatica conflitti
+# 6. Merge degli aggiornamenti da upstream con risoluzione automatica universale
 if [ "$NEW_COMMITS" -gt 0 ]; then
     echo -e "${C_CYAN}[2/5] Trovati ${C_BOLD}${NEW_COMMITS}${C_RESET}${C_CYAN} nuovi commit upstream (v${LOCAL_VER} -> v${UPSTREAM_VER}). Integrazione...${C_RESET}"
-    if ! git merge upstream/master --no-edit --quiet 2>/dev/null; then
-        echo -e "${C_YELLOW}  ! Conflitto rilevato durante il merge. Avvio risoluzione automatica intelligente...${C_RESET}"
+    # -X theirs risolve automaticamente tutti i conflitti di contenuto a favore di upstream,
+    # lasciando a ensure_custom_integrations il compito di riapplicare le nostre patch in modo pulito.
+    if ! git merge -X theirs upstream/master --no-edit --quiet >/dev/null 2>&1; then
+        echo -e "${C_YELLOW}  ! Conflitto strutturale (rename/delete) rilevato. Risoluzione automatica in corso...${C_RESET}"
         CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
         AUTO_RESOLVED=true
 
         for cf in $CONFLICT_FILES; do
             case "$cf" in
-                src/assets/languages/it.json|src/assets/languages/en.json|src/quickshell/qmldir|src/quickshell/widgets/faces/qmldir|src/quickshell/widgets/WidgetRegistry.qml|src/quickshell/quickactions/actions/Timer.qml|src/quickshell/singletons/system/SysNotif.qml|src/version.txt|version.txt)
-                    git checkout --theirs "$cf" 2>/dev/null && git add "$cf"
+                src/assets/matugen/apps/fastfetch/serpantinum.jsonc|src/scripts/serpantinum_update.sh|src/scripts/todo_sync.py|src/scripts/calendar_sync.py|src/quickshell/widgets/faces/todo/*|src/quickshell/widgets/faces/calendar/*|src/quickshell/pomodoro/*|src/quickshell/popouts/PomodoroNotch.qml|src/quickshell/singletons/environment/CalendarService.qml|src/quickshell/singletons/system/PomodoroService.qml|src/quickshell/singletons/widgetcontrols/PomodoroController.qml)
+                    # File puramente nostri: mantieni la nostra versione
+                    git checkout --ours "$cf" >/dev/null 2>&1 && git add "$cf" >/dev/null 2>&1
                     ;;
                 *)
-                    echo -e "${C_RED}  ✗ Conflitto complesso sul file: $cf${C_RESET}"
-                    AUTO_RESOLVED=false
+                    # Se il file esiste in upstream/master prendi la versione upstream,
+                    # altrimenti è stato eliminato/rinominato da upstream (es. WidgetRedactor.qml -> widgets/redactor/*)
+                    if git cat-file -e "upstream/master:$cf" 2>/dev/null; then
+                        if ! (git checkout --theirs "$cf" >/dev/null 2>&1 && git add "$cf" >/dev/null 2>&1); then
+                            echo -e "${C_RED}  ✗ Impossibile risolvere il file: $cf${C_RESET}"
+                            AUTO_RESOLVED=false
+                        fi
+                    else
+                        if ! git rm -f --quiet "$cf" >/dev/null 2>&1; then
+                            echo -e "${C_RED}  ✗ Impossibile rimuovere il file obsoleto: $cf${C_RESET}"
+                            AUTO_RESOLVED=false
+                        fi
+                    fi
                     ;;
             esac
         done
 
         if [ "$AUTO_RESOLVED" = true ]; then
+            git checkout upstream/master -- \
+                src/assets/languages/it.json \
+                src/assets/languages/en.json \
+                src/quickshell/qmldir \
+                src/quickshell/widgets/faces/qmldir \
+                src/quickshell/widgets/WidgetRegistry.qml \
+                src/quickshell/calendar/CalendarPopup.qml \
+                src/quickshell/WindowRegistry.js \
+                src/quickshell/bar/BarModuleRegistry.qml \
+                src/quickshell/singletons/system/SysNotif.qml \
+                src/scripts/qs_manager.sh 2>/dev/null || true
             ensure_custom_integrations
-            git add src/assets/languages/it.json src/assets/languages/en.json \
-                    src/quickshell/qmldir src/quickshell/widgets/faces/qmldir \
-                    src/quickshell/widgets/WidgetRegistry.qml \
-                    src/quickshell/singletons/system/SysNotif.qml 2>/dev/null || true
-            git commit --no-edit --quiet || true
-            echo -e "${C_GREEN}  ✓ Conflitti risolti automaticamente preservando tutte le personalizzazioni!${C_RESET}"
+            git add -A >/dev/null 2>&1 || true
+            git commit --no-edit --quiet >/dev/null 2>&1 || true
+            echo -e "${C_GREEN}  ✓ Conflitti strutturali risolti automaticamente preservando tutte le personalizzazioni!${C_RESET}"
         else
             echo -e "${C_RED}[ERRORE] Impossibile risolvere automaticamente tutti i conflitti. Ripristino stato precedente...${C_RESET}"
             git merge --abort 2>/dev/null || true
             restore_stash_if_needed
             exit 1
         fi
+    else
+        git checkout upstream/master -- \
+            src/assets/languages/it.json \
+            src/assets/languages/en.json \
+            src/quickshell/qmldir \
+            src/quickshell/widgets/faces/qmldir \
+            src/quickshell/widgets/WidgetRegistry.qml \
+            src/quickshell/calendar/CalendarPopup.qml \
+            src/quickshell/WindowRegistry.js \
+            src/quickshell/bar/BarModuleRegistry.qml \
+            src/quickshell/singletons/system/SysNotif.qml \
+            src/scripts/qs_manager.sh 2>/dev/null || true
+        ensure_custom_integrations
+        git add -A >/dev/null 2>&1 || true
+        git commit --amend --no-edit --quiet >/dev/null 2>&1 || true
+        echo -e "${C_GREEN}  ✓ Merge upstream completato automaticamente.${C_RESET}"
     fi
 else
     echo -e "${C_CYAN}[2/5] Sincronizzazione e verifica integrità locale (v${LOCAL_VER})...${C_RESET}"
@@ -603,7 +925,7 @@ fi
 # Ripristina eventuale stash locale prima di verificare l'integrità e fare il deploy
 restore_stash_if_needed
 
-# 7. Verifica integrità delle personalizzazioni (JSON, qmldir, SysNotif, script Python) + binari companion
+# 7. Verifica integrità delle personalizzazioni (JSON, qmldir, SysNotif, CalendarPopup, Redactor, script Python) + binari companion
 echo -e "${C_CYAN}[3/5] Verifica integrità widget personalizzati, traduzioni e binari...${C_RESET}"
 if ! ensure_custom_integrations; then
     echo -e "${C_RED}[ERRORE] Verifica integrità fallita! Controlla i file JSON/QML.${C_RESET}"
@@ -613,13 +935,20 @@ python3 -m py_compile "$REPO_DIR/src/scripts/todo_sync.py" "$REPO_DIR/src/script
 ensure_companion_binaries
 echo -e "  ${C_GREEN}✓${C_RESET} Sintassi JSON, registrazioni QML, binari companion e script Python validati."
 
-# Commit automatico se ensure_custom_integrations ha riparato qualcosa
-if [ -n "$(git status --porcelain src/assets/languages src/quickshell)" ]; then
+# Commit automatico se ensure_custom_integrations ha riparato qualcosa dopo il merge
+if [ -n "$(git status --porcelain src/assets/languages src/quickshell src/scripts)" ]; then
     git add src/assets/languages/it.json src/assets/languages/en.json \
             src/quickshell/qmldir src/quickshell/widgets/faces/qmldir \
             src/quickshell/widgets/WidgetRegistry.qml \
-            src/quickshell/singletons/system/SysNotif.qml 2>/dev/null || true
-    git commit -m "chore(updater): riallineamento automatico integrazioni custom" --quiet 2>/dev/null || true
+            src/quickshell/widgets/redactor/RedactorWorkspace.qml \
+            src/quickshell/calendar/CalendarPopup.qml \
+            src/quickshell/WindowRegistry.js \
+            src/quickshell/bar/BarModuleRegistry.qml \
+            src/quickshell/bar/faces/info/InfoFace.qml \
+            src/quickshell/singletons/system/SysNotif.qml \
+            src/scripts/qs_manager.sh \
+            src/scripts/serpantinum_update.sh 2>/dev/null || true
+    git commit -m "chore(updater): riallineamento automatico integrazioni custom su v$(cat "$REPO_DIR/version.txt" 2>/dev/null | tr -d '[:space:]')" --quiet 2>/dev/null || true
 fi
 
 # 8. Push sul fork personale (origin) se ci sono commit non pushati
@@ -639,8 +968,14 @@ fi
 echo -e "${C_CYAN}[5/5] Distribuzione file in ${TARGET_DIR}...${C_RESET}"
 mkdir -p "$TARGET_DIR/src" "$TARGET_DIR/bin" "$STATE_DIR"
 
-# Copia sorgenti QML, asset e script (risolve eventuali symlink come version.txt)
-cp -r "$REPO_DIR/src/." "$TARGET_DIR/src/"
+# Sincronizza sorgenti QML, asset e script (rimuovendo anche eventuali file eliminati da upstream come il vecchio WidgetRedactor.qml)
+if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete --copy-links "$REPO_DIR/src/" "$TARGET_DIR/src/"
+else
+    rm -rf "$TARGET_DIR/src"
+    mkdir -p "$TARGET_DIR/src"
+    cp -rL "$REPO_DIR/src/." "$TARGET_DIR/src/"
+fi
 
 # Copia binari CLI e demone (serpantinum, serpantinumd)
 if [ -d "$REPO_DIR/bin" ]; then
@@ -649,7 +984,7 @@ if [ -d "$REPO_DIR/bin" ]; then
 fi
 
 # Allinea version.txt sia nella root di TARGET_DIR che in TARGET_DIR/src (come file reale, non symlink rotto)
-FINAL_VER=$(cat "$REPO_DIR/version.txt" 2>/dev/null | tr -d '[:space:]' || echo "2.4.3")
+FINAL_VER=$(cat "$REPO_DIR/version.txt" 2>/dev/null | tr -d '[:space:]' || echo "2.5.1")
 rm -f "$TARGET_DIR/src/version.txt" "$TARGET_DIR/version.txt"
 echo "$FINAL_VER" > "$TARGET_DIR/version.txt"
 echo "$FINAL_VER" > "$TARGET_DIR/src/version.txt"
@@ -709,3 +1044,5 @@ fi
 echo ""
 echo -e "${C_GREEN}${C_BOLD}=== Aggiornamento completato con successo (v${FINAL_VER})! ===${C_RESET}"
 echo -e "Backup configurazione salvato in: ${C_DIM}${CURRENT_BACKUP}${C_RESET}"
+exit 0
+}

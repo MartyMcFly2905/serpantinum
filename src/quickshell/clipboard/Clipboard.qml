@@ -18,7 +18,9 @@ PanelWindow {
 
     WlrLayershell.namespace: "qs-clipboard"
     WlrLayershell.layer: WlrLayer.Overlay
-    focusable: clipboardWindow.isVisible
+    WlrLayershell.keyboardFocus: clipboardWindow.isVisible
+        ? (Compositor.name === "mango" ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand)
+        : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
 
@@ -67,7 +69,7 @@ PanelWindow {
         return false;
     }
 
-    readonly property bool isBarEffectivelyHidden: barAutohide || isFullscreenActive
+    readonly property bool isBarEffectivelyHidden: barAutohide || isFullscreenActive || !Config.isBarEnabledOnScreen(clipboardWindow.screen)
 
     property string attachEdge: {
         if (barPosition === "bottom") return "top";

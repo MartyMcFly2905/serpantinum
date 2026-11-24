@@ -115,6 +115,23 @@
         "title": "Close with right click",
         "desc": "Dismiss a notification by right-clicking it"
       },
+      "timeout_low": {
+        "title": "Low urgency timeout",
+        "desc": "How long low urgency notifications stay on screen"
+      },
+      "timeout_normal": {
+        "title": "Normal timeout",
+        "desc": "How long regular notifications stay on screen"
+      },
+      "timeout_critical": {
+        "title": "Urgent timeout",
+        "desc": "How long urgent notifications stay on screen"
+      },
+      "override_timeouts": {
+        "title": "Override app timeouts",
+        "desc": "By default the values above are only used when the app doesn't set its own timeout. Turn on to always use them"
+      },
+      "timeout_never": "Never",
       "test": "Test notification",
       "test_desc": "This is a test notification"
     },
@@ -402,6 +419,10 @@
         "left": "Left",
         "right": "Right"
       },
+      "monitors": {
+        "title": "Monitors",
+        "desc": "Select which monitors display the bar"
+      },
       "width": {
         "title": "Bar width",
         "desc": "Set the width of the bar as a percentage"
@@ -504,8 +525,12 @@
         "style": {
           "title": "Circle style",
           "desc": "Visual appearance of the progress rings",
-          "wave": "Wave",
-          "circle": "Circle"
+          "wave": "Rings filled with a liquid wave",
+          "circle": "Clean progress rings",
+          "name": {
+            "wave": "Wave",
+            "circle": "Circle"
+          }
         },
         "items": {
           "title": "Stats",
@@ -642,6 +667,20 @@
         "preview": {
           "title": "Song title",
           "author": "Song author"
+        },
+        "style": {
+          "title": "Media style",
+          "desc": "Choose the visual appearance of the media module",
+          "name": {
+            "classic": "Classic",
+            "ambient": "Ambient"
+          },
+          "classic": "Album thumbnail on a plain background",
+          "ambient": "Blurred album art behind the controls"
+        },
+        "art_background": {
+          "title": "Show art in background",
+          "desc": "Fill the module with blurred album art behind the controls"
         }
       },
       "thickness": {
@@ -998,6 +1037,9 @@
       "orientation": {
         "horizontal": "Horizontal",
         "vertical": "Vertical"
+      },
+      "keyboard_layout": {
+        "title": "Show on keyboard layout"
       }
     },
     "common": {
@@ -1043,6 +1085,10 @@
       "background": {
         "title": "Draw a background behind apps",
         "desc": "Show the dock panel behind app icons"
+      },
+      "icons_only": {
+        "title": "Icons only",
+        "desc": "Hide the box behind each app and show only its icon"
       },
       "transparency": {
         "title": "Dock transparency",
@@ -1129,6 +1175,7 @@
     "search": {
       "placeholder": "Search settings...",
       "prompt": "Type to search settings...",
+      "indexing": "Indexing settings...",
       "no_results": "No settings found",
       "results": "Search results"
     },
@@ -1854,6 +1901,7 @@
       "lyrics": "Lyrics",
       "simpleLyrics": "Simple Lyrics",
       "circle": "Circle",
+      "graph": "Graph",
       "month": "Month",
       "agenda": "Agenda"
     },
@@ -1892,7 +1940,9 @@
       "lineThickness": "Thickness",
       "visualizerStyle": "Visualizer style",
       "hideText": "Hide text",
-      "textContent": "Text"
+      "textContent": "Text",
+      "updateRate": "Updates per minute",
+      "perMinute": "/min"
     },
     "align": {
       "left": "Left",
@@ -1908,6 +1958,10 @@
     },
     "text": {
       "placeholder": "Enter text"
+    },
+    "usageGraph": {
+      "average": "Avg",
+      "peak": "Peak"
     },
     "pomodoro": {
       "name": "Pomodoro Timer",
@@ -2328,6 +2382,9 @@
       "today": "Fog today. High {max}, low {min}.",
       "tomorrow": "Fog tomorrow. High {max}, low {min}."
     }
+  },
+  "osd": {
+    "keyboard_layout": "Keyboard layout"
   },
   "pomodoro": {
     "phase": {

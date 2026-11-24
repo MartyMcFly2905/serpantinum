@@ -115,6 +115,23 @@
         "title": "Zatvaranje desnim klikom",
         "desc": "Odbaci obavijest desnim klikom"
       },
+      "timeout_low": {
+        "title": "Vrijeme za nisku hitnost",
+        "desc": "Koliko dugo obavijesti niske hitnosti ostaju na zaslonu"
+      },
+      "timeout_normal": {
+        "title": "Normalno vrijeme",
+        "desc": "Koliko dugo obične obavijesti ostaju na zaslonu"
+      },
+      "timeout_critical": {
+        "title": "Vrijeme za hitne",
+        "desc": "Koliko dugo hitne obavijesti ostaju na zaslonu"
+      },
+      "override_timeouts": {
+        "title": "Zamijeni vremena aplikacija",
+        "desc": "Prema zadanim postavkama vrijednosti iznad koriste se samo kada aplikacija ne postavi vlastito vrijeme. Uključite za uvijek korištenje"
+      },
+      "timeout_never": "Nikad",
       "test": "Probna obavijest",
       "test_desc": "Ovo je probna obavijest"
     },
@@ -402,6 +419,10 @@
         "left": "Lijevo",
         "right": "Desno"
       },
+      "monitors": {
+        "title": "Monitori",
+        "desc": "Odaberite na kojim se monitorima prikazuje traka"
+      },
       "width": {
         "title": "Širina trake",
         "desc": "Postavite širinu trake kao postotak"
@@ -504,8 +525,12 @@
         "style": {
           "title": "Stil kruga",
           "desc": "Vizualni izgled prstenova napretka",
-          "wave": "Val",
-          "circle": "Krug"
+          "wave": "Prstenovi ispunjeni tekućim valom",
+          "circle": "Čisti prstenovi napretka",
+          "name": {
+            "wave": "Val",
+            "circle": "Krug"
+          }
         },
         "items": {
           "title": "Statistika",
@@ -642,6 +667,20 @@
         "preview": {
           "title": "Naslov pjesme",
           "author": "Izvođač pjesme"
+        },
+        "style": {
+          "title": "Stil medija",
+          "desc": "Odaberite vizualni izgled medijskog modula",
+          "name": {
+            "classic": "Klasično",
+            "ambient": "Ambijentalno"
+          },
+          "classic": "Minijatura albuma na običnoj pozadini",
+          "ambient": "Zamućeni omot albuma iza kontrola"
+        },
+        "art_background": {
+          "title": "Prikaži omot u pozadini",
+          "desc": "Ispuni modul zamućenim omotom albuma iza kontrola"
         }
       },
       "thickness": {
@@ -998,6 +1037,9 @@
       "orientation": {
         "horizontal": "Vodoravno",
         "vertical": "Okomito"
+      },
+      "keyboard_layout": {
+        "title": "Prikaži pri promjeni rasporeda tipkovnice"
       }
     },
     "common": {
@@ -1835,7 +1877,8 @@
       "lumen": "Lumen",
       "lyrics": "Tekst pjesme",
       "simpleLyrics": "Jednostavni tekstovi pjesama",
-      "circle": "Krug"
+      "circle": "Krug",
+      "graph": "Grafikon"
     },
     "presets": {
       "minimal": {
@@ -1872,7 +1915,9 @@
       "lineThickness": "Debljina",
       "visualizerStyle": "Stil vizualizatora",
       "hideText": "Sakrij tekst",
-      "textContent": "Tekst"
+      "textContent": "Tekst",
+      "updateRate": "Osvježavanja u minuti",
+      "perMinute": "/min"
     },
     "align": {
       "left": "Lijevo",
@@ -1888,6 +1933,10 @@
     },
     "text": {
       "placeholder": "Unesite tekst"
+    },
+    "usageGraph": {
+      "average": "Prosj.",
+      "peak": "Vrh"
     }
   },
   "cli": {
@@ -2270,5 +2319,8 @@
       "today": "Danas magla. Najviša {max}, najniža {min}.",
       "tomorrow": "Sutra magla. Najviša {max}, najniža {min}."
     }
+  },
+  "osd": {
+    "keyboard_layout": "Raspored tipkovnice"
   }
 }

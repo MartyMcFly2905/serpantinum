@@ -115,6 +115,23 @@
         "title": "Fechar com clique direito",
         "desc": "Dispensar uma notificação com o clique direito"
       },
+      "timeout_low": {
+        "title": "Tempo para urgência baixa",
+        "desc": "Quanto tempo as notificações de urgência baixa ficam na tela"
+      },
+      "timeout_normal": {
+        "title": "Tempo normal",
+        "desc": "Quanto tempo as notificações normais ficam na tela"
+      },
+      "timeout_critical": {
+        "title": "Tempo para urgentes",
+        "desc": "Quanto tempo as notificações urgentes ficam na tela"
+      },
+      "override_timeouts": {
+        "title": "Substituir tempos dos aplicativos",
+        "desc": "Por padrão, os valores acima só são usados quando o aplicativo não define o próprio tempo. Ative para usá-los sempre"
+      },
+      "timeout_never": "Nunca",
       "test": "Testar notificação",
       "test_desc": "Esta é uma notificação de teste"
     },
@@ -402,6 +419,10 @@
         "left": "Esquerda",
         "right": "Direita"
       },
+      "monitors": {
+        "title": "Monitores",
+        "desc": "Selecione em quais monitores exibir a barra"
+      },
       "width": {
         "title": "Largura da barra",
         "desc": "Define a largura da barra em porcentagem"
@@ -504,8 +525,12 @@
         "style": {
           "title": "Estilo do círculo",
           "desc": "Aparência visual dos anéis de progresso",
-          "wave": "Onda",
-          "circle": "Círculo"
+          "wave": "Anéis preenchidos com uma onda líquida",
+          "circle": "Anéis de progresso simples",
+          "name": {
+            "wave": "Onda",
+            "circle": "Círculo"
+          }
         },
         "items": {
           "title": "Estatísticas",
@@ -642,6 +667,20 @@
         "preview": {
           "title": "Título da música",
           "author": "Song author"
+        },
+        "style": {
+          "title": "Estilo de mídia",
+          "desc": "Escolha a aparência visual do módulo de mídia",
+          "name": {
+            "classic": "Clássico",
+            "ambient": "Ambiente"
+          },
+          "classic": "Miniatura do álbum sobre um fundo simples",
+          "ambient": "Capa desfocada atrás dos controles"
+        },
+        "art_background": {
+          "title": "Mostrar capa no fundo",
+          "desc": "Preenche o módulo com a capa desfocada atrás dos controles"
         }
       },
       "thickness": {
@@ -998,6 +1037,9 @@
       "orientation": {
         "horizontal": "Horizontal",
         "vertical": "Vertical"
+      },
+      "keyboard_layout": {
+        "title": "Exibir ao trocar o layout do teclado"
       }
     },
     "common": {
@@ -1835,7 +1877,8 @@
       "lumen": "Lúmen",
       "lyrics": "Letra",
       "simpleLyrics": "Letra simples",
-      "circle": "Círculo"
+      "circle": "Círculo",
+      "graph": "Gráfico"
     },
     "presets": {
       "minimal": {
@@ -1872,7 +1915,9 @@
       "hideText": "Ocultar texto",
       "lineThickness": "Espessura",
       "usageStyle": "Estilo",
-      "visualizerStyle": "Estilo do visualizador"
+      "visualizerStyle": "Estilo do visualizador",
+      "updateRate": "Atualizações por minuto",
+      "perMinute": "/min"
     },
     "align": {
       "left": "Esquerda",
@@ -1888,6 +1933,10 @@
     "style": {
       "circle": "Círculo",
       "wave": "Onda"
+    },
+    "usageGraph": {
+      "average": "Média",
+      "peak": "Pico"
     }
   },
   "cli": {
@@ -2270,5 +2319,8 @@
   },
   "common": {
     "select": "Selecionar..."
+  },
+  "osd": {
+    "keyboard_layout": "Layout do teclado"
   }
 }

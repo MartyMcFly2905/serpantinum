@@ -115,6 +115,23 @@
         "title": "Mit Rechtsklick schließen",
         "desc": "Benachrichtigung per Rechtsklick schließen"
       },
+      "timeout_low": {
+        "title": "Zeitlimit für niedrige Dringlichkeit",
+        "desc": "Wie lange Benachrichtigungen mit niedriger Dringlichkeit angezeigt werden"
+      },
+      "timeout_normal": {
+        "title": "Normales Zeitlimit",
+        "desc": "Wie lange normale Benachrichtigungen angezeigt werden"
+      },
+      "timeout_critical": {
+        "title": "Zeitlimit für dringende",
+        "desc": "Wie lange dringende Benachrichtigungen angezeigt werden"
+      },
+      "override_timeouts": {
+        "title": "App-Zeitlimits überschreiben",
+        "desc": "Standardmäßig werden die obigen Werte nur verwendet, wenn die App kein eigenes Zeitlimit festlegt. Aktivieren, um sie immer zu verwenden"
+      },
+      "timeout_never": "Nie",
       "test": "Benachrichtigung testen",
       "test_desc": "Dies ist eine Testbenachrichtigung"
     },
@@ -402,6 +419,10 @@
         "left": "Links",
         "right": "Rechts"
       },
+      "monitors": {
+        "title": "Monitore",
+        "desc": "Auswählen, auf welchen Monitoren die Leiste angezeigt wird"
+      },
       "width": {
         "title": "Leistenbreite",
         "desc": "Breite der Leiste in Prozent festlegen"
@@ -504,8 +525,12 @@
         "style": {
           "title": "Kreis-Stil",
           "desc": "Erscheinungsbild der Fortschrittsringe",
-          "wave": "Welle",
-          "circle": "Kreis"
+          "wave": "Ringe mit flüssiger Welle gefüllt",
+          "circle": "Schlichte Fortschrittsringe",
+          "name": {
+            "wave": "Welle",
+            "circle": "Kreis"
+          }
         },
         "items": {
           "title": "Werte",
@@ -642,6 +667,20 @@
         "preview": {
           "title": "Songtitel",
           "author": "Song author"
+        },
+        "style": {
+          "title": "Medienstil",
+          "desc": "Wählen Sie das visuelle Design des Medienmoduls",
+          "name": {
+            "classic": "Klassisch",
+            "ambient": "Ambient"
+          },
+          "classic": "Albumvorschau auf schlichtem Hintergrund",
+          "ambient": "Unscharfes Albumcover hinter den Schaltflächen"
+        },
+        "art_background": {
+          "title": "Cover im Hintergrund anzeigen",
+          "desc": "Füllt das Modul mit unscharfem Albumcover hinter den Schaltflächen"
         }
       },
       "thickness": {
@@ -999,6 +1038,9 @@
       "orientation": {
         "horizontal": "Horizontal",
         "vertical": "Vertikal"
+      },
+      "keyboard_layout": {
+        "title": "Bei Tastaturlayout-Wechsel anzeigen"
       }
     },
     "common": {
@@ -1836,7 +1878,8 @@
       "lumen": "Lumen",
       "lyrics": "Songtext",
       "simpleLyrics": "Einfacher Songtext",
-      "circle": "Kreis"
+      "circle": "Kreis",
+      "graph": "Diagramm"
     },
     "presets": {
       "minimal": {
@@ -1873,7 +1916,9 @@
       "hideText": "Text ausblenden",
       "lineThickness": "Stärke",
       "usageStyle": "Stil",
-      "visualizerStyle": "Visualizer-Stil"
+      "visualizerStyle": "Visualizer-Stil",
+      "updateRate": "Aktualisierungen pro Minute",
+      "perMinute": "/min"
     },
     "align": {
       "left": "Links",
@@ -1889,6 +1934,10 @@
     "style": {
       "circle": "Kreis",
       "wave": "Welle"
+    },
+    "usageGraph": {
+      "average": "Mittel",
+      "peak": "Spitze"
     }
   },
   "cli": {
@@ -2271,5 +2320,8 @@
   },
   "common": {
     "select": "Auswählen..."
+  },
+  "osd": {
+    "keyboard_layout": "Tastaturlayout"
   }
 }

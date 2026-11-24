@@ -115,6 +115,23 @@
         "title": "오른쪽 클릭으로 닫기",
         "desc": "마우스 오른쪽 클릭으로 알림을 닫습니다"
       },
+      "timeout_low": {
+        "title": "낮은 긴급도 시간 제한",
+        "desc": "낮은 긴급도 알림이 화면에 표시되는 시간"
+      },
+      "timeout_normal": {
+        "title": "일반 시간 제한",
+        "desc": "일반 알림이 화면에 표시되는 시간"
+      },
+      "timeout_critical": {
+        "title": "긴급 시간 제한",
+        "desc": "긴급 알림이 화면에 표시되는 시간"
+      },
+      "override_timeouts": {
+        "title": "앱 시간 제한 무시",
+        "desc": "기본적으로 위의 값은 앱이 자체 시간 제한을 지정하지 않을 때만 사용됩니다. 켜면 항상 사용합니다"
+      },
+      "timeout_never": "사용 안 함",
       "test": "알림 테스트",
       "test_desc": "이것은 테스트 알림입니다"
     },
@@ -402,6 +419,10 @@
         "left": "왼쪽",
         "right": "오른쪽"
       },
+      "monitors": {
+        "title": "모니터",
+        "desc": "바를 표시할 모니터 선택"
+      },
       "width": {
         "title": "바 너비",
         "desc": "바의 너비를 백분율로 설정합니다"
@@ -504,8 +525,12 @@
         "style": {
           "title": "원 스타일",
           "desc": "진행률 링의 시각적 모양",
-          "wave": "웨이브",
-          "circle": "원형"
+          "wave": "액체 물결로 채워진 링",
+          "circle": "깔끔한 진행률 링",
+          "name": {
+            "wave": "웨이브",
+            "circle": "원형"
+          }
         },
         "items": {
           "title": "통계",
@@ -642,6 +667,20 @@
         "preview": {
           "title": "곡 제목",
           "author": "Song author"
+        },
+        "style": {
+          "title": "미디어 스타일",
+          "desc": "미디어 모듈의 시각적 모양을 선택합니다",
+          "name": {
+            "classic": "클래식",
+            "ambient": "앰비언트"
+          },
+          "classic": "단색 배경의 앨범 썸네일",
+          "ambient": "컨트롤 뒤의 흐린 앨범 아트"
+        },
+        "art_background": {
+          "title": "배경에 아트 표시",
+          "desc": "컨트롤 뒤를 흐린 앨범 아트로 채웁니다"
         }
       },
       "thickness": {
@@ -998,6 +1037,9 @@
       "orientation": {
         "horizontal": "가로",
         "vertical": "세로"
+      },
+      "keyboard_layout": {
+        "title": "키보드 레이아웃 전환 시 표시"
       }
     },
     "common": {
@@ -1835,7 +1877,8 @@
       "lumen": "루멘",
       "lyrics": "가사",
       "simpleLyrics": "단순 가사",
-      "circle": "원"
+      "circle": "원",
+      "graph": "그래프"
     },
     "presets": {
       "minimal": {
@@ -1872,7 +1915,9 @@
       "hideText": "텍스트 숨기기",
       "lineThickness": "두께",
       "usageStyle": "스타일",
-      "visualizerStyle": "비주얼라이저 스타일"
+      "visualizerStyle": "비주얼라이저 스타일",
+      "updateRate": "분당 업데이트",
+      "perMinute": "/분"
     },
     "align": {
       "left": "왼쪽",
@@ -1888,6 +1933,10 @@
     "style": {
       "circle": "원",
       "wave": "파형"
+    },
+    "usageGraph": {
+      "average": "평균",
+      "peak": "최고"
     }
   },
   "cli": {
@@ -2270,5 +2319,8 @@
   },
   "common": {
     "select": "선택..."
+  },
+  "osd": {
+    "keyboard_layout": "키보드 레이아웃"
   }
 }

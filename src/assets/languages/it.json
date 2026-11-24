@@ -115,6 +115,23 @@
         "title": "Chiudi con clic destro",
         "desc": "Chiudi una notifica con il clic destro"
       },
+      "timeout_low": {
+        "title": "Timeout urgenza bassa",
+        "desc": "Per quanto tempo le notifiche a bassa urgenza restano sullo schermo"
+      },
+      "timeout_normal": {
+        "title": "Timeout normale",
+        "desc": "Per quanto tempo le notifiche normali restano sullo schermo"
+      },
+      "timeout_critical": {
+        "title": "Timeout urgenti",
+        "desc": "Per quanto tempo le notifiche urgenti restano sullo schermo"
+      },
+      "override_timeouts": {
+        "title": "Ignora i timeout delle app",
+        "desc": "Per impostazione predefinita i valori sopra vengono usati solo se l'app non imposta un proprio timeout. Attiva per usarli sempre"
+      },
+      "timeout_never": "Mai",
       "test": "Prova notifica",
       "test_desc": "Questa è una notifica di prova"
     },
@@ -402,6 +419,10 @@
         "left": "A sinistra",
         "right": "A destra"
       },
+      "monitors": {
+        "title": "Monitor",
+        "desc": "Seleziona su quali monitor mostrare la barra"
+      },
       "width": {
         "title": "Larghezza barra",
         "desc": "Imposta come percentuale la larghezza della barra"
@@ -504,8 +525,12 @@
         "style": {
           "title": "Stile del cerchio",
           "desc": "Aspetto visivo degli anelli di avanzamento",
-          "wave": "Onda",
-          "circle": "Cerchio"
+          "wave": "Anelli riempiti da un'onda liquida",
+          "circle": "Anelli di avanzamento essenziali",
+          "name": {
+            "wave": "Onda",
+            "circle": "Cerchio"
+          }
         },
         "items": {
           "title": "Statistiche",
@@ -642,6 +667,20 @@
         "preview": {
           "title": "Titolo del brano",
           "author": "Song author"
+        },
+        "style": {
+          "title": "Stile media",
+          "desc": "Scegli l'aspetto visivo del modulo multimediale",
+          "name": {
+            "classic": "Classico",
+            "ambient": "Ambient"
+          },
+          "classic": "Miniatura dell'album su sfondo semplice",
+          "ambient": "Copertina sfocata dietro i controlli"
+        },
+        "art_background": {
+          "title": "Mostra copertina sullo sfondo",
+          "desc": "Riempie il modulo con la copertina sfocata dietro i controlli"
         }
       },
       "thickness": {
@@ -998,6 +1037,9 @@
       "orientation": {
         "horizontal": "Orizzontale",
         "vertical": "Verticale"
+      },
+      "keyboard_layout": {
+        "title": "Mostra al cambio layout tastiera"
       }
     },
     "common": {
@@ -1854,6 +1896,7 @@
       "lyrics": "Testo",
       "simpleLyrics": "Testo semplice",
       "circle": "Cerchio",
+      "graph": "Grafico",
       "month": "Mese",
       "agenda": "Agenda"
     },
@@ -1892,7 +1935,9 @@
       "hideText": "Nascondi testo",
       "lineThickness": "Spessore",
       "usageStyle": "Stile",
-      "visualizerStyle": "Stile del visualizzatore"
+      "visualizerStyle": "Stile del visualizzatore",
+      "updateRate": "Aggiornamenti al minuto",
+      "perMinute": "/min"
     },
     "align": {
       "left": "Sinistra",
@@ -1908,6 +1953,10 @@
     "style": {
       "circle": "Cerchio",
       "wave": "Onda"
+    },
+    "usageGraph": {
+      "average": "Media",
+      "peak": "Picco"
     },
     "pomodoro": {
       "name": "Pomodoro Timer",
@@ -2328,6 +2377,9 @@
   },
   "common": {
     "select": "Seleziona..."
+  },
+  "osd": {
+    "keyboard_layout": "Layout tastiera"
   },
   "pomodoro": {
     "phase": {

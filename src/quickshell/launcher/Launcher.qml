@@ -19,7 +19,9 @@ PanelWindow {
 
     WlrLayershell.namespace: "qs-applauncher"
     WlrLayershell.layer: WlrLayer.Overlay
-    focusable: launcherWindow.isVisible
+    WlrLayershell.keyboardFocus: launcherWindow.isVisible
+        ? (Compositor.name === "mango" ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.OnDemand)
+        : WlrKeyboardFocus.None
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
 
@@ -290,7 +292,7 @@ PanelWindow {
 
     readonly property bool isFullscreenActive: isOsdFullscreen || isToplevelFullscreen || isHyprlandFullscreen
 
-    readonly property bool isBarEffectivelyHidden: barAutohide || isFullscreenActive
+    readonly property bool isBarEffectivelyHidden: barAutohide || isFullscreenActive || !Config.isBarEnabledOnScreen(launcherWindow.screen)
 
     property real barHeight: {
         let dummy = configRevision;

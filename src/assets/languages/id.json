@@ -115,6 +115,23 @@
         "title": "Tutup dengan klik kanan",
         "desc": "Tutup notifikasi dengan klik kanan"
       },
+      "timeout_low": {
+        "title": "Batas waktu urgensi rendah",
+        "desc": "Berapa lama notifikasi urgensi rendah tetap di layar"
+      },
+      "timeout_normal": {
+        "title": "Batas waktu normal",
+        "desc": "Berapa lama notifikasi biasa tetap di layar"
+      },
+      "timeout_critical": {
+        "title": "Batas waktu mendesak",
+        "desc": "Berapa lama notifikasi mendesak tetap di layar"
+      },
+      "override_timeouts": {
+        "title": "Timpa batas waktu aplikasi",
+        "desc": "Secara bawaan, nilai di atas hanya dipakai saat aplikasi tidak menetapkan batas waktunya sendiri. Aktifkan untuk selalu memakainya"
+      },
+      "timeout_never": "Tidak pernah",
       "test": "Uji notifikasi",
       "test_desc": "Ini adalah notifikasi uji coba"
     },
@@ -402,6 +419,10 @@
         "left": "Kiri",
         "right": "Kanan"
       },
+      "monitors": {
+        "title": "Monitor",
+        "desc": "Pilih monitor mana yang menampilkan bilah"
+      },
       "width": {
         "title": "Lebar bilah",
         "desc": "Atur lebar bilah sebagai persentase"
@@ -504,8 +525,12 @@
         "style": {
           "title": "Gaya lingkaran",
           "desc": "Tampilan visual cincin progres",
-          "wave": "Gelombang",
-          "circle": "Lingkaran"
+          "wave": "Cincin terisi gelombang cair",
+          "circle": "Cincin progres sederhana",
+          "name": {
+            "wave": "Gelombang",
+            "circle": "Lingkaran"
+          }
         },
         "items": {
           "title": "Statistik",
@@ -642,6 +667,20 @@
         "preview": {
           "title": "Judul lagu",
           "author": "Song author"
+        },
+        "style": {
+          "title": "Gaya media",
+          "desc": "Pilih tampilan visual untuk modul media",
+          "name": {
+            "classic": "Klasik",
+            "ambient": "Ambien"
+          },
+          "classic": "Gambar mini album di latar polos",
+          "ambient": "Sampul album buram di balik kontrol"
+        },
+        "art_background": {
+          "title": "Tampilkan sampul di latar belakang",
+          "desc": "Isi modul dengan sampul album buram di balik kontrol"
         }
       },
       "thickness": {
@@ -998,6 +1037,9 @@
       "orientation": {
         "horizontal": "Horizontal",
         "vertical": "Vertikal"
+      },
+      "keyboard_layout": {
+        "title": "Tampilkan saat tata letak papan ketik berubah"
       }
     },
     "common": {
@@ -1835,7 +1877,8 @@
       "lumen": "Lumen",
       "lyrics": "Lirik",
       "simpleLyrics": "Lirik Sederhana",
-      "circle": "Lingkaran"
+      "circle": "Lingkaran",
+      "graph": "Grafik"
     },
     "presets": {
       "minimal": {
@@ -1872,7 +1915,9 @@
       "hideText": "Sembunyikan teks",
       "lineThickness": "Ketebalan",
       "usageStyle": "Gaya",
-      "visualizerStyle": "Gaya visualizer"
+      "visualizerStyle": "Gaya visualizer",
+      "updateRate": "Pembaruan per menit",
+      "perMinute": "/mnt"
     },
     "align": {
       "left": "Kiri",
@@ -1888,6 +1933,10 @@
     "style": {
       "circle": "Lingkaran",
       "wave": "Gelombang"
+    },
+    "usageGraph": {
+      "average": "Rata-rata",
+      "peak": "Puncak"
     }
   },
   "cli": {
@@ -2270,5 +2319,8 @@
   },
   "common": {
     "select": "Pilih..."
+  },
+  "osd": {
+    "keyboard_layout": "Tata letak papan ketik"
   }
 }

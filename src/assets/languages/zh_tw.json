@@ -115,6 +115,23 @@
         "title": "按右鍵關閉",
         "desc": "按滑鼠右鍵即可關閉通知"
       },
+      "timeout_low": {
+        "title": "低優先級逾時",
+        "desc": "低優先級通知在螢幕上停留的時間"
+      },
+      "timeout_normal": {
+        "title": "一般逾時",
+        "desc": "一般通知在螢幕上停留的時間"
+      },
+      "timeout_critical": {
+        "title": "緊急逾時",
+        "desc": "緊急通知在螢幕上停留的時間"
+      },
+      "override_timeouts": {
+        "title": "覆寫應用程式逾時",
+        "desc": "預設情況下，僅在應用程式未設定自己的逾時時才使用上方的值。開啟後將一律使用這些值"
+      },
+      "timeout_never": "永不",
       "test": "測試通知",
       "test_desc": "這是一則測試通知"
     },
@@ -402,6 +419,10 @@
         "left": "左側",
         "right": "右側"
       },
+      "monitors": {
+        "title": "顯示器",
+        "desc": "選擇要顯示狀態列的顯示器"
+      },
       "width": {
         "title": "狀態列寬度",
         "desc": "以百分比設定狀態列寬度"
@@ -504,8 +525,12 @@
         "style": {
           "title": "圓環樣式",
           "desc": "進度環的視覺外觀",
-          "wave": "波形",
-          "circle": "圓環"
+          "wave": "充滿液態波浪的圓環",
+          "circle": "簡潔的進度圓環",
+          "name": {
+            "wave": "波形",
+            "circle": "圓環"
+          }
         },
         "items": {
           "title": "統計",
@@ -642,6 +667,20 @@
         "preview": {
           "title": "歌曲標題",
           "author": "Song author"
+        },
+        "style": {
+          "title": "媒體樣式",
+          "desc": "選擇媒體模組的視覺外觀",
+          "name": {
+            "classic": "傳統",
+            "ambient": "氛圍"
+          },
+          "classic": "純色背景上的專輯縮圖",
+          "ambient": "控制按鈕後方的模糊專輯封面"
+        },
+        "art_background": {
+          "title": "在背景顯示封面",
+          "desc": "在控制按鈕後方以模糊專輯封面填滿模組"
         }
       },
       "thickness": {
@@ -998,6 +1037,9 @@
       "orientation": {
         "horizontal": "水平",
         "vertical": "垂直"
+      },
+      "keyboard_layout": {
+        "title": "切換鍵盤配置時顯示"
       }
     },
     "common": {
@@ -1835,7 +1877,8 @@
       "lumen": "Lumen",
       "lyrics": "歌詞",
       "simpleLyrics": "簡約歌詞",
-      "circle": "圓形"
+      "circle": "圓形",
+      "graph": "圖表"
     },
     "presets": {
       "minimal": {
@@ -1872,7 +1915,9 @@
       "hideText": "隱藏文字",
       "lineThickness": "粗細",
       "usageStyle": "樣式",
-      "visualizerStyle": "視覺化器樣式"
+      "visualizerStyle": "視覺化器樣式",
+      "updateRate": "每分鐘更新次數",
+      "perMinute": "/分"
     },
     "align": {
       "left": "靠左",
@@ -1888,6 +1933,10 @@
     "style": {
       "circle": "圓形",
       "wave": "波形"
+    },
+    "usageGraph": {
+      "average": "平均",
+      "peak": "峰值"
     }
   },
   "cli": {
@@ -2270,5 +2319,8 @@
   },
   "common": {
     "select": "選取..."
+  },
+  "osd": {
+    "keyboard_layout": "鍵盤配置"
   }
 }

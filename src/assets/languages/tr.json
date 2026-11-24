@@ -115,6 +115,23 @@
         "title": "Sağ tıkla kapat",
         "desc": "Bildirimi sağ tıklayarak kapat"
       },
+      "timeout_low": {
+        "title": "Düşük öncelik zaman aşımı",
+        "desc": "Düşük öncelikli bildirimlerin ekranda ne kadar kalacağı"
+      },
+      "timeout_normal": {
+        "title": "Normal zaman aşımı",
+        "desc": "Normal bildirimlerin ekranda ne kadar kalacağı"
+      },
+      "timeout_critical": {
+        "title": "Acil zaman aşımı",
+        "desc": "Acil bildirimlerin ekranda ne kadar kalacağı"
+      },
+      "override_timeouts": {
+        "title": "Uygulama zaman aşımlarını geçersiz kıl",
+        "desc": "Varsayılan olarak yukarıdaki değerler yalnızca uygulama kendi zaman aşımını belirtmediğinde kullanılır. Her zaman kullanmak için açın"
+      },
+      "timeout_never": "Asla",
       "test": "Test bildirimi",
       "test_desc": "Bu bir test bildirimidir"
     },
@@ -402,6 +419,10 @@
         "left": "Sol",
         "right": "Sağ"
       },
+      "monitors": {
+        "title": "Monitörler",
+        "desc": "Çubuğun hangi monitörlerde görüntüleneceğini seçin"
+      },
       "width": {
         "title": "Çubuk genişliği",
         "desc": "Çubuk genişliğini yüzde olarak ayarlayın"
@@ -504,8 +525,12 @@
         "style": {
           "title": "Halka stili",
           "desc": "İlerleme halkalarının görsel görünümü",
-          "wave": "Dalga",
-          "circle": "Daire"
+          "wave": "Sıvı dalgayla dolu halkalar",
+          "circle": "Sade ilerleme halkaları",
+          "name": {
+            "wave": "Dalga",
+            "circle": "Daire"
+          }
         },
         "items": {
           "title": "İstatistikler",
@@ -642,6 +667,20 @@
         "preview": {
           "title": "Şarkı adı",
           "author": "Song author"
+        },
+        "style": {
+          "title": "Medya stili",
+          "desc": "Medya modülünün görsel görünümünü seçin",
+          "name": {
+            "classic": "Klasik",
+            "ambient": "Ambiyans"
+          },
+          "classic": "Sade arka planda albüm küçük resmi",
+          "ambient": "Denetimlerin ardında bulanık albüm kapağı"
+        },
+        "art_background": {
+          "title": "Kapağı arka planda göster",
+          "desc": "Modülü denetimlerin ardında bulanık albüm kapağıyla doldurun"
         }
       },
       "thickness": {
@@ -998,6 +1037,9 @@
       "orientation": {
         "horizontal": "Yatay",
         "vertical": "Dikey"
+      },
+      "keyboard_layout": {
+        "title": "Klavye düzeni değiştiğinde göster"
       }
     },
     "common": {
@@ -1835,7 +1877,8 @@
       "lumen": "Lumen",
       "lyrics": "Şarkı Sözleri",
       "simpleLyrics": "Basit Şarkı Sözleri",
-      "circle": "Daire"
+      "circle": "Daire",
+      "graph": "Grafik"
     },
     "presets": {
       "minimal": {
@@ -1872,7 +1915,9 @@
       "hideText": "Metni gizle",
       "lineThickness": "Kalınlık",
       "usageStyle": "Stil",
-      "visualizerStyle": "Görselleştirici stili"
+      "visualizerStyle": "Görselleştirici stili",
+      "updateRate": "Dakikadaki güncelleme",
+      "perMinute": "/dk"
     },
     "align": {
       "left": "Sol",
@@ -1888,6 +1933,10 @@
     "style": {
       "circle": "Daire",
       "wave": "Dalga"
+    },
+    "usageGraph": {
+      "average": "Ort.",
+      "peak": "Zirve"
     }
   },
   "cli": {
@@ -2270,5 +2319,8 @@
   },
   "common": {
     "select": "Seç..."
+  },
+  "osd": {
+    "keyboard_layout": "Klavye düzeni"
   }
 }

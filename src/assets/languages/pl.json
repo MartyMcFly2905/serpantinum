@@ -596,7 +596,8 @@
       "lumen": "Lumen",
       "lyrics": "Tekst utworu",
       "simpleLyrics": "Prosty tekst utworu",
-      "circle": "Koło"
+      "circle": "Koło",
+      "graph": "Wykres"
     },
     "presets": {
       "minimal": {
@@ -633,7 +634,9 @@
       "hideText": "Ukryj tekst",
       "lineThickness": "Grubość",
       "usageStyle": "Styl",
-      "visualizerStyle": "Styl wizualizatora"
+      "visualizerStyle": "Styl wizualizatora",
+      "updateRate": "Odświeżenia na minutę",
+      "perMinute": "/min"
     },
     "align": {
       "left": "Do lewej",
@@ -649,6 +652,10 @@
     "style": {
       "circle": "Koło",
       "wave": "Fala"
+    },
+    "usageGraph": {
+      "average": "Śr.",
+      "peak": "Szczyt"
     }
   },
   "cli": {
@@ -1004,6 +1011,23 @@
         "title": "Zamykaj prawym przyciskiem",
         "desc": "Zamykaj powiadomienie prawym przyciskiem myszy"
       },
+      "timeout_low": {
+        "title": "Limit czasu niskiej pilności",
+        "desc": "Jak długo powiadomienia o niskiej pilności pozostają na ekranie"
+      },
+      "timeout_normal": {
+        "title": "Normalny limit czasu",
+        "desc": "Jak długo zwykłe powiadomienia pozostają na ekranie"
+      },
+      "timeout_critical": {
+        "title": "Limit czasu pilnych",
+        "desc": "Jak długo pilne powiadomienia pozostają na ekranie"
+      },
+      "override_timeouts": {
+        "title": "Zastępuj limity czasu aplikacji",
+        "desc": "Domyślnie powyższe wartości są używane tylko wtedy, gdy aplikacja nie ustawia własnego limitu czasu. Włącz, aby używać ich zawsze"
+      },
+      "timeout_never": "Nigdy",
       "test": "Powiadomienie testowe",
       "test_desc": "To jest powiadomienie testowe"
     },
@@ -1291,6 +1315,10 @@
         "left": "Lewo",
         "right": "Prawo"
       },
+      "monitors": {
+        "title": "Monitory",
+        "desc": "Wybierz, na których monitorach wyświetlać pasek"
+      },
       "width": {
         "title": "Szerokość paska",
         "desc": "Ustaw szerokość paska w procentach"
@@ -1393,8 +1421,12 @@
         "style": {
           "title": "Styl okręgu",
           "desc": "Wygląd wizualny pierścieni postępu",
-          "wave": "Fala",
-          "circle": "Okrąg"
+          "wave": "Pierścienie wypełnione płynną falą",
+          "circle": "Proste pierścienie postępu",
+          "name": {
+            "wave": "Fala",
+            "circle": "Okrąg"
+          }
         },
         "items": {
           "title": "Statystyki",
@@ -1531,6 +1563,20 @@
         "preview": {
           "title": "Tytuł utworu",
           "author": "Song author"
+        },
+        "style": {
+          "title": "Styl multimediów",
+          "desc": "Wybierz wygląd wizualny modułu multimediów",
+          "name": {
+            "classic": "Klasyczny",
+            "ambient": "Ambient"
+          },
+          "classic": "Miniatura albumu na zwykłym tle",
+          "ambient": "Rozmyta okładka albumu za przyciskami"
+        },
+        "art_background": {
+          "title": "Pokaż okładkę w tle",
+          "desc": "Wypełnia moduł rozmytą okładką albumu za przyciskami"
         }
       },
       "thickness": {
@@ -1887,6 +1933,9 @@
       "orientation": {
         "horizontal": "Pozioma",
         "vertical": "Pionowa"
+      },
+      "keyboard_layout": {
+        "title": "Pokaż przy zmianie układu klawiatury"
       }
     },
     "common": {
@@ -2270,5 +2319,8 @@
   },
   "common": {
     "select": "Wybierz..."
+  },
+  "osd": {
+    "keyboard_layout": "Układ klawiatury"
   }
 }

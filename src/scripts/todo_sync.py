@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Serpantinum Todo Sync & CSV Engine
-Manages persistent tasks, intelligent date parsing/grouping, and full Todoist CSV import/export.
+Serpantinum Todo Sync, Todoist API v1 Bidirectional Engine & CSV Manager
+Manages persistent tasks, intelligent date parsing/grouping, Todoist API v1
+two-way sync (with offline command queue), and full Todoist CSV import/export.
 """
 
 import sys
@@ -10,11 +11,17 @@ import re
 import csv
 import json
 import time
+import uuid
+import ssl
+import urllib.request
+import urllib.error
 import subprocess
 from datetime import datetime, date, timedelta
 
 CONFIG_DIR = os.path.expanduser(os.environ.get("XDG_CONFIG_HOME", "~/.config") + "/serpantinum")
 TODOS_FILE = os.path.join(CONFIG_DIR, "todos.json")
+TODOIST_TOKEN_FILE = os.path.join(CONFIG_DIR, "todoist_token.json")
+TODOIST_SYNC_URL = "https://api.todoist.com/api/v1/sync"
 
 MONTHS = {
     "gen": 1, "jan": 1, "gennaio": 1, "january": 1,
@@ -46,13 +53,19 @@ WEEKDAY_NAMES = {
 
 TRUE_VALUES = {"1", "true", "yes", "si", "sì", "done", "x", "checked", "completato", "fatto", "t", "y"}
 
+
 def ensure_config_dir():
     os.makedirs(CONFIG_DIR, exist_ok=True)
+
+
+# ==============================================================================
+# DATE PARSING & NORMALIZATION
+# ==============================================================================
 
 def parse_natural_date(raw_str, ref_date=None):
     """
     Parses natural language date strings (Italian & English) or standard ISO dates.
-    Returns (date_obj, time_str) or (None, None).
+    Returns (date_obj, time_str) or (None, "").
     """
     if not raw_str or not str(raw_str).strip():
         return None, ""
@@ -60,7 +73,19 @@ def parse_natural_date(raw_str, ref_date=None):
     if ref_date is None:
         ref_date = date.today()
 
-    s = str(raw_str).strip().lower()
+    s = str(raw_str).strip()
+
+    # Handle ISO 8601 datetime with 'T' (e.g. 2026-11-26T14:30:00Z or 2026-11-26T14:30:00)
+    m_iso_dt = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})[T ](\d{1,2}):(\d{2})", s)
+    if m_iso_dt:
+        try:
+            d_obj = date(int(m_iso_dt.group(1)), int(m_iso_dt.group(2)), int(m_iso_dt.group(3)))
+            t_str = f"{int(m_iso_dt.group(4)):02d}:{m_iso_dt.group(5)}"
+            return d_obj, t_str
+        except ValueError:
+            pass
+
+    s = s.lower()
 
     # Extract time component if present (e.g. 14:30 or 2:30pm)
     time_part = ""
@@ -95,6 +120,11 @@ def parse_natural_date(raw_str, ref_date=None):
     if s in ("dopodomani", "day after tomorrow"):
         return ref_date + timedelta(days=2), time_part
 
+    # Relative +N days
+    m_rel = re.match(r"^\+\s*(\d+)\s*(?:d|dd|g|gg|days?|giorni?)?$", s)
+    if m_rel:
+        return ref_date + timedelta(days=int(m_rel.group(1))), time_part
+
     # Weekday check (e.g. "venerdì", "next friday")
     is_next = "next" in s or "prossim" in s
     for w_name, w_idx in WEEKDAY_NAMES.items():
@@ -120,133 +150,170 @@ def parse_natural_date(raw_str, ref_date=None):
         except ValueError:
             pass
 
-    # Format like "15 nov", "15 novembre 2026", "nov 15"
-    tokens = re.findall(r"[a-zA-Zà-ù]+|\d+", s)
-    if len(tokens) >= 2:
-        d_val = None
-        m_val = None
-        y_val = ref_date.year
-        for tok in tokens:
-            if tok.isdigit():
-                val = int(tok)
-                if val > 1900:
-                    y_val = val
-                elif d_val is None and 1 <= val <= 31:
-                    d_val = val
-            elif tok in MONTHS:
-                m_val = MONTHS[tok]
+    # Short European format (DD/MM)
+    m_short_eur = re.match(r"^(\d{1,2})[-/.](\d{1,2})$", s)
+    if m_short_eur:
+        try:
+            day_val = int(m_short_eur.group(1))
+            mon_val = int(m_short_eur.group(2))
+            cand = date(ref_date.year, mon_val, day_val)
+            if cand < ref_date - timedelta(days=180):
+                cand = date(ref_date.year + 1, mon_val, day_val)
+            return cand, time_part
+        except ValueError:
+            pass
 
-        if d_val and m_val:
-            try:
-                # If date is earlier in the year and no year specified, assume current year or next
-                return date(y_val, m_val, d_val), time_part
-            except ValueError:
-                pass
+    # Named month: "15 nov 2026" or "15 nov" or "nov 15 2026"
+    m_dm = re.search(r"\b(\d{1,2})\s+([a-zà-ü]+)(?:\s+(\d{4}))?\b", s)
+    if m_dm and m_dm.group(2) in MONTHS:
+        try:
+            d_val = int(m_dm.group(1))
+            m_val = MONTHS[m_dm.group(2)]
+            y_val = int(m_dm.group(3)) if m_dm.group(3) else ref_date.year
+            cand = date(y_val, m_val, d_val)
+            if not m_dm.group(3) and cand < ref_date - timedelta(days=180):
+                cand = date(y_val + 1, m_val, d_val)
+            return cand, time_part
+        except ValueError:
+            pass
+
+    m_md = re.search(r"\b([a-zà-ü]+)\s+(\d{1,2})(?:,?\s+(\d{4}))?\b", s)
+    if m_md and m_md.group(1) in MONTHS:
+        try:
+            m_val = MONTHS[m_md.group(1)]
+            d_val = int(m_md.group(2))
+            y_val = int(m_md.group(3)) if m_md.group(3) else ref_date.year
+            cand = date(y_val, m_val, d_val)
+            if not m_md.group(3) and cand < ref_date - timedelta(days=180):
+                cand = date(y_val + 1, m_val, d_val)
+            return cand, time_part
+        except ValueError:
+            pass
 
     return None, time_part
 
-def compute_date_meta(date_obj, time_part, raw_str, today=None):
-    if today is None:
-        today = date.today()
 
-    if not date_obj:
+def compute_date_meta(d_obj, time_part="", raw_str="", ref_date=None):
+    if ref_date is None:
+        ref_date = date.today()
+
+    if d_obj is None:
         return {
             "due_date": "",
             "due_time": time_part or "",
-            "due_raw": (raw_str or "").strip(),
+            "due_raw": raw_str or "",
             "day_category": "nodate",
-            "relative_label": (raw_str or "").strip(),
+            "relative_label": raw_str or "",
             "days_diff": 999
         }
 
-    iso_date = date_obj.strftime("%Y-%m-%d")
-    diff = (date_obj - today).days
-
-    time_suffix = f" {time_part}" if time_part else ""
+    diff = (d_obj - ref_date).days
+    iso_str = d_obj.strftime("%Y-%m-%d")
 
     if diff < 0:
-        day_cat = "overdue"
+        cat = "overdue"
         if diff == -1:
-            rel = "Ieri" + time_suffix
+            rel = "Ieri"
         else:
-            rel = f"Scaduta ({abs(diff)} gg fa)"
+            rel = f"{d_obj.day} {MONTHS_ABBR_IT[d_obj.month]}"
     elif diff == 0:
-        day_cat = "today"
-        rel = "Oggi" + time_suffix
+        cat = "today"
+        rel = "Oggi"
     elif diff == 1:
-        day_cat = "tomorrow"
-        rel = "Domani" + time_suffix
-    elif 2 <= diff <= 6:
-        day_cat = "upcoming"
-        wk = WEEKDAYS_IT[date_obj.weekday()]
-        rel = f"{wk} {date_obj.day} {MONTHS_ABBR_IT[date_obj.month]}" + time_suffix
+        cat = "tomorrow"
+        rel = "Domani"
+    elif diff <= 7:
+        cat = "upcoming"
+        rel = f"{WEEKDAYS_IT[d_obj.weekday()]} {d_obj.day}"
     else:
-        day_cat = "future"
-        rel = f"{date_obj.day} {MONTHS_ABBR_IT[date_obj.month]}" + time_suffix
+        cat = "future"
+        rel = f"{d_obj.day} {MONTHS_ABBR_IT[d_obj.month]}"
+        if d_obj.year != ref_date.year:
+            rel += f" {d_obj.year}"
+
+    if time_part:
+        rel = f"{rel} {time_part}"
 
     return {
-        "due_date": iso_date,
+        "due_date": iso_str,
         "due_time": time_part or "",
-        "due_raw": (raw_str or "").strip(),
-        "day_category": day_cat,
+        "due_raw": raw_str or iso_str,
+        "day_category": cat,
         "relative_label": rel,
         "days_diff": diff
     }
 
-def normalize_priority(val):
+
+def normalize_priority(raw_prio):
     """
-    Normalizes priority into Todoist standards:
-    1 = P1 (Highest / Urgent / Red)
-    2 = P2 (High / Orange)
-    3 = P3 (Medium / Blue)
-    4 = P4 (Normal / Default)
+    Normalizes priority to UI scale:
+    1 = P1 (Urgent), 2 = P2 (High), 3 = P3 (Medium), 4 = P4 (Normal)
     """
-    if val is None or str(val).strip() == "":
-        return 4, "P4", "#a6adc8"
-    s = str(val).strip().lower()
-    if s in ("1", "p1", "urgent", "urgente", "critica", "max"):
+    s = str(raw_prio or "4").strip().lower()
+    if s in ("1", "p1", "urgent", "urgente", "high", "alta", "critical"):
         return 1, "P1", "#f38ba8"
-    if s in ("2", "p2", "high", "alta"):
+    if s in ("2", "p2", "medium-high", "alta-media"):
         return 2, "P2", "#fab387"
-    if s in ("3", "p3", "medium", "media", "med"):
+    if s in ("3", "p3", "medium", "media"):
         return 3, "P3", "#89b4fa"
     return 4, "P4", "#a6adc8"
 
-def extract_labels(content):
-    """
-    Extracts @label and #project from task content string.
-    """
+
+def ui_prio_to_todoist_api(ui_prio):
+    """Todoist API v1 uses 4=Urgent(P1), 3=High(P2), 2=Medium(P3), 1=Normal(P4)."""
+    try:
+        p = int(ui_prio)
+    except (ValueError, TypeError):
+        p = 4
+    return max(1, min(4, 5 - p))
+
+
+def todoist_api_to_ui_prio(api_prio):
+    """Converts Todoist API v1 priority (1..4) to UI priority (P1=1..P4=4)."""
+    try:
+        p = int(api_prio)
+    except (ValueError, TypeError):
+        p = 1
+    return max(1, min(4, 5 - p))
+
+
+def is_uncompletable_separator(text):
+    if not text:
+        return False
+    s = text.strip()
+    return s.startswith("* ") or s in ("---", "___", "***")
+
+
+def clean_uncompletable_title(text):
+    s = (text or "").strip()
+    if s.startswith("* "):
+        return s[2:].strip()
+    return s
+
+
+def extract_labels(text):
+    """Extracts @label tokens from task text and returns (labels_list, first_category)."""
+    if not text:
+        return [], ""
+    found = re.findall(r"@([a-zA-Z0-9_\-àèéìòù]+)", text)
     labels = []
-    category = ""
-    for match in re.finditer(r"@([\w\-]+)", content):
-        labels.append(match.group(1))
-    cat_match = re.search(r"#([\w\-]+)", content)
-    if cat_match:
-        category = cat_match.group(1)
-    return labels, category
+    for l in found:
+        if l not in labels:
+            labels.append(l)
+    return labels, (labels[0] if labels else "")
 
-def is_uncompletable_separator(title):
-    """
-    In Todoist, tasks starting with '* ' (asterisk + space) or '---' are uncompletable separator headers.
-    """
-    t = (title or "").strip()
-    if t.startswith("* ") or t in ("---", "___", "***"):
-        return True
-    return False
 
-def clean_uncompletable_title(title):
-    t = (title or "").strip()
-    if t.startswith("* "):
-        return t[2:].strip()
-    return t
+def strip_inline_labels(text):
+    """Removes inline @label tokens when pushing clean content to Todoist (labels sent separately)."""
+    if not text:
+        return ""
+    cleaned = re.sub(r"\s*@[a-zA-Z0-9_\-àèéìòù]+", "", text).strip()
+    return cleaned or text.strip()
+
 
 def refresh_task_dates(task, today=None):
-    """
-    Recomputes day_category and relative_label for an existing task.
-    """
     if today is None:
         today = date.today()
-
     due_date_str = task.get("due_date", "")
     time_part = task.get("due_time", "")
     raw_str = task.get("due_raw", "") or due_date_str
@@ -279,27 +346,386 @@ def refresh_task_dates(task, today=None):
         task["section_description"] = ""
     if "section_index" not in task:
         task["section_index"] = 0
+    if "source" not in task:
+        task["source"] = "todoist" if task.get("todoist_id") else "local"
     return task
 
-def load_todos():
+
+# ==============================================================================
+# TODOIST TOKEN & STATE MANAGEMENT (SECURE 0600)
+# ==============================================================================
+
+def load_todoist_cfg():
     ensure_config_dir()
-    today = date.today()
-    if os.path.isfile(TODOS_FILE):
+    if os.path.isfile(TODOIST_TOKEN_FILE):
         try:
-            with open(TODOS_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data, dict) and "todos" in data:
-                    todos = [refresh_task_dates(t, today) for t in data["todos"] if isinstance(t, dict)]
-                    data["todos"] = todos
-                    if "sections" not in data:
-                        data["sections"] = extract_sections_from_todos(todos)
-                    return data
-                elif isinstance(data, list):
-                    todos = [refresh_task_dates(t, today) for t in data if isinstance(t, dict)]
-                    return {"updated_at": int(time.time()), "sections": extract_sections_from_todos(todos), "todos": todos}
+            with open(TODOIST_TOKEN_FILE, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                if isinstance(cfg, dict):
+                    cfg.setdefault("api_token", "")
+                    cfg.setdefault("enabled", bool(cfg.get("api_token")))
+                    cfg.setdefault("project_id", "")
+                    cfg.setdefault("project_name", "Tutti i progetti")
+                    cfg.setdefault("user_name", "")
+                    cfg.setdefault("user_email", "")
+                    cfg.setdefault("last_sync", 0)
+                    cfg.setdefault("projects", [])
+                    cfg.setdefault("pending_commands", [])
+                    cfg.setdefault("sync_error", "")
+                    return cfg
         except Exception:
             pass
-    return {"updated_at": int(time.time()), "sections": [], "todos": []}
+    return {
+        "api_token": "",
+        "enabled": False,
+        "project_id": "",
+        "project_name": "Tutti i progetti",
+        "user_name": "",
+        "user_email": "",
+        "last_sync": 0,
+        "projects": [],
+        "pending_commands": [],
+        "sync_error": ""
+    }
+
+
+def save_todoist_cfg(cfg):
+    ensure_config_dir()
+    tmp_path = TODOIST_TOKEN_FILE + f".tmp.{os.getpid()}"
+    fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, indent=2, ensure_ascii=False)
+    os.chmod(tmp_path, 0o600)
+    os.replace(tmp_path, TODOIST_TOKEN_FILE)
+    return cfg
+
+
+def public_todoist_meta(cfg=None):
+    """Non-sensitive Todoist status summary embedded into todos.json for QML."""
+    if cfg is None:
+        cfg = load_todoist_cfg()
+    connected = bool(cfg.get("enabled") and cfg.get("api_token"))
+    return {
+        "connected": connected,
+        "user_name": cfg.get("user_name", "") if connected else "",
+        "user_email": cfg.get("user_email", "") if connected else "",
+        "project_id": cfg.get("project_id", "") if connected else "",
+        "project_name": cfg.get("project_name", "Tutti i progetti") if connected else "",
+        "projects": cfg.get("projects", []) if connected else [],
+        "last_sync": cfg.get("last_sync", 0) if connected else 0,
+        "pending_count": len(cfg.get("pending_commands", [])) if connected else 0,
+        "sync_error": cfg.get("sync_error", "") if connected else ""
+    }
+
+
+def todoist_api_sync_request(token, resource_types=None, commands=None, sync_token="*", timeout=15):
+    payload = {"sync_token": sync_token}
+    if resource_types is not None:
+        payload["resource_types"] = resource_types
+    if commands:
+        payload["commands"] = commands
+
+    body = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        TODOIST_SYNC_URL,
+        data=body,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "User-Agent": "Serpantinum-TodoWidget/2.0"
+        },
+        method="POST"
+    )
+    ctx = ssl.create_default_context()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+            raw = resp.read().decode("utf-8")
+            return json.loads(raw)
+    except urllib.error.HTTPError as e:
+        err_body = ""
+        try:
+            err_body = e.read().decode("utf-8", errors="ignore")[:240]
+        except Exception:
+            pass
+        if e.code in (401, 403):
+            raise RuntimeError("Token Todoist non valido o revocato (HTTP 401/403)")
+        raise RuntimeError(f"Errore API Todoist (HTTP {e.code}): {err_body or e.reason}")
+    except urllib.error.URLError as e:
+        raise ConnectionError(f"Connessione a Todoist non disponibile: {e.reason}")
+    except Exception as e:
+        raise RuntimeError(f"Errore sincronizzazione Todoist: {e}")
+
+
+def queue_todoist_command(cmd_obj):
+    cfg = load_todoist_cfg()
+    if not (cfg.get("enabled") and cfg.get("api_token")):
+        return False
+    cfg["pending_commands"].append(cmd_obj)
+    save_todoist_cfg(cfg)
+    return True
+
+
+def flush_todoist_commands_only():
+    """Flushes queued commands without a full pull (fast push for add/toggle/delete)."""
+    cfg = load_todoist_cfg()
+    if not (cfg.get("enabled") and cfg.get("api_token")):
+        return None
+    cmds = cfg.get("pending_commands", [])
+    if not cmds:
+        return {"status": "ok", "flushed": 0}
+    try:
+        resp = todoist_api_sync_request(cfg["api_token"], commands=cmds, sync_token="*", timeout=10)
+        sync_status = resp.get("sync_status", {}) or {}
+        remaining = []
+        for c in cmds:
+            st = sync_status.get(c["uuid"])
+            if st != "ok":
+                # Drop permanent client errors (4xx), keep transient network/5xx
+                if isinstance(st, dict) and str(st.get("http_code", "")).startswith("4"):
+                    continue
+                remaining.append(c)
+        cfg["pending_commands"] = remaining
+        cfg["sync_error"] = ""
+        cfg["last_sync"] = int(time.time())
+        save_todoist_cfg(cfg)
+        return {
+            "status": "ok",
+            "temp_id_mapping": resp.get("temp_id_mapping", {}) or {},
+            "remaining": len(remaining)
+        }
+    except Exception as e:
+        cfg["sync_error"] = str(e)
+        save_todoist_cfg(cfg)
+        return {"status": "offline", "message": str(e)}
+
+
+def sync_with_todoist(override_token=None, override_project_id=None):
+    """
+    Full bidirectional sync with Todoist API v1:
+    1. Flushes any offline pending commands (add/complete/uncomplete/delete).
+    2. Pulls user info, projects, sections, and active items.
+    3. Merges Todoist items into todos.json while preserving local-only tasks.
+    """
+    cfg = load_todoist_cfg()
+    token = (override_token or cfg.get("api_token") or "").strip()
+    if not token:
+        return {"status": "error", "message": "Nessun token Todoist configurato"}
+
+    cmds = cfg.get("pending_commands", []) if override_token is None else []
+
+    try:
+        resp = todoist_api_sync_request(
+            token,
+            resource_types=["user", "projects", "sections", "items"],
+            commands=cmds if cmds else None,
+            sync_token="*",
+            timeout=15
+        )
+    except Exception as e:
+        if override_token is None:
+            cfg["sync_error"] = str(e)
+            save_todoist_cfg(cfg)
+            data = load_todos()
+            data["todoist"] = public_todoist_meta(cfg)
+            save_todos(data)
+        return {"status": "error", "message": str(e)}
+
+    # Update pending commands queue
+    if cmds:
+        sync_status = resp.get("sync_status", {}) or {}
+        remaining = []
+        for c in cmds:
+            st = sync_status.get(c["uuid"])
+            if st != "ok":
+                if isinstance(st, dict) and str(st.get("http_code", "")).startswith("4"):
+                    continue
+                remaining.append(c)
+        cfg["pending_commands"] = remaining
+
+    user = resp.get("user") or {}
+    raw_projects = [
+        p for p in (resp.get("projects") or [])
+        if not p.get("is_deleted") and not p.get("is_archived")
+    ]
+    raw_projects.sort(key=lambda p: (0 if p.get("inbox_project") else 1, p.get("child_order", 0)))
+
+    projects_list = [
+        {
+            "id": str(p["id"]),
+            "name": p.get("name", "Senza nome"),
+            "is_inbox": bool(p.get("inbox_project")),
+            "color": p.get("color", "")
+        }
+        for p in raw_projects
+    ]
+    proj_name_map = {p["id"]: p["name"] for p in projects_list}
+    proj_inbox_ids = {p["id"] for p in projects_list if p["is_inbox"]}
+    proj_order_map = {p["id"]: idx for idx, p in enumerate(projects_list)}
+
+    raw_sections = [
+        s for s in (resp.get("sections") or [])
+        if not s.get("is_deleted") and not s.get("is_archived")
+    ]
+    raw_sections.sort(key=lambda s: (proj_order_map.get(str(s.get("project_id", "")), 999), s.get("section_order", 0)))
+    sec_name_map = {str(s["id"]): s.get("name", "") for s in raw_sections}
+    sec_order_map = {str(s["id"]): idx + 1 for idx, s in enumerate(raw_sections)}
+
+    selected_project_id = cfg.get("project_id", "")
+    if override_project_id is not None:
+        selected_project_id = str(override_project_id).strip()
+
+    if selected_project_id and selected_project_id not in proj_name_map:
+        selected_project_id = ""
+
+    selected_project_name = proj_name_map.get(selected_project_id, "Tutti i progetti") if selected_project_id else "Tutti i progetti"
+
+    cfg["api_token"] = token
+    cfg["enabled"] = True
+    cfg["user_name"] = user.get("full_name") or user.get("email") or "Todoist"
+    cfg["user_email"] = user.get("email") or ""
+    cfg["projects"] = projects_list
+    cfg["project_id"] = selected_project_id
+    cfg["project_name"] = selected_project_name
+    cfg["last_sync"] = int(time.time())
+    cfg["sync_error"] = ""
+    save_todoist_cfg(cfg)
+
+    today = date.today()
+    raw_items = resp.get("items") or []
+    todoist_tasks = []
+
+    for idx, it in enumerate(raw_items):
+        if it.get("is_deleted"):
+            continue
+        is_done = bool(it.get("checked") or it.get("is_completed"))
+        proj_id = str(it.get("project_id") or "")
+        if selected_project_id and proj_id != selected_project_id:
+            continue
+
+        sec_id = str(it.get("section_id") or "")
+        raw_content = (it.get("content") or "").strip()
+        if not raw_content:
+            continue
+
+        uncomp = is_uncompletable_separator(raw_content)
+        clean_title = clean_uncompletable_title(raw_content) if uncomp else raw_content
+
+        # Determine section/category label
+        if sec_id and sec_id in sec_name_map:
+            cat_name = sec_name_map[sec_id]
+            sec_idx = sec_order_map.get(sec_id, 0)
+            if not selected_project_id and proj_id not in proj_inbox_ids and proj_id in proj_name_map:
+                cat_name = f"{proj_name_map[proj_id]} · {cat_name}"
+        elif not selected_project_id and proj_id in proj_name_map and proj_id not in proj_inbox_ids:
+            cat_name = proj_name_map[proj_id]
+            sec_idx = (proj_order_map.get(proj_id, 0) + 1) * 100
+        else:
+            cat_name = ""
+            sec_idx = 0
+
+        # Parse Todoist due object
+        due_obj = it.get("due")
+        due_date_raw = ""
+        due_str_raw = ""
+        if isinstance(due_obj, dict):
+            due_date_raw = str(due_obj.get("date") or "")
+            due_str_raw = str(due_obj.get("string") or due_date_raw)
+
+        d_obj, t_part = parse_natural_date(due_date_raw, today)
+        date_meta = compute_date_meta(d_obj, t_part, due_str_raw, today)
+
+        ui_p = todoist_api_to_ui_prio(it.get("priority", 1))
+        p_num, p_lbl, p_col = normalize_priority(ui_p)
+
+        labels = [str(l) for l in (it.get("labels") or []) if str(l).strip()]
+        indent_level = 2 if it.get("parent_id") else 1
+        created_ts = int(time.time())
+        added_at = it.get("added_at") or it.get("created_at") or ""
+        if added_at:
+            try:
+                created_ts = int(datetime.fromisoformat(added_at.replace("Z", "+00:00")).timestamp())
+            except Exception:
+                pass
+
+        todoist_tasks.append({
+            "id": f"td_{it['id']}",
+            "todoist_id": str(it["id"]),
+            "source": "todoist",
+            "project_id": proj_id,
+            "section_id": sec_id,
+            "item_type": "separator" if uncomp else "task",
+            "uncompletable": uncomp,
+            "title": clean_title,
+            "raw_title": raw_content,
+            "description": (it.get("description") or "").strip(),
+            "completed": is_done,
+            "priority": p_num,
+            "priority_label": p_lbl,
+            "priority_color": p_col,
+            "indent": indent_level,
+            "category": cat_name,
+            "section_description": "",
+            "section_index": sec_idx,
+            "labels": labels,
+            "due_date": date_meta["due_date"],
+            "due_time": date_meta["due_time"],
+            "due_raw": date_meta["due_raw"],
+            "day_category": date_meta["day_category"],
+            "relative_label": date_meta["relative_label"],
+            "days_diff": date_meta["days_diff"],
+            "created_at": created_ts,
+            "csv_order": int(it.get("child_order", idx))
+        })
+
+    # Merge with existing local-only (non-Todoist) tasks
+    data = load_todos()
+    local_only = [
+        t for t in data.get("todos", [])
+        if t.get("source") != "todoist" and not t.get("todoist_id")
+    ]
+    data["todos"] = todoist_tasks + local_only
+    data["todoist"] = public_todoist_meta(cfg)
+    save_todos(data)
+
+    return {
+        "status": "ok",
+        "action": "todoist_synced",
+        "synced_count": len(todoist_tasks),
+        "total_count": len(data["todos"]),
+        "todoist": data["todoist"],
+        "todos": data["todos"]
+    }
+
+
+def disconnect_todoist(remove_synced_tasks=False):
+    if os.path.isfile(TODOIST_TOKEN_FILE):
+        try:
+            os.remove(TODOIST_TOKEN_FILE)
+        except Exception:
+            pass
+    data = load_todos()
+    if remove_synced_tasks:
+        data["todos"] = [
+            t for t in data.get("todos", [])
+            if t.get("source") != "todoist" and not t.get("todoist_id")
+        ]
+    else:
+        for t in data.get("todos", []):
+            t["source"] = "local"
+            t.pop("todoist_id", None)
+    data["todoist"] = public_todoist_meta(load_todoist_cfg())
+    save_todos(data)
+    return {
+        "status": "ok",
+        "action": "todoist_disconnected",
+        "todoist": data["todoist"],
+        "todos": data["todos"]
+    }
+
+
+# ==============================================================================
+# LOCAL PERSISTENCE & CRUD (WITH AUTOMATIC TODOIST PUSH)
+# ==============================================================================
 
 def extract_sections_from_todos(todos):
     seen = {}
@@ -317,16 +743,48 @@ def extract_sections_from_todos(todos):
             sections.append(sec_obj)
     return sections
 
+
+def load_todos():
+    ensure_config_dir()
+    today = date.today()
+    td_meta = public_todoist_meta()
+    if os.path.isfile(TODOS_FILE):
+        try:
+            with open(TODOS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict) and "todos" in data:
+                    todos = [refresh_task_dates(t, today) for t in data["todos"] if isinstance(t, dict)]
+                    data["todos"] = todos
+                    if "sections" not in data:
+                        data["sections"] = extract_sections_from_todos(todos)
+                    data["todoist"] = td_meta
+                    return data
+                elif isinstance(data, list):
+                    todos = [refresh_task_dates(t, today) for t in data if isinstance(t, dict)]
+                    return {
+                        "updated_at": int(time.time()),
+                        "sections": extract_sections_from_todos(todos),
+                        "todoist": td_meta,
+                        "todos": todos
+                    }
+        except Exception:
+            pass
+    return {"updated_at": int(time.time()), "sections": [], "todoist": td_meta, "todos": []}
+
+
 def save_todos(data):
     ensure_config_dir()
     data["updated_at"] = int(time.time())
     if "todos" in data:
         data["sections"] = extract_sections_from_todos(data["todos"])
+    if "todoist" not in data:
+        data["todoist"] = public_todoist_meta()
     tmp_path = TODOS_FILE + f".tmp.{os.getpid()}"
     with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
     os.replace(tmp_path, TODOS_FILE)
     return data
+
 
 def add_todo(title, priority=4, category="", due_date="", description=""):
     clean_title = (title or "").strip()
@@ -345,8 +803,13 @@ def add_todo(title, priority=4, category="", due_date="", description=""):
 
     data = load_todos()
     now_ms = int(time.time() * 1000)
+    cfg = load_todoist_cfg()
+    is_td_connected = bool(cfg.get("enabled") and cfg.get("api_token"))
+
+    temp_id = str(uuid.uuid4())
     new_item = {
         "id": f"todo_{now_ms}_{len(data['todos'])}",
+        "source": "todoist" if is_td_connected else "local",
         "item_type": "separator" if uncomp else "task",
         "uncompletable": uncomp,
         "title": clean_uncompletable_title(clean_title) if uncomp else clean_title,
@@ -356,6 +819,7 @@ def add_todo(title, priority=4, category="", due_date="", description=""):
         "priority": p_num,
         "priority_label": p_lbl,
         "priority_color": p_col,
+        "indent": 1,
         "category": final_cat,
         "section_description": "",
         "section_index": 0,
@@ -368,9 +832,44 @@ def add_todo(title, priority=4, category="", due_date="", description=""):
         "days_diff": date_meta["days_diff"],
         "created_at": int(time.time())
     }
+
+    if is_td_connected:
+        args = {
+            "content": strip_inline_labels(clean_title) if labels else clean_title,
+            "priority": ui_prio_to_todoist_api(p_num)
+        }
+        if new_item["description"]:
+            args["description"] = new_item["description"]
+        if labels:
+            args["labels"] = labels
+        if cfg.get("project_id"):
+            args["project_id"] = cfg["project_id"]
+        if date_meta["due_date"]:
+            if date_meta["due_time"]:
+                args["due"] = {"date": f"{date_meta['due_date']}T{date_meta['due_time']}:00"}
+            else:
+                args["due"] = {"date": date_meta["due_date"]}
+        elif due_date and str(due_date).strip():
+            args["due"] = {"string": str(due_date).strip()}
+
+        queue_todoist_command({
+            "type": "item_add",
+            "uuid": str(uuid.uuid4()),
+            "temp_id": temp_id,
+            "args": args
+        })
+        flush_res = flush_todoist_commands_only()
+        if flush_res and flush_res.get("status") == "ok":
+            real_id = flush_res.get("temp_id_mapping", {}).get(temp_id)
+            if real_id:
+                new_item["todoist_id"] = str(real_id)
+                new_item["id"] = f"td_{real_id}"
+
     data["todos"].insert(0, new_item)
+    data["todoist"] = public_todoist_meta()
     save_todos(data)
     return {"status": "ok", "action": "added", "item": new_item, "total": len(data["todos"])}
+
 
 def toggle_todo(todo_id):
     data = load_todos()
@@ -383,20 +882,49 @@ def toggle_todo(todo_id):
             item["completed"] = not bool(item.get("completed"))
             found = item
             break
+
     if found is not None:
+        td_id = found.get("todoist_id")
+        if td_id:
+            cmd_type = "item_complete" if found["completed"] else "item_uncomplete"
+            queue_todoist_command({
+                "type": cmd_type,
+                "uuid": str(uuid.uuid4()),
+                "args": {"id": str(td_id)}
+            })
+            flush_todoist_commands_only()
+        data["todoist"] = public_todoist_meta()
         save_todos(data)
         return {"status": "ok", "action": "toggled", "item": found}
     return {"status": "error", "message": "Elemento non trovato"}
 
+
 def delete_todo(todo_id):
     data = load_todos()
     target_id = str(todo_id).strip()
-    orig_len = len(data["todos"])
-    data["todos"] = [it for it in data["todos"] if str(it.get("id")).strip() != target_id]
-    if len(data["todos"]) < orig_len:
+    target_item = None
+    remaining = []
+    for it in data["todos"]:
+        if str(it.get("id")).strip() == target_id:
+            target_item = it
+        else:
+            remaining.append(it)
+
+    if target_item is not None:
+        td_id = target_item.get("todoist_id")
+        if td_id:
+            queue_todoist_command({
+                "type": "item_delete",
+                "uuid": str(uuid.uuid4()),
+                "args": {"id": str(td_id)}
+            })
+            flush_todoist_commands_only()
+        data["todos"] = remaining
+        data["todoist"] = public_todoist_meta()
         save_todos(data)
         return {"status": "ok", "action": "deleted", "total": len(data["todos"])}
     return {"status": "error", "message": "Elemento non trovato"}
+
 
 def clear_completed():
     data = load_todos()
@@ -406,6 +934,7 @@ def clear_completed():
     save_todos(data)
     return {"status": "ok", "action": "cleared", "cleared": cleared_count, "total": len(data["todos"])}
 
+
 def clear_all():
     data = load_todos()
     orig_len = len(data["todos"])
@@ -413,6 +942,11 @@ def clear_all():
     data["sections"] = []
     save_todos(data)
     return {"status": "ok", "action": "cleared_all", "cleared": orig_len, "total": 0}
+
+
+# ==============================================================================
+# CSV IMPORT / EXPORT (TODOIST TEMPLATE COMPATIBLE)
+# ==============================================================================
 
 def detect_delimiter(sample_text):
     for delim in [";", ",", "\t", "|"]:
@@ -425,6 +959,7 @@ def detect_delimiter(sample_text):
     except Exception:
         return ","
 
+
 def read_file_with_encodings(filepath):
     encodings = ["utf-8-sig", "utf-8", "cp1252", "latin-1", "iso-8859-1"]
     for enc in encodings:
@@ -436,80 +971,77 @@ def read_file_with_encodings(filepath):
     with open(filepath, "r", encoding="utf-8", errors="replace") as f:
         return f.read()
 
+
 def parse_todoist_or_generic_csv(content):
-    """
-    Parses CSV content matching Todoist templates or generic CSV formats.
-    Supports:
-    - TYPE=section (with CONTENT and DESCRIPTION)
-    - TYPE=task (including uncompletable '* ' separator tasks)
-    - TYPE=note (appended to previous task or section description)
-    """
     if not content or not content.strip():
         return []
 
     delim = detect_delimiter(content)
     reader = csv.reader(content.splitlines(), delimiter=delim)
-    rows = [r for r in reader if r and any(cell.strip() for cell in r)]
+    rows = list(reader)
     if not rows:
         return []
 
-    header = [c.strip().upper() for c in rows[0]]
+    header_raw = [c.strip().lstrip("\ufeff") for c in rows[0]]
+    header_upper = [c.upper() for c in header_raw]
 
-    # Detect Todoist standard template columns
-    is_todoist_format = "CONTENT" in header or "TYPE" in header
-    col_map = {}
-    for idx, col in enumerate(header):
-        col_map[col] = idx
+    is_todoist = ("TYPE" in header_upper and "CONTENT" in header_upper)
+    col_map = {name: idx for idx, name in enumerate(header_upper)}
+
+    def get_col(row, name):
+        idx = col_map.get(name, -1)
+        if idx >= 0 and idx < len(row):
+            return row[idx].strip()
+        return ""
 
     today = date.today()
+    base_time = int(time.time() * 1000)
     parsed_items = []
     current_section = ""
     current_section_desc = ""
     current_section_idx = 0
     last_task = None
-    base_time = int(time.time() * 1000)
 
-    start_idx = 1 if (is_todoist_format or any(h in header for h in ("TITLE", "TASK", "NAME", "TESTO", "TITOLO"))) else 0
+    start_row = 1 if is_todoist or any(h in ("TITLE", "TASK", "CONTENUTO", "ATTIVITA", "ATTIVITÀ", "NAME", "NOME") for h in header_upper) else 0
 
-    for r_idx, row in enumerate(rows[start_idx:]):
-        if not row:
+    for r_idx, row in enumerate(rows[start_row:], start=1):
+        if not row or not any(c.strip() for c in row):
             continue
 
-        if is_todoist_format:
-            row_type = row[col_map.get("TYPE", 0)].strip().lower() if "TYPE" in col_map and col_map["TYPE"] < len(row) else "task"
-            content_val = row[col_map.get("CONTENT", 1)].strip() if "CONTENT" in col_map and col_map["CONTENT"] < len(row) else ""
-            desc_val = row[col_map.get("DESCRIPTION", -1)].strip() if "DESCRIPTION" in col_map and col_map["DESCRIPTION"] < len(row) else ""
-            prio_val = row[col_map.get("PRIORITY", -1)].strip() if "PRIORITY" in col_map and col_map["PRIORITY"] < len(row) else "4"
-            date_val = row[col_map.get("DATE", -1)].strip() if "DATE" in col_map and col_map["DATE"] < len(row) else ""
-            indent_val = row[col_map.get("INDENT", -1)].strip() if "INDENT" in col_map and col_map["INDENT"] < len(row) else "1"
+        if is_todoist:
+            row_type = get_col(row, "TYPE").lower()
+            content_val = get_col(row, "CONTENT")
+            desc_val = get_col(row, "DESCRIPTION")
 
-            if row_type in ("section", "separator"):
+            if row_type == "section":
                 if content_val:
-                    current_section = clean_uncompletable_title(content_val)
+                    current_section = content_val
                     current_section_desc = desc_val
                     current_section_idx += 1
                     last_task = None
                 continue
 
             if row_type == "note":
-                if last_task and content_val:
-                    if last_task.get("description"):
-                        last_task["description"] += "\n" + content_val
-                    else:
-                        last_task["description"] = content_val
-                elif current_section and content_val:
-                    if current_section_desc:
-                        current_section_desc += "\n" + content_val
-                    else:
-                        current_section_desc = content_val
+                if content_val:
+                    if last_task is not None:
+                        existing_desc = last_task.get("description", "")
+                        last_task["description"] = (existing_desc + "\n" + content_val).strip() if existing_desc else content_val
+                    elif current_section:
+                        current_section_desc = (current_section_desc + "\n" + content_val).strip() if current_section_desc else content_val
+                continue
+
+            if row_type and row_type not in ("task", "item"):
                 continue
 
             if not content_val:
                 continue
 
+            prio_val = get_col(row, "PRIORITY")
+            date_val = get_col(row, "DATE")
+            indent_val = get_col(row, "INDENT") or "1"
+
             uncomp = is_uncompletable_separator(content_val)
             clean_title = clean_uncompletable_title(content_val) if uncomp else content_val
-
             labels, auto_cat = extract_labels(clean_title)
             d_obj, t_part = parse_natural_date(date_val, today)
             date_meta = compute_date_meta(d_obj, t_part, date_val, today)
@@ -522,6 +1054,7 @@ def parse_todoist_or_generic_csv(content):
 
             item = {
                 "id": f"todo_{base_time}_{r_idx}",
+                "source": "local",
                 "item_type": "separator" if uncomp else "task",
                 "uncompletable": uncomp,
                 "title": clean_title,
@@ -547,10 +1080,8 @@ def parse_todoist_or_generic_csv(content):
             }
             parsed_items.append(item)
             last_task = item
-
         else:
-            # Generic CSV parser
-            title = row[0].strip()
+            title = row[0].strip() if len(row) > 0 else ""
             if not title:
                 continue
 
@@ -563,13 +1094,14 @@ def parse_todoist_or_generic_csv(content):
             due = ""
             desc = ""
 
-            for c_idx, cell in enumerate(row[1:], start=1):
+            for cell in row[1:]:
                 val = cell.strip()
                 if not val:
                     continue
-                if val.lower() in TRUE_VALUES or val.lower() in ("false", "0", "no"):
-                    done = val.lower() in TRUE_VALUES
-                elif val.lower() in ("1", "2", "3", "4", "p1", "p2", "p3", "p4", "high", "alta", "low", "bassa"):
+                low = val.lower()
+                if low in TRUE_VALUES or low in ("0", "false", "no", "pending", "open"):
+                    done = low in TRUE_VALUES
+                elif low in ("1", "2", "3", "4", "p1", "p2", "p3", "p4", "high", "medium", "low", "urgent"):
                     prio = val
                 elif not due:
                     d_test, _ = parse_natural_date(val, today)
@@ -591,6 +1123,7 @@ def parse_todoist_or_generic_csv(content):
 
             item = {
                 "id": f"todo_{base_time}_{r_idx}",
+                "source": "local",
                 "item_type": "separator" if uncomp else "task",
                 "uncompletable": uncomp,
                 "title": clean_title,
@@ -618,6 +1151,7 @@ def parse_todoist_or_generic_csv(content):
             last_task = item
 
     return parsed_items
+
 
 def import_csv_file(filepath, mode="merge"):
     clean_path = os.path.expanduser(filepath.strip())
@@ -647,7 +1181,6 @@ def import_csv_file(filepath, mode="merge"):
                     added.append(item)
                     existing_map[sig] = item
                 else:
-                    # Update description and section_description if newer CSV has them
                     ex = existing_map[sig]
                     if item.get("description") and not ex.get("description"):
                         ex["description"] = item["description"]
@@ -673,11 +1206,8 @@ def import_csv_file(filepath, mode="merge"):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+
 def export_csv_todoist(destination=None):
-    """
-    Exports tasks matching Todoist official template schema:
-    TYPE,CONTENT,DESCRIPTION,PRIORITY,INDENT,AUTHOR,RESPONSIBLE,DATE,DATE_LANG,TIMEZONE
-    """
     data = load_todos()
     ensure_config_dir()
     if not destination or not str(destination).strip():
@@ -690,7 +1220,6 @@ def export_csv_todoist(destination=None):
         if dest_dir:
             os.makedirs(dest_dir, exist_ok=True)
 
-        # Group tasks by section/category preserving order
         sections = {}
         section_descs = {}
         for it in data["todos"]:
@@ -735,6 +1264,7 @@ def export_csv_todoist(destination=None):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+
 def pick_csv_dialog(mode="merge"):
     try:
         res = subprocess.run([
@@ -749,6 +1279,7 @@ def pick_csv_dialog(mode="merge"):
         return import_csv_file(selected, mode=mode)
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
 
 def pick_export_dialog():
     try:
@@ -767,6 +1298,7 @@ def pick_export_dialog():
         return export_csv_todoist(selected)
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ("--get", "-g"):
@@ -802,6 +1334,29 @@ def main():
         res = clear_all()
         print(json.dumps(res, ensure_ascii=False))
 
+    elif cmd == "--todoist-status":
+        print(json.dumps({"status": "ok", "todoist": public_todoist_meta()}, ensure_ascii=False))
+
+    elif cmd == "--todoist-connect":
+        token = sys.argv[2] if len(sys.argv) > 2 else ""
+        proj_id = sys.argv[3] if len(sys.argv) > 3 else ""
+        res = sync_with_todoist(override_token=token, override_project_id=proj_id)
+        print(json.dumps(res, ensure_ascii=False))
+
+    elif cmd == "--todoist-sync":
+        res = sync_with_todoist()
+        print(json.dumps(res, ensure_ascii=False))
+
+    elif cmd == "--todoist-set-project":
+        proj_id = sys.argv[2] if len(sys.argv) > 2 else ""
+        res = sync_with_todoist(override_project_id=proj_id)
+        print(json.dumps(res, ensure_ascii=False))
+
+    elif cmd == "--todoist-disconnect":
+        remove_tasks = len(sys.argv) > 2 and sys.argv[2] in ("--remove-tasks", "1", "true")
+        res = disconnect_todoist(remove_synced_tasks=remove_tasks)
+        print(json.dumps(res, ensure_ascii=False))
+
     elif cmd == "--import-csv":
         path = sys.argv[2] if len(sys.argv) > 2 else ""
         mode = "merge"
@@ -833,6 +1388,7 @@ def main():
     else:
         print(f"Unknown command: {cmd}", file=sys.stderr)
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

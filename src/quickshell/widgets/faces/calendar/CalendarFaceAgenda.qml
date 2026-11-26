@@ -19,6 +19,8 @@ Item {
     anchors.fill: parent
     clip: true
 
+    property bool previewMode: false
+
     property real minWidth: Scaler.s(240)
     property real minHeight: Scaler.s(150)
     property real maxWidth: Scaler.s(900)
@@ -30,9 +32,10 @@ Item {
     property bool isConfiguring: false
     property bool isAddingTask: false
     property string selectedCalColor: "#89b4fa"
-    property bool wantsKeyboardFocus: isConfiguring || isAddingTask
+    property bool wantsKeyboardFocus: !previewMode && (isConfiguring || isAddingTask)
 
     function setKeyboardFocus(enable) {
+        if (root.previewMode) return;
         root.wantsKeyboardFocus = enable;
         try {
             let win = root.Window ? root.Window.window : null;
@@ -158,10 +161,10 @@ Item {
     Rectangle {
         id: bgCard
         anchors.fill: parent
-        color: Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
+        color: bgGlass.active ? "transparent" : Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
         radius: ThemeBackend.clampedBorderRadius !== undefined ? ThemeBackend.clampedBorderRadius : ThemeBackend.borderRadius
         border.width: 1
-        border.color: Qt.alpha(ThemeBackend.surface2, 0.38)
+        border.color: Qt.alpha(ThemeBackend.text, bgGlass.active ? 0.08 : 0.05)
         clip: true
 
         WallpaperBlur {
@@ -171,6 +174,7 @@ Item {
         }
 
         GlassFill {
+            id: bgGlass
             z: -1
             anchors.fill: parent
             radius: parent.radius
@@ -181,29 +185,23 @@ Item {
         // Main Agenda & Tasks View
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: Scaler.s(11)
-            spacing: Scaler.s(7)
+            anchors.margins: Scaler.s(13)
+            spacing: Scaler.s(8)
             visible: !root.isConfiguring
 
             // Header Bar
             RowLayout {
                 Layout.fillWidth: true
-                Layout.preferredHeight: Scaler.s(30)
+                Layout.preferredHeight: Scaler.s(28)
                 spacing: Scaler.s(4)
-
-                Text {
-                    text: "󰃭"
-                    font.family: ThemeBackend.iconFont
-                    font.pixelSize: Scaler.s(15)
-                    color: ThemeBackend.mauve
-                }
 
                 // Selected Day / Mode Pill (click to toggle Selected Day vs All Upcoming)
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: Scaler.s(26)
-                    radius: Scaler.s(7)
+                    radius: Scaler.s(8)
                     color: modeToggleMa.containsMouse ? Qt.alpha(ThemeBackend.surface1, 0.7) : "transparent"
+                    Behavior on color { ColorAnimation { duration: 130 } }
 
                     RowLayout {
                         anchors.fill: parent
@@ -214,7 +212,7 @@ Item {
                         Text {
                             text: root.selectedHeaderTitle
                             font.family: ThemeBackend.fontFamily
-                            font.pixelSize: Scaler.s(12.5)
+                            font.pixelSize: Scaler.s(13)
                             font.weight: Font.Black
                             color: ThemeBackend.text
                             elide: Text.ElideRight
@@ -222,10 +220,10 @@ Item {
                         }
 
                         Rectangle {
-                            Layout.preferredHeight: Scaler.s(18)
+                            Layout.preferredHeight: Scaler.s(19)
                             Layout.preferredWidth: countBadgeText.implicitWidth + Scaler.s(10)
-                            radius: Scaler.s(9)
-                            color: Qt.alpha(ThemeBackend.mauve, 0.2)
+                            radius: Scaler.s(9.5)
+                            color: Qt.alpha(ThemeBackend.mauve, 0.18)
 
                             Text {
                                 id: countBadgeText
@@ -252,11 +250,11 @@ Item {
                     }
                 }
 
-                // Prev Day step button (visible when filtering by day)
+                // Prev Day step button
                 IconButton {
                     visible: root.isDateFiltered
                     size: Scaler.s(24)
-                    cornerRadius: ThemeBackend.borderRadius
+                    cornerRadius: Scaler.s(8)
                     buttonIcon: "󰅁"
                     iconFontSize: Scaler.s(12)
                     accentColor: ThemeBackend.surface1
@@ -269,11 +267,11 @@ Item {
                     }
                 }
 
-                // Next Day step button (visible when filtering by day)
+                // Next Day step button
                 IconButton {
                     visible: root.isDateFiltered
                     size: Scaler.s(24)
-                    cornerRadius: ThemeBackend.borderRadius
+                    cornerRadius: Scaler.s(8)
                     buttonIcon: "󰅂"
                     iconFontSize: Scaler.s(12)
                     accentColor: ThemeBackend.surface1
@@ -290,7 +288,7 @@ Item {
                 IconButton {
                     visible: typeof CalendarService !== "undefined" && (!CalendarService.isSelectedToday || !CalendarService.filterBySelectedDate)
                     size: Scaler.s(26)
-                    cornerRadius: ThemeBackend.borderRadius
+                    cornerRadius: Scaler.s(8)
                     buttonIcon: "󰁝"
                     iconFontSize: Scaler.s(12)
                     accentColor: ThemeBackend.surface1
@@ -307,7 +305,7 @@ Item {
                 IconButton {
                     visible: root.completedCountInView > 0
                     size: Scaler.s(26)
-                    cornerRadius: ThemeBackend.borderRadius
+                    cornerRadius: Scaler.s(8)
                     buttonIcon: "󰃢"
                     iconFontSize: Scaler.s(12)
                     accentColor: ThemeBackend.surface1
@@ -320,10 +318,10 @@ Item {
                     }
                 }
 
-                // Add Event / Task button (+ toggles quick add bar)
+                // Add Event / Task button
                 IconButton {
                     size: Scaler.s(26)
-                    cornerRadius: ThemeBackend.borderRadius
+                    cornerRadius: Scaler.s(8)
                     buttonIcon: root.isAddingTask ? "󰅖" : "󰐕"
                     iconFontSize: Scaler.s(13)
                     accentColor: root.isAddingTask ? ThemeBackend.mauve : ThemeBackend.surface1
@@ -341,7 +339,7 @@ Item {
                 // Show/Hide Archived button
                 IconButton {
                     size: Scaler.s(26)
-                    cornerRadius: ThemeBackend.borderRadius
+                    cornerRadius: Scaler.s(8)
                     buttonIcon: "󰀼"
                     iconFontSize: Scaler.s(12)
                     accentColor: (typeof CalendarService !== "undefined" && CalendarService.showArchived)
@@ -361,7 +359,7 @@ Item {
                 // Open Google Calendar Web
                 IconButton {
                     size: Scaler.s(26)
-                    cornerRadius: ThemeBackend.borderRadius
+                    cornerRadius: Scaler.s(8)
                     buttonIcon: "󰊭"
                     iconFontSize: Scaler.s(12)
                     accentColor: ThemeBackend.surface1
@@ -387,7 +385,7 @@ Item {
                         id: agendaSyncBtn
                         anchors.fill: parent
                         size: Scaler.s(26)
-                        cornerRadius: ThemeBackend.borderRadius
+                        cornerRadius: Scaler.s(8)
                         buttonIcon: "󰑐"
                         iconFontSize: Scaler.s(12)
                         accentColor: ThemeBackend.surface1
@@ -414,7 +412,7 @@ Item {
                 // Configure Calendars button
                 IconButton {
                     size: Scaler.s(26)
-                    cornerRadius: ThemeBackend.borderRadius
+                    cornerRadius: Scaler.s(8)
                     buttonIcon: "󰒓"
                     iconFontSize: Scaler.s(12)
                     accentColor: ThemeBackend.surface1

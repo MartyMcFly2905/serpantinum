@@ -17,6 +17,8 @@ Item {
     anchors.fill: parent
     clip: true
 
+    property bool previewMode: false
+
     property real minWidth: Scaler.s(250)
     property real minHeight: Scaler.s(210)
     property real maxWidth: Scaler.s(1200)
@@ -32,11 +34,12 @@ Item {
 
     property bool isConfiguring: false
     property string selectedCalColor: "#89b4fa"
-    property bool wantsKeyboardFocus: isConfiguring
+    property bool wantsKeyboardFocus: !previewMode && isConfiguring
 
     readonly property bool isWide: root.width >= Scaler.s(520)
 
     function setKeyboardFocus(enable) {
+        if (root.previewMode) return;
         root.wantsKeyboardFocus = enable;
         try {
             let win = root.Window ? root.Window.window : null;
@@ -194,10 +197,10 @@ Item {
     Rectangle {
         id: bgCard
         anchors.fill: parent
-        color: Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
+        color: bgGlass.active ? "transparent" : Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
         radius: ThemeBackend.clampedBorderRadius !== undefined ? ThemeBackend.clampedBorderRadius : ThemeBackend.borderRadius
         border.width: 1
-        border.color: Qt.alpha(ThemeBackend.surface2, 0.38)
+        border.color: Qt.alpha(ThemeBackend.text, bgGlass.active ? 0.08 : 0.05)
         clip: true
 
         WallpaperBlur {
@@ -207,6 +210,7 @@ Item {
         }
 
         GlassFill {
+            id: bgGlass
             z: -1
             anchors.fill: parent
             radius: parent.radius
@@ -217,8 +221,8 @@ Item {
         // Main Widget View
         RowLayout {
             anchors.fill: parent
-            anchors.margins: Scaler.s(12)
-            spacing: Scaler.s(12)
+            anchors.margins: Scaler.s(13)
+            spacing: Scaler.s(13)
             visible: !root.isConfiguring
 
             // Calendar Grid Column
@@ -230,7 +234,7 @@ Item {
                 // Header bar (Month title + Today + Prev/Next + Google Calendar Web + Sync + Config)
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Scaler.s(30)
+                    Layout.preferredHeight: Scaler.s(28)
                     spacing: Scaler.s(4)
 
                     Text {
@@ -246,21 +250,19 @@ Item {
                     // "Oggi" (Today) quick pill button
                     Rectangle {
                         visible: root.monthOffset !== 0 || (typeof CalendarService !== "undefined" && !CalendarService.isSelectedToday)
-                        Layout.preferredHeight: Scaler.s(26)
+                        Layout.preferredHeight: Scaler.s(24)
                         Layout.preferredWidth: todayBtnLabel.implicitWidth + Scaler.s(14)
-                        radius: ThemeBackend.borderRadius
-                        color: todayBtnMa.containsMouse ? ThemeBackend.mauve : Qt.alpha(ThemeBackend.surface1, 0.75)
-                        border.width: 1
-                        border.color: Qt.alpha(ThemeBackend.mauve, 0.45)
+                        radius: Scaler.s(8)
+                        color: todayBtnMa.containsMouse ? ThemeBackend.mauve : Qt.alpha(ThemeBackend.mauve, 0.16)
 
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on color { ColorAnimation { duration: 140 } }
 
                         Text {
                             id: todayBtnLabel
                             anchors.centerIn: parent
                             text: typeof I18n !== "undefined" ? I18n.t("widgets.calendar.today", "Oggi") : "Oggi"
                             font.family: ThemeBackend.fontFamily
-                            font.pixelSize: Scaler.s(10)
+                            font.pixelSize: Scaler.s(9.5)
                             font.bold: true
                             color: todayBtnMa.containsMouse ? ThemeBackend.crust : ThemeBackend.mauve
                         }
@@ -282,7 +284,7 @@ Item {
                     // Prev Month
                     IconButton {
                         size: Scaler.s(26)
-                        cornerRadius: ThemeBackend.borderRadius
+                        cornerRadius: Scaler.s(8)
                         buttonIcon: "󰅁"
                         iconFontSize: Scaler.s(13)
                         accentColor: ThemeBackend.surface1
@@ -294,7 +296,7 @@ Item {
                     // Next Month
                     IconButton {
                         size: Scaler.s(26)
-                        cornerRadius: ThemeBackend.borderRadius
+                        cornerRadius: Scaler.s(8)
                         buttonIcon: "󰅂"
                         iconFontSize: Scaler.s(13)
                         accentColor: ThemeBackend.surface1
@@ -303,10 +305,10 @@ Item {
                         onClicked: root.monthOffset++
                     }
 
-                    // Open Google Calendar in Browser (xdg-open "https://calendar.google.com")
+                    // Open Google Calendar in Browser
                     IconButton {
                         size: Scaler.s(26)
-                        cornerRadius: ThemeBackend.borderRadius
+                        cornerRadius: Scaler.s(8)
                         buttonIcon: "󰊭"
                         iconFontSize: Scaler.s(12)
                         accentColor: ThemeBackend.surface1
@@ -330,7 +332,7 @@ Item {
                             id: syncBtn
                             anchors.fill: parent
                             size: Scaler.s(26)
-                            cornerRadius: ThemeBackend.borderRadius
+                            cornerRadius: Scaler.s(8)
                             buttonIcon: "󰑐"
                             iconFontSize: Scaler.s(12)
                             accentColor: ThemeBackend.surface1
@@ -359,13 +361,13 @@ Item {
                         visible: typeof CalendarService !== "undefined" && CalendarService.isCached
                         Layout.preferredHeight: Scaler.s(22)
                         Layout.preferredWidth: Scaler.s(22)
-                        radius: Scaler.s(11)
-                        color: Qt.rgba(ThemeBackend.peach.r, ThemeBackend.peach.g, ThemeBackend.peach.b, 0.2)
+                        radius: Scaler.s(8)
+                        color: Qt.alpha(ThemeBackend.peach, 0.18)
 
                         Text {
                             anchors.centerIn: parent
                             text: "󰋊"
-                            font.family: ThemeBackend.fontFamily
+                            font.family: ThemeBackend.iconFont
                             font.pixelSize: Scaler.s(11)
                             color: ThemeBackend.peach
                         }
@@ -374,7 +376,7 @@ Item {
                     // Configure feeds button
                     IconButton {
                         size: Scaler.s(26)
-                        cornerRadius: ThemeBackend.borderRadius
+                        cornerRadius: Scaler.s(8)
                         buttonIcon: "󰒓"
                         iconFontSize: Scaler.s(12)
                         accentColor: ThemeBackend.surface1
@@ -408,9 +410,9 @@ Item {
                             Layout.fillWidth: true
                             text: modelData
                             font.family: ThemeBackend.fontFamily
-                            font.pixelSize: Scaler.s(10)
-                            font.bold: true
-                            color: ThemeBackend.overlay0
+                            font.pixelSize: Scaler.s(9.5)
+                            font.weight: Font.Black
+                            color: index >= 5 ? Qt.alpha(ThemeBackend.mauve, 0.72) : ThemeBackend.overlay0
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -447,21 +449,23 @@ Item {
                                 id: dayCell
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                radius: Scaler.s(7)
+                                radius: Scaler.s(8)
 
                                 readonly property bool isSelectedDay: (model.year === root.selectedYear && model.month === root.selectedMonth && model.dayNum === root.selectedDay)
 
                                 color: {
                                     if (model.isToday) return ThemeBackend.mauve;
-                                    if (isSelectedDay) return Qt.alpha(ThemeBackend.mauve, 0.25);
-                                    if (dayMa.containsMouse) return Qt.alpha(ThemeBackend.surface1, 0.75);
+                                    if (isSelectedDay) return Qt.alpha(ThemeBackend.mauve, 0.22);
+                                    if (dayMa.containsMouse) return Qt.alpha(ThemeBackend.surface1, 0.72);
                                     return "transparent";
                                 }
 
-                                border.width: model.isToday ? 0 : (isSelectedDay ? 1.5 : 0)
-                                border.color: ThemeBackend.mauve
+                                border.width: model.isToday ? 0 : (isSelectedDay ? 1.2 : 0)
+                                border.color: Qt.alpha(ThemeBackend.mauve, 0.65)
+                                scale: dayMa.pressed ? 0.90 : 1.0
 
-                                Behavior on color { ColorAnimation { duration: 120 } }
+                                Behavior on color { ColorAnimation { duration: 130 } }
+                                Behavior on scale { NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
 
                                 ColumnLayout {
                                     anchors.centerIn: parent

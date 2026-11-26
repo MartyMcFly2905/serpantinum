@@ -10,6 +10,8 @@ Item {
     anchors.fill: parent
     clip: true
 
+    property bool previewMode: false
+
     property real minWidth: Scaler.s(160)
     property real minHeight: Scaler.s(90)
     property real maxWidth: Scaler.s(600)
@@ -51,10 +53,10 @@ Item {
     Rectangle {
         id: bgContainer
         anchors.fill: parent
-        color: Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
+        color: bgGlass.active ? "transparent" : Qt.alpha(ThemeBackend.surface0, ThemeBackend.elementOpacity)
         radius: ThemeBackend.clampedBorderRadius !== undefined ? ThemeBackend.clampedBorderRadius : ThemeBackend.borderRadius
         border.width: 1
-        border.color: Qt.alpha(ThemeBackend.surface2, 0.38)
+        border.color: Qt.alpha(ThemeBackend.text, bgGlass.active ? 0.08 : 0.05)
         clip: true
 
         WallpaperBlur {
@@ -64,6 +66,7 @@ Item {
         }
 
         GlassFill {
+            id: bgGlass
             z: -1
             anchors.fill: parent
             radius: parent.radius
@@ -71,34 +74,38 @@ Item {
             tintAmount: 0.22
         }
 
-        // Soft accent glow circle in the corner
+        // Subtle accent ambient glow
         Rectangle {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
-            anchors.margins: -width * 0.3
-            width: Math.min(parent.width, parent.height) * 0.7
+            anchors.margins: -width * 0.35
+            width: Math.min(parent.width, parent.height) * 0.72
             height: width
             radius: width / 2
             color: ThemeBackend.mauve
-            opacity: 0.12
+            opacity: 0.06
             antialiasing: true
         }
 
         // Horizontal Layout (Wide)
         RowLayout {
             anchors.fill: parent
-            anchors.margins: Scaler.s(10)
-            spacing: Scaler.s(10)
+            anchors.margins: Scaler.s(11)
+            spacing: Scaler.s(11)
             visible: !root.isStacked
 
             // Left Date Badge (click to reset selection to Today)
             Rectangle {
-                Layout.preferredWidth: Scaler.s(70)
+                id: dateBadge
+                Layout.preferredWidth: Scaler.s(72)
                 Layout.fillHeight: true
-                color: Qt.alpha(ThemeBackend.surface1, 0.65)
-                radius: Scaler.s(8)
+                color: dateBadgeMa.containsMouse ? Qt.alpha(ThemeBackend.surface1, 0.72) : Qt.alpha(ThemeBackend.surface1, 0.48)
+                radius: Scaler.s(10)
                 border.width: 1
-                border.color: Qt.alpha(ThemeBackend.surface2, 0.3)
+                border.color: Qt.alpha(ThemeBackend.text, 0.06)
+                scale: dateBadgeMa.pressed ? 0.96 : 1.0
+                Behavior on color { ColorAnimation { duration: 130 } }
+                Behavior on scale { NumberAnimation { duration: 110; easing.type: Easing.OutCubic } }
 
                 ColumnLayout {
                     anchors.centerIn: parent
@@ -109,7 +116,7 @@ Item {
                         text: root.monthStr
                         font.family: ThemeBackend.fontFamily
                         font.pixelSize: Scaler.s(9)
-                        font.bold: true
+                        font.weight: Font.Black
                         color: ThemeBackend.mauve
                     }
 
@@ -117,8 +124,8 @@ Item {
                         Layout.alignment: Qt.AlignHCenter
                         text: root.dayNumStr
                         font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Scaler.s(22)
-                        font.bold: true
+                        font.pixelSize: Scaler.s(23)
+                        font.weight: Font.Black
                         color: ThemeBackend.text
                     }
 
@@ -133,7 +140,9 @@ Item {
                 }
 
                 MouseArea {
+                    id: dateBadgeMa
                     anchors.fill: parent
+                    hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
                         if (typeof CalendarService !== "undefined") {

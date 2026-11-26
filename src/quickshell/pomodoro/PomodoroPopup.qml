@@ -97,12 +97,12 @@ Item {
         Rectangle {
             id: popupBg
             anchors.fill: parent
-            radius: ThemeBackend.borderRadius
-            color: Qt.alpha(ThemeBackend.base, Math.min(0.95, Math.max(0.72, ThemeBackend.elementOpacity)))
+            radius: ThemeBackend.clampedBorderRadius !== undefined ? ThemeBackend.clampedBorderRadius : ThemeBackend.borderRadius
+            color: popupGlass.active ? "transparent" : Qt.alpha(ThemeBackend.base, Math.min(0.95, Math.max(0.75, ThemeBackend.elementOpacity)))
             clip: true
 
             border.width: 1
-            border.color: Qt.alpha(PomodoroService.phaseColor, 0.32)
+            border.color: Qt.alpha(PomodoroService.phaseColor, 0.22)
             Behavior on border.color { ColorAnimation { duration: 250 } }
 
             WallpaperBlur {
@@ -112,14 +112,15 @@ Item {
             }
 
             GlassFill {
+                id: popupGlass
                 z: -1
                 anchors.fill: parent
                 radius: parent.radius
                 tintColor: ThemeBackend.surface0
-                tintAmount: 0.25
+                tintAmount: 0.24
             }
 
-            // Ambient soft glow matching active phase color
+            // Subtle ambient glow matching active phase color
             Rectangle {
                 anchors.right: parent.right
                 anchors.top: parent.top
@@ -128,7 +129,7 @@ Item {
                 height: width
                 radius: width / 2
                 color: PomodoroService.phaseColor
-                opacity: PomodoroService.isRunning ? 0.14 : 0.07
+                opacity: PomodoroService.isRunning ? 0.10 : 0.04
                 Behavior on color { ColorAnimation { duration: 300 } }
                 Behavior on opacity { NumberAnimation { duration: 300 } }
             }

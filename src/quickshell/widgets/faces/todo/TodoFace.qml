@@ -827,16 +827,6 @@ Item {
                     Layout.fillWidth: true
                     spacing: Scaler.s(6)
 
-                    Text {
-                        text: root.headerTitle
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Scaler.s(13.5)
-                        font.weight: Font.Black
-                        color: ThemeBackend.text
-                        elide: Text.ElideRight
-                        Layout.maximumWidth: parent.width - Scaler.s(24)
-                    }
-
                     // Live Todoist Cloud status indicator dot
                     Rectangle {
                         visible: Boolean(root.todoistMeta && root.todoistMeta.connected)
@@ -849,7 +839,15 @@ Item {
                         Behavior on color { ColorAnimation { duration: 220 } }
                     }
 
-                    Item { Layout.fillWidth: true }
+                    Text {
+                        text: root.headerTitle
+                        font.family: ThemeBackend.fontFamily
+                        font.pixelSize: Scaler.s(13.5)
+                        font.weight: Font.Black
+                        color: ThemeBackend.text
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
                 }
 
                 // Compact Progress Pill (e.g. "3/5")

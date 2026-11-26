@@ -405,7 +405,8 @@
             "name": {
               "classic": "क्लासिक",
               "material": "मटीरियल",
-              "badge": "डॉट मैट्रिक्स"
+              "badge": "डॉट मैट्रिक्स",
+              "pill": "पिल"
             }
           }
         },
@@ -681,10 +682,6 @@
           },
           "classic": "सादी पृष्ठभूमि पर एल्बम थंबनेल",
           "ambient": "नियंत्रणों के पीछे धुंधला एल्बम कवर"
-        },
-        "art_background": {
-          "title": "पृष्ठभूमि में कवर दिखाएं",
-          "desc": "नियंत्रणों के पीछे मॉड्यूल को धुंधले एल्बम कवर से भरें"
         }
       },
       "thickness": {
@@ -1327,7 +1324,10 @@
     "tab_emojis": "इमोजी",
     "placeholder_emojis": "नाम या कीवर्ड से इमोजी खोजें...",
     "search_run": "{provider} पर खोजें",
-    "search_hint": "{provider} पर खोजने के लिए टाइप करें"
+    "search_hint": "{provider} पर खोजने के लिए टाइप करें",
+    "tab_windows": "विंडो",
+    "placeholder_windows": "खुली विंडो खोजें...",
+    "window_workspace": "वर्कस्पेस {ws}"
   },
   "calendar": {
     "loading": "लोड हो रहा है...",
@@ -1688,7 +1688,7 @@
     "welcome": "स्वागत है",
     "tagline": "एक डेस्कटॉप शेल जो बना है",
     "you": "आपके लिए",
-    "start_preview": "पूर्वावलोकन शुरू करें"
+    "hold_to_start": "शुरू करने के लिए दबाकर रखें"
   },
   "syspanel": {
     "user": {
@@ -1855,6 +1855,7 @@
       "no_results": "कुछ नहीं मिला"
     },
     "types": {
+      "snake": "साँप",
       "clock": "घड़ी",
       "music": "संगीत",
       "weather": "मौसम",
@@ -1919,6 +1920,8 @@
       "no_contributions": "कोई योगदान नहीं मिला"
     },
     "settings": {
+      "snakeLength": "लंबाई",
+      "snakeSpeed": "गति",
       "lyricsLines": "पंक्तियां",
       "lyricsAlignment": "संरेखण",
       "textContent": "टेक्स्ट",
@@ -2064,7 +2067,7 @@
     },
     "os": {
       "error_root": "त्रुटि: इस स्क्रिप्ट को सीधे root/sudo के साथ न चलाएं। सामान्य उपयोगकर्ता के रूप में चलाएं।",
-      "error_unsupported": "असमर्थित ओएस ({os})। Serpantinum केवल arch linux और इसके डेरिवेटिव का समर्थन करता है।",
+      "error_unsupported": "असमर्थित ओएस ({os})। Serpantinum, Arch Linux, Fedora, Void Linux, Gentoo और उनके डेरिवेटिव का समर्थन करता है।",
       "error_not_found": "ओएस का पता नहीं लगाया जा सका। /etc/os-release नहीं मिला।",
       "unknown_cpu": "अज्ञात CPU",
       "unknown_gpu": "अज्ञात / वर्चुअल मशीन",

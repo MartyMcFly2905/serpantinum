@@ -405,7 +405,8 @@
             "name": {
               "classic": "Klassik",
               "material": "Material",
-              "badge": "Nöqtəli matris"
+              "badge": "Nöqtəli matris",
+              "pill": "Kapsul"
             }
           }
         },
@@ -681,10 +682,6 @@
           },
           "classic": "Sadə fonda albom miniatürü",
           "ambient": "İdarəetmə düymələrinin arxasında bulanıq albom örtüyü"
-        },
-        "art_background": {
-          "title": "Örtüyü arxa fonda göstər",
-          "desc": "Modulu idarəetmə düymələrinin arxasında bulanıq albom örtüyü ilə doldurun"
         }
       },
       "thickness": {
@@ -1327,7 +1324,10 @@
     "tab_emojis": "Emojilər",
     "placeholder_emojis": "Emojiləri axtarın və ya açar söz daxil edin...",
     "search_run": "{provider} ilə axtar",
-    "search_hint": "{provider} ilə axtarmaq üçün yazın"
+    "search_hint": "{provider} ilə axtarmaq üçün yazın",
+    "tab_windows": "Pəncərələr",
+    "placeholder_windows": "Açıq pəncərələrdə axtar...",
+    "window_workspace": "İş sahəsi {ws}"
   },
   "calendar": {
     "loading": "Yüklənir...",
@@ -1688,7 +1688,7 @@
     "welcome": "Xoş gəlmisiniz",
     "tagline": "Bu iş masası mühitinin hazırlandığı şəxs",
     "you": "Sizsiniz",
-    "start_preview": "Önbaxışı başlat"
+    "hold_to_start": "Başlamaq üçün basılı saxlayın"
   },
   "syspanel": {
     "user": {
@@ -1855,6 +1855,7 @@
       "no_results": "Heç nə tapılmadı"
     },
     "types": {
+      "snake": "İlan",
       "clock": "Saat",
       "music": "Musiqi",
       "weather": "Hava",
@@ -1919,6 +1920,8 @@
       "no_contributions": "Heç bir töhfə tapılmadı"
     },
     "settings": {
+      "snakeLength": "Uzunluq",
+      "snakeSpeed": "Sürət",
       "lyricsLines": "Sətirlər",
       "lyricsAlignment": "Hizalama",
       "textContent": "Mətn",
@@ -2064,7 +2067,7 @@
     },
     "os": {
       "error_root": "Xəta: bu skripti birbaşa root/sudo ilə işə salmayın. Adi istifadəçi kimi işə salın.",
-      "error_unsupported": "Dəstəklənməyən əməliyyat sistemi ({os}). Serpantinum yalnız Arch Linux və onun törəmələrini dəstəkləyir.",
+      "error_unsupported": "Dəstəklənməyən əməliyyat sistemi ({os}). Serpantinum Arch Linux, Fedora, Void Linux, Gentoo və onların törəmələrini dəstəkləyir.",
       "error_not_found": "Əməliyyat sistemini müəyyən etmək mümkün deyil. /etc/os-release tapılmadı.",
       "unknown_cpu": "Naməlum CPU",
       "unknown_gpu": "Naməlum / virtual maşın",

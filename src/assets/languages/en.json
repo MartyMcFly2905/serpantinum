@@ -405,7 +405,8 @@
             "name": {
               "classic": "Classic",
               "material": "Material",
-              "badge": "Dot Matrix"
+              "badge": "Dot Matrix",
+              "pill": "Pill"
             }
           }
         },
@@ -681,10 +682,6 @@
           },
           "classic": "Album thumbnail on a plain background",
           "ambient": "Blurred album art behind the controls"
-        },
-        "art_background": {
-          "title": "Show art in background",
-          "desc": "Fill the module with blurred album art behind the controls"
         }
       },
       "thickness": {
@@ -1332,7 +1329,10 @@
     "tab_emojis": "Emojis",
     "placeholder_emojis": "Search emojis by name or keyword...",
     "search_run": "Search {provider}",
-    "search_hint": "Type to search with {provider}"
+    "search_hint": "Type to search with {provider}",
+    "tab_windows": "Windows",
+    "placeholder_windows": "Search open windows...",
+    "window_workspace": "Workspace {ws}"
   },
   "calendar": {
     "loading": "Loading...",
@@ -1693,7 +1693,7 @@
     "welcome": "Welcome",
     "tagline": "A desktop shell built for",
     "you": "You",
-    "start_preview": "Start preview"
+    "hold_to_start": "Hold to get started"
   },
   "syspanel": {
     "user": {
@@ -1875,6 +1875,7 @@
       "no_results": "Nothing found"
     },
     "types": {
+      "snake": "Snake",
       "clock": "Clock",
       "music": "Music",
       "weather": "Weather",
@@ -1944,6 +1945,8 @@
       "no_contributions": "No contributions found"
     },
     "settings": {
+      "snakeLength": "Length",
+      "snakeSpeed": "Speed",
       "lyricsLines": "Lines",
       "lyricsAlignment": "Alignment",
       "usageStyle": "Style",
@@ -2127,7 +2130,7 @@
     },
     "os": {
       "error_root": "Error: Do not run this script directly with root/sudo. Run as normal user.",
-      "error_unsupported": "Unsupported OS ({os}). Serpantinum strictly supports arch linux and derivatives.",
+      "error_unsupported": "Unsupported OS ({os}). Serpantinum supports Arch Linux, Fedora, Void Linux, Gentoo, and their derivatives.",
       "error_not_found": "Cannot detect OS. /etc/os-release not found.",
       "unknown_cpu": "Unknown CPU",
       "unknown_gpu": "Unknown / virtual machine",

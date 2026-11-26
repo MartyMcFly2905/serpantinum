@@ -405,7 +405,8 @@
             "name": {
               "classic": "Clásico",
               "material": "Material",
-              "badge": "Matriz de puntos"
+              "badge": "Matriz de puntos",
+              "pill": "Píldora"
             }
           }
         },
@@ -681,10 +682,6 @@
           },
           "classic": "Miniatura del álbum sobre un fondo liso",
           "ambient": "Portada desenfocada detrás de los controles"
-        },
-        "art_background": {
-          "title": "Mostrar portada de fondo",
-          "desc": "Rellena el módulo con la portada desenfocada detrás de los controles"
         }
       },
       "thickness": {
@@ -1328,7 +1325,10 @@
     "tab_emojis": "Emojis",
     "placeholder_emojis": "Buscar emojis o escribir palabra clave...",
     "search_run": "Buscar en {provider}",
-    "search_hint": "Escribe para buscar con {provider}"
+    "search_hint": "Escribe para buscar con {provider}",
+    "tab_windows": "Ventanas",
+    "placeholder_windows": "Buscar ventanas abiertas...",
+    "window_workspace": "Espacio de trabajo {ws}"
   },
   "calendar": {
     "loading": "Cargando...",
@@ -1689,7 +1689,7 @@
     "welcome": "Bienvenido",
     "tagline": "Un entorno de escritorio creado para",
     "you": "ti",
-    "start_preview": "Iniciar vista previa"
+    "hold_to_start": "Mantén pulsado para empezar"
   },
   "syspanel": {
     "user": {
@@ -1856,6 +1856,7 @@
       "no_results": "No se encontró nada"
     },
     "types": {
+      "snake": "Serpiente",
       "clock": "Reloj",
       "music": "Música",
       "weather": "Clima",
@@ -1920,6 +1921,8 @@
       "no_contributions": "No se encontraron contribuciones"
     },
     "settings": {
+      "snakeLength": "Longitud",
+      "snakeSpeed": "Velocidad",
       "lyricsLines": "Líneas",
       "lyricsAlignment": "Alineación",
       "textContent": "Texto",
@@ -2065,7 +2068,7 @@
     },
     "os": {
       "error_root": "Error: No ejecutes este script directamente con root/sudo. Ejecútalo como usuario normal.",
-      "error_unsupported": "SO no compatible ({os}). Serpantinum solo es compatible con arch linux y sus derivados.",
+      "error_unsupported": "SO no compatible ({os}). Serpantinum es compatible con Arch Linux, Fedora, Void Linux, Gentoo y sus derivados.",
       "error_not_found": "No se puede detectar el SO. /etc/os-release no encontrado.",
       "unknown_cpu": "CPU desconocida",
       "unknown_gpu": "Desconocida / máquina virtual",

@@ -40,7 +40,10 @@
     "tab_emojis": "Emoji",
     "placeholder_emojis": "Szukaj emoji według nazwy lub słowa kluczowego...",
     "search_run": "Szukaj w {provider}",
-    "search_hint": "Wpisz, aby szukać w {provider}"
+    "search_hint": "Wpisz, aby szukać w {provider}",
+    "tab_windows": "Okna",
+    "placeholder_windows": "Szukaj otwartych okien...",
+    "window_workspace": "Obszar roboczy {ws}"
   },
   "calendar": {
     "loading": "Ładowanie...",
@@ -401,7 +404,7 @@
     "welcome": "Witaj",
     "tagline": "Powłoka pulpitu stworzona dla",
     "you": "Ciebie",
-    "start_preview": "Rozpocznij podgląd"
+    "hold_to_start": "Przytrzymaj, aby rozpocząć"
   },
   "syspanel": {
     "user": {
@@ -568,6 +571,7 @@
       "no_results": "Nic nie znaleziono"
     },
     "types": {
+      "snake": "Wąż",
       "clock": "Zegar",
       "music": "Muzyka",
       "weather": "Pogoda",
@@ -632,6 +636,8 @@
       "no_contributions": "Nie znaleziono aktywności"
     },
     "settings": {
+      "snakeLength": "Długość",
+      "snakeSpeed": "Prędkość",
       "lyricsLines": "Linie",
       "lyricsAlignment": "Wyrównanie",
       "textContent": "Tekst",
@@ -777,7 +783,7 @@
     },
     "os": {
       "error_root": "Błąd: Nie uruchamiaj tego skryptu bezpośrednio jako root/sudo. Uruchom jako zwykły użytkownik.",
-      "error_unsupported": "Nieobsługiwany system operacyjny ({os}). Serpantinum obsługuje wyłącznie Arch Linux i jego pochodne.",
+      "error_unsupported": "Nieobsługiwany system operacyjny ({os}). Serpantinum obsługuje Arch Linux, Fedora, Void Linux, Gentoo oraz ich pochodne.",
       "error_not_found": "Nie można wykryć systemu operacyjnego. Nie znaleziono /etc/os-release.",
       "unknown_cpu": "Nieznany procesor",
       "unknown_gpu": "Nieznana karta graficzna / maszyna wirtualna",
@@ -1407,7 +1413,8 @@
             "name": {
               "classic": "Klasyczny",
               "material": "Material",
-              "badge": "Matryca punktowa"
+              "badge": "Matryca punktowa",
+              "pill": "Pigułka"
             }
           }
         },
@@ -1683,10 +1690,6 @@
           },
           "classic": "Miniatura albumu na zwykłym tle",
           "ambient": "Rozmyta okładka albumu za przyciskami"
-        },
-        "art_background": {
-          "title": "Pokaż okładkę w tle",
-          "desc": "Wypełnia moduł rozmytą okładką albumu za przyciskami"
         }
       },
       "thickness": {

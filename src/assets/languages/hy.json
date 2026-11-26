@@ -405,7 +405,8 @@
             "name": {
               "classic": "Դասական",
               "material": "Material",
-              "badge": "Կետային մատրից"
+              "badge": "Կետային մատրից",
+              "pill": "Պատիճ"
             }
           }
         },
@@ -681,10 +682,6 @@
           },
           "classic": "Ալբոմի մանրապատկեր՝ պարզ ֆոնի վրա",
           "ambient": "Մշուշոտ ալբոմի շապիկ՝ կառավարման կոճակների հետևում"
-        },
-        "art_background": {
-          "title": "Ցուցադրել շապիկը ֆոնում",
-          "desc": "Լցնել մոդուլը մշուշոտ ալբոմի շապիկով կառավարման կոճակների հետևում"
         }
       },
       "thickness": {
@@ -1327,7 +1324,10 @@
     "tab_emojis": "Էմոջիներ",
     "placeholder_emojis": "Որոնել էմոջիներ կամ մուտքագրել բառ...",
     "search_run": "Որոնել {provider}-ում",
-    "search_hint": "Մուտքագրեք՝ {provider}-ում որոնելու համար"
+    "search_hint": "Մուտքագրեք՝ {provider}-ում որոնելու համար",
+    "tab_windows": "Պատուհաններ",
+    "placeholder_windows": "Որոնել բաց պատուհանները...",
+    "window_workspace": "Աշխատանքային տարածք {ws}"
   },
   "calendar": {
     "loading": "Բեռնվում է...",
@@ -1688,7 +1688,7 @@
     "welcome": "Բարի գալուստ",
     "tagline": "Աշխատասեղանի թաղանթ՝ ստեղծված",
     "you": "Ձեզ համար",
-    "start_preview": "Սկսել նախադիտումը"
+    "hold_to_start": "Սեղմած պահեք՝ սկսելու համար"
   },
   "syspanel": {
     "user": {
@@ -1855,6 +1855,7 @@
       "no_results": "Ոչինչ չի գտնվել"
     },
     "types": {
+      "snake": "Օձ",
       "clock": "Ժամացույց",
       "music": "Երաժշտություն",
       "weather": "Եղանակ",
@@ -1919,6 +1920,8 @@
       "no_contributions": "Ներդրումներ չեն գտնվել"
     },
     "settings": {
+      "snakeLength": "Երկարություն",
+      "snakeSpeed": "Արագություն",
       "lyricsLines": "Տողեր",
       "lyricsAlignment": "Հավասարեցում",
       "textContent": "Տեքստ",
@@ -2064,7 +2067,7 @@
     },
     "os": {
       "error_root": "Սխալ՝ այս սկրիպտը մի գործարկեք անմիջապես root/sudo-ով։ Գործարկեք սովորական օգտատիրոջ անունից։",
-      "error_unsupported": "Չաջակցվող ՕՀ ({os})։ Serpantinum-ը խստորեն աջակցում է Arch Linux-ին և դրա ածանցյալներին։",
+      "error_unsupported": "Չաջակցվող ՕՀ ({os})։ Serpantinum-ը աջակցում է Arch Linux-ին, Fedora-ին, Void Linux-ին, Gentoo-ին և դրանց ածանցյալներին։",
       "error_not_found": "Չհաջողվեց որոշել ՕՀ-ն։ /etc/os-release-ը չի գտնվել։",
       "unknown_cpu": "Անհայտ CPU",
       "unknown_gpu": "Անհայտ / վիրտուալ մեքենա",

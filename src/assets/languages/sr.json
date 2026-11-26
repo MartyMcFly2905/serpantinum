@@ -414,7 +414,8 @@
             "name": {
               "classic": "Класично",
               "material": "Material",
-              "badge": "Тачкаста матрица"
+              "badge": "Тачкаста матрица",
+              "pill": "Капсула"
             }
           }
         },
@@ -690,10 +691,6 @@
           },
           "classic": "Сличица албума на обичној позадини",
           "ambient": "Замућени омот албума иза контрола"
-        },
-        "art_background": {
-          "title": "Прикажи омот у позадини",
-          "desc": "Испуни модул замућеним омотом албума иза контрола"
         }
       },
       "thickness": {
@@ -1336,7 +1333,10 @@
     "tab_emojis": "Емотикони",
     "placeholder_emojis": "Претражи емотиконе према називу или кључној речи...",
     "search_run": "Претражи {provider}",
-    "search_hint": "Упишите за претраживање помоћу {provider}"
+    "search_hint": "Упишите за претраживање помоћу {provider}",
+    "tab_windows": "Прозори",
+    "placeholder_windows": "Претражи отворене прозоре...",
+    "window_workspace": "Радни простор {ws}"
   },
   "calendar": {
     "loading": "Учитавање...",
@@ -1697,7 +1697,7 @@
     "welcome": "Добро дошли",
     "tagline": "Љуска радне површине створена за",
     "you": "вас",
-    "start_preview": "Покрени преглед"
+    "hold_to_start": "Задржите да бисте почели"
   },
   "syspanel": {
     "user": {
@@ -1864,6 +1864,7 @@
       "no_results": "Ништа није пронађено"
     },
     "types": {
+      "snake": "Змија",
       "clock": "Сат",
       "music": "Глазба",
       "weather": "Време",
@@ -1928,6 +1929,8 @@
       "no_contributions": "Нису пронађени доприноси"
     },
     "settings": {
+      "snakeLength": "Дужина",
+      "snakeSpeed": "Брзина",
       "lyricsLines": "Ретци",
       "lyricsAlignment": "Поравнање",
       "usageStyle": "Стил",
@@ -2073,7 +2076,7 @@
     },
     "os": {
       "error_root": "Грешка: немојте директно покретати ову скрипту с роот/судо овластима. Покрените је као обичан корисник.",
-      "error_unsupported": "Неподржани оперативни систем ({os}). Serpantinum службено подржава само Arch Linux и његове изведенице.",
+      "error_unsupported": "Неподржани оперативни систем ({os}). Serpantinum подржава Arch Linux, Fedora, Void Linux, Gentoo и њихове изведенице.",
       "error_not_found": "Није могуће открити оперативни систем. Датотека /etc/os-release није пронађена.",
       "unknown_cpu": "Непознат CPU",
       "unknown_gpu": "Непознато / виртуелна машина",

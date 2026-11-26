@@ -25,6 +25,7 @@ VisualizerFaceContinuous 1.0 visualizer/VisualizerFaceContinuous.qml
 WeatherFaceCompact 1.0 weather/WeatherFaceCompact.qml
 WeatherFaceFull 1.0 weather/WeatherFaceFull.qml
 WeatherFaceRound 1.0 weather/WeatherFaceRound.qml
+SnakeFace 1.0 snake/SnakeFace.qml
 CalendarFaceCompact 1.0 calendar/CalendarFaceCompact.qml
 CalendarFaceMonth 1.0 calendar/CalendarFaceMonth.qml
 CalendarFaceAgenda 1.0 calendar/CalendarFaceAgenda.qml

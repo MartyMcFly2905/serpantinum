@@ -405,7 +405,8 @@
             "name": {
               "badge": "Матриця точок",
               "classic": "Класичний",
-              "material": "Material"
+              "material": "Material",
+              "pill": "Пігулка"
             }
           }
         },
@@ -681,10 +682,6 @@
           },
           "classic": "Обкладинка альбому на простому тлі",
           "ambient": "Розмита обкладинка альбому за кнопками"
-        },
-        "art_background": {
-          "title": "Обкладинка на тлі",
-          "desc": "Заповнювати модуль розмитою обкладинкою альбому за кнопками"
         }
       },
       "thickness": {
@@ -1328,7 +1325,10 @@
     "tab_emojis": "Емодзі",
     "placeholder_emojis": "Пошук емодзі за назвою або словом...",
     "search_run": "Шукати в {provider}",
-    "search_hint": "Введіть запит для пошуку в {provider}"
+    "search_hint": "Введіть запит для пошуку в {provider}",
+    "tab_windows": "Вікна",
+    "placeholder_windows": "Пошук відкритих вікон...",
+    "window_workspace": "Робочий простір {ws}"
   },
   "calendar": {
     "loading": "Завантаження...",
@@ -1689,7 +1689,7 @@
     "welcome": "Ласкаво просимо",
     "tagline": "Оболонка робочого столу, створена для",
     "you": "вас",
-    "start_preview": "Почати попередній перегляд"
+    "hold_to_start": "Утримуйте, щоб почати"
   },
   "syspanel": {
     "user": {
@@ -1856,6 +1856,7 @@
       "no_results": "Нічого не знайдено"
     },
     "types": {
+      "snake": "Змійка",
       "clock": "Годинник",
       "music": "Музика",
       "weather": "Погода",
@@ -1920,6 +1921,8 @@
       "no_contributions": "Контрибуцій не знайдено"
     },
     "settings": {
+      "snakeLength": "Довжина",
+      "snakeSpeed": "Швидкість",
       "lyricsLines": "Рядки",
       "lyricsAlignment": "Вирівнювання",
       "textContent": "Текст",
@@ -2065,7 +2068,7 @@
     },
     "os": {
       "error_root": "Помилка: не запускайте цей скрипт від root/sudo. Запустіть від звичайного користувача.",
-      "error_unsupported": "Непідтримувана ОС ({os}). Serpantinum підтримує лише arch linux та його похідні.",
+      "error_unsupported": "Непідтримувана ОС ({os}). Serpantinum підтримує Arch Linux, Fedora, Void Linux, Gentoo та їхні похідні.",
       "error_not_found": "Не вдалося визначити ОС. /etc/os-release не знайдено.",
       "unknown_cpu": "Невідомий процесор",
       "unknown_gpu": "Невідомо / віртуальна машина",

@@ -34,7 +34,10 @@
     "tab_emojis": "絵文字",
     "placeholder_emojis": "名前やキーワードで絵文字を検索...",
     "search_run": "{provider} で検索",
-    "search_hint": "入力して {provider} で検索"
+    "search_hint": "入力して {provider} で検索",
+    "tab_windows": "ウィンドウ",
+    "placeholder_windows": "開いているウィンドウを検索...",
+    "window_workspace": "ワークスペース {ws}"
   },
   "calendar": {
     "loading": "読み込み中...",
@@ -395,7 +398,7 @@
     "welcome": "ようこそ",
     "tagline": "あなたのために作られたデスクトップシェル",
     "you": "あなた",
-    "start_preview": "プレビューを開始"
+    "hold_to_start": "長押しして始める"
   },
   "syspanel": {
     "user": {
@@ -562,6 +565,7 @@
       "no_results": "見つかりませんでした"
     },
     "types": {
+      "snake": "ヘビ",
       "clock": "時計",
       "music": "音楽",
       "weather": "天気",
@@ -626,6 +630,8 @@
       "no_contributions": "コントリビューションが見つかりません"
     },
     "settings": {
+      "snakeLength": "長さ",
+      "snakeSpeed": "速度",
       "lyricsLines": "行数",
       "lyricsAlignment": "配置",
       "textContent": "テキスト",
@@ -771,7 +777,7 @@
     },
     "os": {
       "error_root": "エラー: このスクリプトを root/sudo で直接実行しないでください。一般ユーザーとして実行してください。",
-      "error_unsupported": "サポートされていないOS ({os}) です。Serpantinum は Arch Linux およびその派生ディストリビューションのみをサポートしています。",
+      "error_unsupported": "サポートされていないOS ({os}) です。Serpantinum は Arch Linux、Fedora、Void Linux、Gentoo およびそれらの派生ディストリビューションをサポートしています。",
       "error_not_found": "OSを検出できません。/etc/os-release が見つかりません。",
       "unknown_cpu": "不明なCPU",
       "unknown_gpu": "不明 / 仮想マシン",
@@ -1407,7 +1413,8 @@
             "name": {
               "classic": "クラシック",
               "material": "マテリアル",
-              "badge": "ドットマトリクス"
+              "badge": "ドットマトリクス",
+              "pill": "ピル"
             }
           }
         },
@@ -1683,10 +1690,6 @@
           },
           "classic": "シンプルな背景にアルバムサムネイル",
           "ambient": "コントロールの背後にぼかしたアルバムアート"
-        },
-        "art_background": {
-          "title": "背景にアートを表示",
-          "desc": "コントロールの背後をぼかしたアルバムアートで埋めます"
         }
       },
       "thickness": {

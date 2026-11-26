@@ -405,7 +405,8 @@
             "name": {
               "classic": "傳統",
               "material": "Material",
-              "badge": "點陣"
+              "badge": "點陣",
+              "pill": "膠囊"
             }
           }
         },
@@ -681,10 +682,6 @@
           },
           "classic": "純色背景上的專輯縮圖",
           "ambient": "控制按鈕後方的模糊專輯封面"
-        },
-        "art_background": {
-          "title": "在背景顯示封面",
-          "desc": "在控制按鈕後方以模糊專輯封面填滿模組"
         }
       },
       "thickness": {
@@ -1327,7 +1324,10 @@
     "tab_emojis": "表情符號",
     "placeholder_emojis": "依名稱或關鍵字搜尋表情符號...",
     "search_run": "使用 {provider} 搜尋",
-    "search_hint": "輸入內容以使用 {provider} 搜尋"
+    "search_hint": "輸入內容以使用 {provider} 搜尋",
+    "tab_windows": "視窗",
+    "placeholder_windows": "搜尋已開啟的視窗...",
+    "window_workspace": "工作區 {ws}"
   },
   "calendar": {
     "loading": "載入中...",
@@ -1688,7 +1688,7 @@
     "welcome": "歡迎",
     "tagline": "專為您量身打造的桌面 Shell",
     "you": "您",
-    "start_preview": "開始預覽"
+    "hold_to_start": "長按開始"
   },
   "syspanel": {
     "user": {
@@ -1855,6 +1855,7 @@
       "no_results": "找不到任何內容"
     },
     "types": {
+      "snake": "蛇",
       "clock": "時鐘",
       "music": "音樂",
       "weather": "天氣",
@@ -1919,6 +1920,8 @@
       "no_contributions": "找不到貢獻記錄"
     },
     "settings": {
+      "snakeLength": "長度",
+      "snakeSpeed": "速度",
       "lyricsLines": "行數",
       "lyricsAlignment": "對齊方式",
       "textContent": "文字",
@@ -2064,7 +2067,7 @@
     },
     "os": {
       "error_root": "錯誤：請勿直接使用 root/sudo 執行此指令稿。請以一般使用者身分執行。",
-      "error_unsupported": "不支援的作業系統（{os}）。Serpantinum 僅嚴格支援 Arch Linux 及其衍生發行版。",
+      "error_unsupported": "不支援的作業系統（{os}）。Serpantinum 支援 Arch Linux、Fedora、Void Linux、Gentoo 及其衍生發行版。",
       "error_not_found": "無法偵測作業系統。找不到 /etc/os-release。",
       "unknown_cpu": "未知的 CPU",
       "unknown_gpu": "未知 / 虛擬機器",

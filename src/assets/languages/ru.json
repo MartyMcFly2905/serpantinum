@@ -405,7 +405,8 @@
             "name": {
               "classic": "Классический",
               "material": "Material",
-              "badge": "Точечная матрица"
+              "badge": "Точечная матрица",
+              "pill": "Таблетка"
             }
           }
         },
@@ -681,10 +682,6 @@
           },
           "classic": "Обложка альбома на простом фоне",
           "ambient": "Размытая обложка альбома за кнопками"
-        },
-        "art_background": {
-          "title": "Обложка на фоне",
-          "desc": "Заполнять модуль размытой обложкой альбома за кнопками"
         }
       },
       "thickness": {
@@ -1328,7 +1325,10 @@
     "tab_emojis": "Эмодзи",
     "placeholder_emojis": "Поиск эмодзи по названию или слову...",
     "search_run": "Искать в {provider}",
-    "search_hint": "Введите запрос для поиска в {provider}"
+    "search_hint": "Введите запрос для поиска в {provider}",
+    "tab_windows": "Окна",
+    "placeholder_windows": "Поиск открытых окон...",
+    "window_workspace": "Рабочий стол {ws}"
   },
   "calendar": {
     "loading": "Загрузка...",
@@ -1689,7 +1689,7 @@
     "welcome": "Добро пожаловать",
     "tagline": "Оболочка рабочего стола, созданная для",
     "you": "вас",
-    "start_preview": "Начать предпросмотр"
+    "hold_to_start": "Удерживайте, чтобы начать"
   },
   "syspanel": {
     "user": {
@@ -1856,6 +1856,7 @@
       "no_results": "Ничего не найдено"
     },
     "types": {
+      "snake": "Змейка",
       "clock": "Часы",
       "music": "Музыка",
       "weather": "Погода",
@@ -1920,6 +1921,8 @@
       "no_contributions": "Контрибуции не найдены"
     },
     "settings": {
+      "snakeLength": "Длина",
+      "snakeSpeed": "Скорость",
       "lyricsLines": "Строки",
       "lyricsAlignment": "Выравнивание",
       "hideText": "Скрыть текст",
@@ -2065,7 +2068,7 @@
     },
     "os": {
       "error_root": "Ошибка: не запускайте этот скрипт от root/sudo. Запустите от обычного пользователя.",
-      "error_unsupported": "Неподдерживаемая ОС ({os}). Serpantinum поддерживает только arch linux и его производные.",
+      "error_unsupported": "Неподдерживаемая ОС ({os}). Serpantinum поддерживает Arch Linux, Fedora, Void Linux, Gentoo и их производные.",
       "error_not_found": "Не удалось определить ОС. /etc/os-release не найден.",
       "unknown_cpu": "Неизвестный процессор",
       "unknown_gpu": "Неизвестно / виртуальная машина",

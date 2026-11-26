@@ -405,7 +405,8 @@
             "name": {
               "classic": "Klasik",
               "material": "Material",
-              "badge": "Nokta Matrisi"
+              "badge": "Nokta Matrisi",
+              "pill": "Hap"
             }
           }
         },
@@ -681,10 +682,6 @@
           },
           "classic": "Sade arka planda albüm küçük resmi",
           "ambient": "Denetimlerin ardında bulanık albüm kapağı"
-        },
-        "art_background": {
-          "title": "Kapağı arka planda göster",
-          "desc": "Modülü denetimlerin ardında bulanık albüm kapağıyla doldurun"
         }
       },
       "thickness": {
@@ -1327,7 +1324,10 @@
     "tab_emojis": "Emojiler",
     "placeholder_emojis": "Emojileri ada veya anahtar kelimeye göre arayın...",
     "search_run": "{provider} ile ara",
-    "search_hint": "{provider} ile aramak için yazın"
+    "search_hint": "{provider} ile aramak için yazın",
+    "tab_windows": "Pencereler",
+    "placeholder_windows": "Açık pencerelerde ara...",
+    "window_workspace": "Çalışma alanı {ws}"
   },
   "calendar": {
     "loading": "Yükleniyor...",
@@ -1688,7 +1688,7 @@
     "welcome": "Hoş Geldiniz",
     "tagline": "Şunun için oluşturulmuş bir masaüstü kabuğu:",
     "you": "Siz",
-    "start_preview": "Önizlemeyi başlat"
+    "hold_to_start": "Başlamak için basılı tutun"
   },
   "syspanel": {
     "user": {
@@ -1855,6 +1855,7 @@
       "no_results": "Hiçbir şey bulunamadı"
     },
     "types": {
+      "snake": "Yılan",
       "clock": "Saat",
       "music": "Müzik",
       "weather": "Hava Durumu",
@@ -1919,6 +1920,8 @@
       "no_contributions": "Katkı bulunamadı"
     },
     "settings": {
+      "snakeLength": "Uzunluk",
+      "snakeSpeed": "Hız",
       "lyricsLines": "Satırlar",
       "lyricsAlignment": "Hizalama",
       "textContent": "Metin",
@@ -2064,7 +2067,7 @@
     },
     "os": {
       "error_root": "Hata: Bu betiği doğrudan root/sudo ile çalıştırmayın. Normal kullanıcı olarak çalıştırın.",
-      "error_unsupported": "Desteklenmeyen işletim sistemi ({os}). Serpantinum yalnızca Arch Linux ve türevlerini destekler.",
+      "error_unsupported": "Desteklenmeyen işletim sistemi ({os}). Serpantinum; Arch Linux, Fedora, Void Linux, Gentoo ve türevlerini destekler.",
       "error_not_found": "İşletim sistemi algılanamadı. /etc/os-release bulunamadı.",
       "unknown_cpu": "Bilinmeyen CPU",
       "unknown_gpu": "Bilinmeyen / sanal makine",

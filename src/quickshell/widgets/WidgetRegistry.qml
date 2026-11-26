@@ -550,6 +550,135 @@ QtObject {
         }
     }
 
+    property Component snakeLengthComponent: Component {
+        Item {
+            id: settingRoot
+            property var typeData: null
+            property var settingData: null
+            property var redactor: null
+            property var widget: null
+            property var widgetData: null
+            property var item: null
+
+            readonly property var targetWidget: settingRoot.widget || settingRoot.widgetData || settingRoot.item || null
+
+            implicitWidth: lengthSelector.implicitWidth
+            implicitHeight: lengthSelector.implicitHeight
+
+            function syncValue() {
+                let w = settingRoot.targetWidget;
+                if (!w) return;
+                let cur = (w.snakeLength !== undefined) ? w.snakeLength : 48;
+                if (lengthSelector.value !== cur) lengthSelector.setValue(cur);
+            }
+
+            Component.onCompleted: syncValue()
+            onTargetWidgetChanged: syncValue()
+
+            Connections {
+                target: settingRoot.targetWidget
+                ignoreUnknownSignals: true
+                function onSnakeLengthChanged() {
+                    settingRoot.syncValue();
+                }
+            }
+
+            NumberSelector {
+                id: lengthSelector
+                anchors.centerIn: parent
+                implicitWidth: Scaler.s(120)
+                implicitHeight: Scaler.s(32)
+                from: settingRoot.settingData ? settingRoot.settingData.from : 16
+                to: settingRoot.settingData ? settingRoot.settingData.to : 96
+                stepSize: settingRoot.settingData ? settingRoot.settingData.stepSize : 4
+                decimals: 0
+                value: {
+                    let w = settingRoot.targetWidget;
+                    return (w && w.snakeLength !== undefined) ? w.snakeLength : 48;
+                }
+                fontFamily: ThemeBackend.fontFamily
+                accentColor: ThemeBackend.mauve
+                baseColor: ThemeBackend.surface0
+                buttonColor: ThemeBackend.surface1
+                textColor: ThemeBackend.text
+                buttonTextColor: ThemeBackend.subtext1
+                cornerRadius: ThemeBackend.borderRadius
+
+                onTriggered: {
+                    let val = Math.round(lengthSelector.value);
+                    let w = settingRoot.targetWidget;
+                    if (w && w.snakeLength !== undefined) w.snakeLength = val;
+                    if (settingRoot.redactor) settingRoot.redactor.setWidgetProperty("snakeLength", val);
+                }
+            }
+        }
+    }
+
+    property Component snakeSpeedComponent: Component {
+        Item {
+            id: settingRoot
+            property var typeData: null
+            property var settingData: null
+            property var redactor: null
+            property var widget: null
+            property var widgetData: null
+            property var item: null
+
+            readonly property var targetWidget: settingRoot.widget || settingRoot.widgetData || settingRoot.item || null
+
+            implicitWidth: speedSelector.implicitWidth
+            implicitHeight: speedSelector.implicitHeight
+
+            function syncValue() {
+                let w = settingRoot.targetWidget;
+                if (!w) return;
+                let cur = (w.snakeSpeed !== undefined) ? w.snakeSpeed : 1;
+                if (speedSelector.value !== cur) speedSelector.setValue(cur);
+            }
+
+            Component.onCompleted: syncValue()
+            onTargetWidgetChanged: syncValue()
+
+            Connections {
+                target: settingRoot.targetWidget
+                ignoreUnknownSignals: true
+                function onSnakeSpeedChanged() {
+                    settingRoot.syncValue();
+                }
+            }
+
+            NumberSelector {
+                id: speedSelector
+                anchors.centerIn: parent
+                implicitWidth: Scaler.s(120)
+                implicitHeight: Scaler.s(32)
+                from: settingRoot.settingData ? settingRoot.settingData.from : 0.25
+                to: settingRoot.settingData ? settingRoot.settingData.to : 3
+                stepSize: settingRoot.settingData ? settingRoot.settingData.stepSize : 0.25
+                decimals: 2
+                suffix: "×"
+                value: {
+                    let w = settingRoot.targetWidget;
+                    return (w && w.snakeSpeed !== undefined) ? w.snakeSpeed : 1;
+                }
+                fontFamily: ThemeBackend.fontFamily
+                accentColor: ThemeBackend.mauve
+                baseColor: ThemeBackend.surface0
+                buttonColor: ThemeBackend.surface1
+                textColor: ThemeBackend.text
+                buttonTextColor: ThemeBackend.subtext1
+                cornerRadius: ThemeBackend.borderRadius
+
+                onTriggered: {
+                    let val = Math.round(speedSelector.value * 100) / 100;
+                    let w = settingRoot.targetWidget;
+                    if (w && w.snakeSpeed !== undefined) w.snakeSpeed = val;
+                    if (settingRoot.redactor) settingRoot.redactor.setWidgetProperty("snakeSpeed", val);
+                }
+            }
+        }
+    }
+
     property Component usageRateComponent: Component {
         Item {
             id: settingRoot
@@ -846,6 +975,60 @@ QtObject {
                     row: "top",
                     accentColor: "surface0",
                     textColor: "mauve"
+                }
+            ]
+        },
+        "snake": {
+            name: I18n.t("widgets.types.snake", "Snake"),
+            icon: String.fromCodePoint(0xF150E),
+            category: "media",
+            defaultWidth: Math.round((Quickshell.screens && Quickshell.screens.length > 0 ? Quickshell.screens[0].width : 1920) / 2),
+            defaultHeight: Math.round((Quickshell.screens && Quickshell.screens.length > 0 ? Quickshell.screens[0].height : 1080) / 2),
+            defaultVariant: "default",
+            variants: {
+                "default": { file: "faces/snake/SnakeFace.qml", icon: "1", label: I18n.t("widgets.variants.default", "Default") }
+            },
+            additionalSettings: [
+                {
+                    id: "fillScreen",
+                    icon: String.fromCodePoint(0xF004C),
+                    iconFontSize: 16,
+                    action: "fillScreen",
+                    row: "top",
+                    accentColor: "surface0",
+                    textColor: "mauve"
+                },
+                {
+                    id: "snakeLength",
+                    name: I18n.t("widgets.settings.snakeLength", "Length"),
+                    icon: String.fromCodePoint(0xF150E),
+                    iconFontSize: 16,
+                    action: "snakeLength",
+                    type: "custom",
+                    row: "bottom",
+                    property: "snakeLength",
+                    from: 16,
+                    to: 96,
+                    stepSize: 4,
+                    accentColor: "surface0",
+                    textColor: "mauve",
+                    component: registry.snakeLengthComponent
+                },
+                {
+                    id: "snakeSpeed",
+                    name: I18n.t("widgets.settings.snakeSpeed", "Speed"),
+                    icon: String.fromCodePoint(0xF04C5),
+                    iconFontSize: 16,
+                    action: "snakeSpeed",
+                    type: "custom",
+                    row: "bottom",
+                    property: "snakeSpeed",
+                    from: 0.25,
+                    to: 3,
+                    stepSize: 0.25,
+                    accentColor: "surface0",
+                    textColor: "mauve",
+                    component: registry.snakeSpeedComponent
                 }
             ]
         },

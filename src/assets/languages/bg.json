@@ -405,7 +405,8 @@
             "name": {
               "classic": "Класически",
               "material": "Material",
-              "badge": "Точкова матрица"
+              "badge": "Точкова матрица",
+              "pill": "Капсула"
             }
           }
         },
@@ -681,10 +682,6 @@
           },
           "classic": "Миниатюра на албума на обикновен фон",
           "ambient": "Размита обложка на албума зад бутоните"
-        },
-        "art_background": {
-          "title": "Обложка във фона",
-          "desc": "Запълва модула с размита обложка на албума зад бутоните"
         }
       },
       "thickness": {
@@ -1327,7 +1324,10 @@
     "tab_emojis": "Емоджита",
     "placeholder_emojis": "Търсене на емоджита по име или ключова дума...",
     "search_run": "Търсене в {provider}",
-    "search_hint": "Въведете, за да търсите в {provider}"
+    "search_hint": "Въведете, за да търсите в {provider}",
+    "tab_windows": "Прозорци",
+    "placeholder_windows": "Търсене в отворените прозорци...",
+    "window_workspace": "Работно пространство {ws}"
   },
   "calendar": {
     "loading": "Зареждане...",
@@ -1688,7 +1688,7 @@
     "welcome": "Добре дошли",
     "tagline": "Работна среда, създадена за",
     "you": "Вас",
-    "start_preview": "Стартиране на визуализацията"
+    "hold_to_start": "Задръжте, за да започнете"
   },
   "syspanel": {
     "user": {
@@ -1855,6 +1855,7 @@
       "no_results": "Нищо не е намерено"
     },
     "types": {
+      "snake": "Змия",
       "clock": "Часовник",
       "music": "Музика",
       "weather": "Времето",
@@ -1919,6 +1920,8 @@
       "no_contributions": "Няма намерени приноси"
     },
     "settings": {
+      "snakeLength": "Дължина",
+      "snakeSpeed": "Скорост",
       "lyricsLines": "Редове",
       "lyricsAlignment": "Подравняване",
       "textContent": "Текст",
@@ -2064,7 +2067,7 @@
     },
     "os": {
       "error_root": "Грешка: Не изпълнявайте този скрипт директно с root/sudo. Изпълнете го като обикновен потребител.",
-      "error_unsupported": "Неподдържана ОС ({os}). Serpantinum поддържа строго arch linux и деривати.",
+      "error_unsupported": "Неподдържана ОС ({os}). Serpantinum поддържа Arch Linux, Fedora, Void Linux, Gentoo и техните деривати.",
       "error_not_found": "ОС не може да бъде открита. /etc/os-release не е намерен.",
       "unknown_cpu": "Неизвестен процесор",
       "unknown_gpu": "Неизвестна / виртуална машина",

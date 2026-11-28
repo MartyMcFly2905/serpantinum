@@ -236,6 +236,10 @@
         "title": "Thao tác nhanh",
         "desc": "Bật lớp phủ thao tác nhanh nổi"
       },
+      "daily_ping": {
+        "title": "Ping hằng ngày",
+        "desc": "Gửi một yêu cầu trống mỗi ngày để đếm số người dùng hoạt động. Không kèm theo dữ liệu nào"
+      },
       "location": {
         "title": "Vị trí",
         "desc": "Cấu hình vị trí cho lịch trình mặt trời tự động và thời tiết",
@@ -733,6 +737,14 @@
         "select_dir": "Chọn thư mục...",
         "select_wallpaper": "Chọn hình nền",
         "select": "Hình nền",
+        "carousel": {
+          "title": "Băng chuyền hình nền",
+          "desc": "Hiển thị hình nền ngẫu nhiên từ thư mục theo lịch, đi qua tất cả trước khi lặp lại",
+          "interval": {
+            "title": "Khoảng thời gian thay đổi",
+            "desc": "Số giây giữa các lần đổi hình nền, từ 10 giây đến một tuần"
+          }
+        },
         "transition": {
           "mode": {
             "title": "Hiệu ứng chuyển",

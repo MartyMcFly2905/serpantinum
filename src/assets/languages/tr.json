@@ -236,6 +236,10 @@
         "title": "Hızlı işlemler",
         "desc": "Kayan hızlı işlemler katmanını etkinleştirin"
       },
+      "daily_ping": {
+        "title": "Günlük ping",
+        "desc": "Aktif kullanıcıları saymak için günde bir boş istek gönderir. Hiçbir veri eklenmez"
+      },
       "location": {
         "title": "Konum",
         "desc": "Otomatik güneş takvimi ve hava durumu için konumu yapılandırın",
@@ -733,6 +737,14 @@
         "select_dir": "Dizin seçin...",
         "select_wallpaper": "Duvar kâğıdı seç",
         "select": "Duvar Kâğıdı",
+        "carousel": {
+          "title": "Duvar kağıdı karuseli",
+          "desc": "Klasörden rastgele bir duvar kağıdını belirli aralıklarla göster, tekrar etmeden önce hepsini dolaş",
+          "interval": {
+            "title": "Değişim aralığı",
+            "desc": "Duvar kağıdı değişimleri arasındaki saniye, 10 saniyeden bir haftaya kadar"
+          }
+        },
         "transition": {
           "mode": {
             "title": "Geçiş",

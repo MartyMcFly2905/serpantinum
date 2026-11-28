@@ -13,8 +13,21 @@ GuideTab {
     id: screenshotTabRoot
 
     readonly property string scriptPath: Caching.serpantinumDir + "/scripts/ocr_langs.sh"
+    primaryFlickable: languageList
 
-    property bool captureOnRelease: false
+    ConfigSection {
+        id: generalCfg
+        section: "general"
+        defaults: ({ "screenshotCaptureOnRelease": false })
+    }
+
+    ConfigSection {
+        id: rootCfg
+        section: ""
+        defaults: ({ "screenshotDir": "" })
+    }
+
+    readonly property bool captureOnRelease: Boolean(generalCfg.values.screenshotCaptureOnRelease)
     property var allLanguages: []
     property bool online: true
     property bool loaded: false
@@ -23,8 +36,11 @@ GuideTab {
     property string busyCode: ""
     property string busyAction: ""
     property string search: ""
-    readonly property string defaultScreenshotDir: (Quickshell.env("XDG_PICTURES_DIR") || (Quickshell.env("HOME") + "/Pictures")) + "/Screenshots"
-    property string currentScreenshotDir: defaultScreenshotDir
+    readonly property string defaultScreenshotDir: Caching.xdgPicturesDir + "/Screenshots"
+    readonly property string currentScreenshotDir: {
+        let dir = String(rootCfg.values.screenshotDir || "");
+        return dir !== "" ? dir : defaultScreenshotDir;
+    }
     property var availableScreenshotDirs: [defaultScreenshotDir]
 
     ListModel { id: languageModel }
@@ -35,12 +51,14 @@ GuideTab {
         let q = screenshotTabRoot.search.trim().toLowerCase();
         languageModel.clear();
         let items = screenshotTabRoot.allLanguages;
+        let rows = [];
         for (let i = 0; i < items.length; i++) {
             let l = items[i];
             if (q === "" || l.name.toLowerCase().indexOf(q) !== -1 || l.code.indexOf(q) !== -1) {
-                languageModel.append({ code: l.code, name: l.name, size: l.size, installed: l.installed });
+                rows.push({ code: l.code, name: l.name, size: l.size, installed: l.installed });
             }
         }
+        if (rows.length > 0) languageModel.append(rows);
     }
 
     function syncInstalled() {
@@ -81,14 +99,6 @@ GuideTab {
         screenshotTabRoot.syncInstalled();
     }
 
-    function syncSettings() {
-        let gs = (typeof Config !== "undefined" && typeof Config.getSetting === "function") ? Config.getSetting("general", {}) : {};
-        screenshotTabRoot.captureOnRelease = gs && gs.screenshotCaptureOnRelease === true;
-        let dir = Config.getSetting("screenshotDir", "");
-        screenshotTabRoot.currentScreenshotDir = dir && dir !== "" ? dir : screenshotTabRoot.defaultScreenshotDir;
-        screenshotTabRoot.listCurrentScreenshotDir();
-    }
-
     function listCurrentScreenshotDir() {
         let cur = screenshotTabRoot.currentScreenshotDir;
         if (cur && screenshotTabRoot.availableScreenshotDirs.indexOf(cur) === -1) {
@@ -96,10 +106,11 @@ GuideTab {
         }
     }
 
+    onCurrentScreenshotDirChanged: listCurrentScreenshotDir()
+
     function updateScreenshotDir(value) {
         if (typeof Config !== "undefined" && !Config.dataReady) return;
-        screenshotTabRoot.currentScreenshotDir = value;
-        Config.setSetting("screenshotDir", value);
+        rootCfg.set("screenshotDir", value);
     }
 
     function scanScreenshotDirs() {
@@ -109,10 +120,7 @@ GuideTab {
 
     function updateCaptureOnRelease(value) {
         if (typeof Config !== "undefined" && !Config.dataReady) return;
-        let current = Object.assign({}, Config.getSetting("general", {}));
-        current.screenshotCaptureOnRelease = value;
-        Config.setSetting("general", current);
-        screenshotTabRoot.captureOnRelease = value;
+        generalCfg.set("screenshotCaptureOnRelease", value);
     }
 
     function loadLanguages() {
@@ -152,19 +160,21 @@ GuideTab {
     Process {
         id: listProc
         command: ["bash", screenshotTabRoot.scriptPath, "list"]
-        stdout: StdioCollector {
-            id: listOut
-            onStreamFinished: {
+        stdout: SplitParser {
+            onRead: function(line) {
                 try {
-                    let data = JSON.parse(listOut.text);
+                    let data = JSON.parse(line);
                     screenshotTabRoot.applyList(data.languages || []);
                     screenshotTabRoot.online = data.online === true;
+                    if (data.pending !== true || data.online === true) screenshotTabRoot.loaded = true;
                 } catch (e) {
                     screenshotTabRoot.online = false;
                 }
-                screenshotTabRoot.loaded = true;
-                screenshotTabRoot.lastLoadMs = Date.now();
             }
+        }
+        onExited: {
+            screenshotTabRoot.loaded = true;
+            screenshotTabRoot.lastLoadMs = Date.now();
         }
     }
 
@@ -182,18 +192,17 @@ GuideTab {
 
     onVisibleChanged: {
         if (visible) {
-            syncSettings();
+            listCurrentScreenshotDir();
             scanScreenshotDirs();
             if (!screenshotTabRoot.loaded || Date.now() - screenshotTabRoot.lastLoadMs > 60000) loadLanguages();
         }
     }
 
-    Component.onCompleted: syncSettings()
-
-    Connections {
-        target: typeof Config !== "undefined" ? Config : null
-        function onSettingsLoaded() {
-            screenshotTabRoot.syncSettings();
+    Component.onCompleted: {
+        listCurrentScreenshotDir();
+        if (isCurrent) {
+            scanScreenshotDirs();
+            loadLanguages();
         }
     }
 
@@ -244,17 +253,16 @@ GuideTab {
                     onClicked: {
                         if (screenshotTabRoot.currentScreenshotDir !== "") {
                             let escapeBash = function(str) { return String(str).replace(/(["\\$`])/g, '\\$1'); };
-                            Quickshell.execDetached(["bash", "-c", "mkdir -p \"" + escapeBash(screenshotTabRoot.currentScreenshotDir) + "\" && xdg-open \"" + escapeBash(screenshotTabRoot.currentScreenshotDir) + "\""]);
+                            AppMatcher.execDetached(["bash", "-c", "mkdir -p \"" + escapeBash(screenshotTabRoot.currentScreenshotDir) + "\" && xdg-open \"" + escapeBash(screenshotTabRoot.currentScreenshotDir) + "\""]);
                         }
                     }
                 }
 
-                Dropdown {
+                PathDropdown {
                     Layout.preferredWidth: rootObj.s(260)
                     Layout.preferredHeight: rootObj.s(32)
                     Layout.alignment: Qt.AlignVCenter
                     options: screenshotTabRoot.availableScreenshotDirs
-                    isPathSelector: true
                     fuzzySearch: true
                     currentIndex: options.indexOf(screenshotTabRoot.currentScreenshotDir) >= 0 ? options.indexOf(screenshotTabRoot.currentScreenshotDir) : 0
                     placeholderText: I18n.t("guide.screenshot.directory.select_dir", "Select directory...")
@@ -340,15 +348,9 @@ GuideTab {
                     id: listHover
                 }
 
-                ScrollBar.vertical: ScrollBar {
-                    active: listHover.hovered
-                    width: rootObj.s(4)
-                    policy: listHover.hovered ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-                    contentItem: Rectangle {
-                        implicitWidth: rootObj.s(4)
-                        radius: rootObj.s(2)
-                        color: ThemeBackend.surface2
-                    }
+                ScrollBar.vertical: StyledScrollBar {
+                    rootObj: screenshotTabRoot.rootObj
+                    hoveredActive: listHover.hovered
                 }
 
                 delegate: Rectangle {

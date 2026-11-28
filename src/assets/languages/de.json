@@ -236,6 +236,10 @@
         "title": "Schnellaktionen",
         "desc": "Schwebendes Schnellaktions-Overlay aktivieren"
       },
+      "daily_ping": {
+        "title": "Täglicher Ping",
+        "desc": "Sendet einmal täglich eine leere Anfrage, um aktive Nutzer zu zählen. Es werden keine Daten übertragen"
+      },
       "location": {
         "title": "Standort",
         "desc": "Standort für automatischen Sonnenzeitplan und Wetter konfigurieren",
@@ -733,6 +737,14 @@
         "select_dir": "Ordner auswählen...",
         "select_wallpaper": "Hintergrundbild auswählen",
         "select": "Hintergrundbild",
+        "carousel": {
+          "title": "Hintergrundkarussell",
+          "desc": "Zeigt nach Zeitplan ein zufälliges Hintergrundbild aus dem Ordner und geht alle durch, bevor sich eines wiederholt",
+          "interval": {
+            "title": "Wechselintervall",
+            "desc": "Sekunden zwischen Hintergrundwechseln, von 10 Sekunden bis zu einer Woche"
+          }
+        },
         "transition": {
           "mode": {
             "title": "Übergang",

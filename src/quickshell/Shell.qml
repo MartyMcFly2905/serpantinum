@@ -1,14 +1,17 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import "reusables"
 import "widgets"
 import "notifications/weather"
 import "notifications/battery"
 
 ShellRoot {
-    readonly property bool performanceMode: !!(Config.getSetting("general", {}).performance)
-    readonly property bool quickactionsEnabled: Config.getSetting("general", {}).quickactions !== false
-    readonly property bool dockEnabled: Config.getSetting("dock", {}).enabled !== false
+    id: shellRoot
+
+    readonly property bool performanceMode: !!(Config.getSetting("general.performance", false))
+    readonly property bool quickactionsEnabled: Config.getSetting("general.quickactions", true) !== false
+    readonly property bool dockEnabled: Config.getSetting("dock.enabled", true) !== false
 
     Connections {
         target: Quickshell
@@ -55,11 +58,23 @@ ShellRoot {
     WidgetRedactor {}
     LockRedactor {}
 
-    Launcher {}
-    Clipboard {}    
-    Dashboard {}
+    IdleLazyLoader {
+        wanted: LauncherController.isVisible
+        Launcher {}
+    }
+    IdleLazyLoader {
+        wanted: ClipboardController.isVisible
+        Clipboard {}
+    }
+    IdleLazyLoader {
+        wanted: DashboardController.isVisible
+        Dashboard {}
+    }
 
-    Polkit {}
+    LazyLoader {
+        active: PolkitService.isActive
+        Polkit {}
+    }
     WellbeingLimitOverlay {}
     PopoutManager {}
 
@@ -68,7 +83,11 @@ ShellRoot {
         sourceComponent: Dock {}
     }
 
-    Idle {}
+    Idle {
+        id: idleService
+        Component.onCompleted: ShellRouter.registerIdle(idleService)
+        Component.onDestruction: ShellRouter.unregisterIdle(idleService)
+    }
     Variants {
         model: performanceMode ? [] : Quickshell.screens
         delegate: WidgetLoader {
@@ -94,5 +113,6 @@ ShellRoot {
         SysNotif.checkBattery();
         WeatherAlerts.isQuietNow();
         GovAlerts.refresh();
+        DailyPing.start();
     }
 }

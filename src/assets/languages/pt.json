@@ -236,6 +236,10 @@
         "title": "Ações rápidas",
         "desc": "Ativa o overlay flutuante de ações rápidas"
       },
+      "daily_ping": {
+        "title": "Ping diário",
+        "desc": "Envia uma solicitação vazia por dia para contar usuários ativos. Nenhum dado é anexado"
+      },
       "location": {
         "title": "Localização",
         "desc": "Configure a localização para ciclo solar automático e clima",
@@ -733,6 +737,14 @@
         "select_dir": "Selecionar pasta...",
         "select_wallpaper": "Selecionar papel de parede",
         "select": "Papel de parede",
+        "carousel": {
+          "title": "Carrossel de papéis de parede",
+          "desc": "Mostra um papel de parede aleatório da pasta em intervalos, passando por todos antes de repetir",
+          "interval": {
+            "title": "Intervalo de troca",
+            "desc": "Segundos entre trocas de papel de parede, de 10 segundos a uma semana"
+          }
+        },
         "transition": {
           "mode": {
             "title": "Transição",

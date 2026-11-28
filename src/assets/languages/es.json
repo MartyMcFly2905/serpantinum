@@ -236,6 +236,10 @@
         "title": "Acciones rápidas",
         "desc": "Habilitar panel flotante de acciones rápidas"
       },
+      "daily_ping": {
+        "title": "Ping diario",
+        "desc": "Envía una solicitud vacía al día para contar usuarios activos. No se adjuntan datos"
+      },
       "location": {
         "title": "Ubicación",
         "desc": "Configurar ubicación para horario solar automático y clima",
@@ -733,6 +737,14 @@
         "select_dir": "Seleccionar directorio...",
         "select_wallpaper": "Seleccionar fondo de pantalla",
         "select": "Fondo de pantalla",
+        "carousel": {
+          "title": "Carrusel de fondos",
+          "desc": "Muestra un fondo aleatorio de la carpeta según un horario, recorriendo todos antes de repetir",
+          "interval": {
+            "title": "Intervalo de cambio",
+            "desc": "Segundos entre cambios de fondo, de 10 segundos a una semana"
+          }
+        },
         "transition": {
           "mode": {
             "title": "Transición",

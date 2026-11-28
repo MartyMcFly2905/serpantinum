@@ -236,6 +236,10 @@
         "title": "Brze radnje",
         "desc": "Omogući plutajući sloj brzih radnji"
       },
+      "daily_ping": {
+        "title": "Dnevni ping",
+        "desc": "Šalje jedan prazan zahtjev dnevno radi brojanja aktivnih korisnika. Ne prilažu se nikakvi podaci"
+      },
       "location": {
         "title": "Lokacija",
         "desc": "Konfigurirajte lokaciju za automatski raspored sunca i vremensku prognozu",
@@ -745,6 +749,14 @@
         "select_dir": "Odaberi direktorij...",
         "select_wallpaper": "Odaberi pozadinu",
         "select": "Pozadina",
+        "carousel": {
+          "title": "Vrtuljak pozadina",
+          "desc": "Prikazuj nasumičnu pozadinu iz mape prema rasporedu, prolazeći kroz sve prije ponavljanja",
+          "interval": {
+            "title": "Interval promjene",
+            "desc": "Sekunde između promjena pozadine, od 10 sekundi do tjedan dana"
+          }
+        },
         "transition": {
           "mode": {
             "title": "Prijelaz",

@@ -236,6 +236,10 @@
         "title": "Snelle acties",
         "desc": "Zwevend venster voor snelle acties inschakelen"
       },
+      "daily_ping": {
+        "title": "Dagelijkse ping",
+        "desc": "Stuurt één leeg verzoek per dag om actieve gebruikers te tellen. Er worden geen gegevens meegestuurd"
+      },
       "location": {
         "title": "Locatie",
         "desc": "Configureer locatie voor automatisch zonschema en weer",
@@ -733,6 +737,14 @@
         "select_dir": "Map selecteren...",
         "select_wallpaper": "Achtergrond selecteren",
         "select": "Achtergrond",
+        "carousel": {
+          "title": "Achtergrondcarrousel",
+          "desc": "Toon volgens een schema een willekeurige achtergrond uit de map en loop ze allemaal door voordat er een herhaalt",
+          "interval": {
+            "title": "Wisselinterval",
+            "desc": "Seconden tussen achtergrondwisselingen, van 10 seconden tot een week"
+          }
+        },
         "transition": {
           "mode": {
             "title": "Overgang",
